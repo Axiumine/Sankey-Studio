@@ -143,6 +143,10 @@ rendering) under `memray run`, prints `memray stats` and writes a flamegraph to
   outside `mongo_safety.py`; no secrets in logs or exceptions; no outbound HTTP; no unsafe HTML
   (`Markup`, `|safe`, f-string `HTMLResponse`, inline scripts or handlers in templates, DOM XSS sinks
   in JavaScript); no CORS; no wildcard bind or hosts; regex only from escaped text or constants.
+  Two generic registry rules are excluded by id in `scripts/semgrep.sh` (inline waivers are
+  forbidden in templates): `var-in-href` (hrefs come from a server-side constant table) and
+  `var-in-script-tag` (the only variable in a script is the `application/json` boot block, encoded
+  with `tojson`). The project rules and the template policy tests still cover those files.
 * **Trivy** (`make trivy`) runs the pinned `aquasec/trivy` image through `scripts/trivy.sh` with
   `trivy.yaml`: vulnerabilities in `uv.lock` (HIGH and CRITICAL, fixed ones), secrets,
   misconfigurations and forbidden licences (GPL-2.0, GPL-3.0, AGPL-3.0, SSPL-1.0). Accepted findings
