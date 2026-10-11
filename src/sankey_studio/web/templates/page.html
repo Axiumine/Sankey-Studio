@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{#- The one page template (API.md section 4). Context: page, heading, links, boot.
+    - page "new" and "edit" share static/js/pages/editor.js; every other page loads
+      static/js/pages/<page>.js and static/css/pages/<page>.css (written by the page agents).
+    - boot is rendered ONLY as {{ boot|tojson }} in the application/json block.
+    - nav links are the entries of `links` whose href is one of the three known routes; the
+      other entries (graph names) are listed inside <noscript> as a fallback.
+    - error.html (the not-found page) extends this and overrides `head`, `page_root` and
+      `page_scripts`; everything else, the header and the banners included, is shared. -#}
+{% from "partials/icons.html" import icon %}
+{% set module = "editor" if page in ("new", "edit") else page %}
+{% set nav_ids = {"/": "nav-library", "/graphs/new": "nav-new", "/settings": "nav-settings"} %}
+{% set current = {"library": "/", "new": "/graphs/new", "settings": "/settings"}.get(page) %}
+{% set section = "/" if page in ("viewer", "edit", "compare") else none %}
+{% block head %}
+  <link rel="stylesheet" href="/static/css/pages/{{ module }}.css">
+{% endblock %}
+{% block body %}
+<a class="skip-link" href="#main">Skip to main content</a>
+<div class="loading-bar" id="loading-bar" data-testid="loading" role="progressbar" aria-label="Loading" hidden></div>
+<div class="app" id="app">
+  <header class="app-header">
+    <div class="app-header-inner">
+      <a class="brand" href="/" aria-label="Sankey Studio, home">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+          <rect x="3" y="5" width="4" height="22" rx="1" fill="currentColor"/>
+          <rect x="25" y="5" width="4" height="9" rx="1" fill="currentColor"/>
+          <rect x="25" y="18" width="4" height="9" rx="1" fill="currentColor"/>
+          <path d="M7 5C16 5 16 18 25 18V27C16 27 16 14 7 14Z" fill="currentColor" opacity=".55"/>
+          <path d="M7 18C16 18 16 5 25 5V14C16 14 16 27 7 27Z" fill="currentColor" opacity=".3"/>
+        </svg>
+        <span>Sankey Studio</span>
+      </a>
+      <nav class="main-nav" aria-label="Main">
+        <ul>
+        {% for link in links if link.href in nav_ids %}
+          <li><a class="nav-link{% if link.href == '/graphs/new' %} nav-cta{% endif %}{% if link.href == section %} is-section{% endif %}" href="{{ link.href }}" data-testid="{{ nav_ids[link.href] }}"{% if link.href == current %} aria-current="page"{% endif %}>{{ link.label }}</a></li>
+        {% endfor %}
+        </ul>
+      </nav>
+      <div class="segmented theme-switch" role="group" aria-label="Colour theme" data-testid="theme-switch">
+        <button type="button" data-theme-value="system" aria-pressed="false" title="Match the system theme">{{ icon("monitor") }}<span class="visually-hidden">System theme</span></button>
+        <button type="button" data-theme-value="light" aria-pressed="false" title="Light theme">{{ icon("sun") }}<span class="visually-hidden">Light theme</span></button>
+        <button type="button" data-theme-value="dark" aria-pressed="false" title="Dark theme">{{ icon("moon") }}<span class="visually-hidden">Dark theme</span></button>
+      </div>
+    </div>
+  </header>
+  {% if boot.remote_mode %}
+  <div class="banner banner-warning" data-testid="remote-banner">
+    <div class="banner-inner">
+      {{ icon("alert", 18) }}
+      <p class="banner-text"><span class="banner-title">Remote mode, no login.</span>
+        This server can be reached from other machines and nothing asks who is connecting.
+        {% if boot.writes_allowed %}Anyone who can open this address can see and change your graphs.{% else %}Anyone who can open this address can see your graphs.{% endif %}</p>
+    </div>
+  </div>
+  {% endif %}
+  {% if not boot.writes_allowed %}
+  <div class="banner banner-info" data-testid="read-only-banner">
+    <div class="banner-inner">
+      {{ icon("lock", 18) }}
+      <p class="banner-text"><span class="banner-title">Read-only.</span>
+        You can look at graphs, preview and export them. Saving, importing, uploading files and changing settings are turned off on this server.</p>
+    </div>
+  </div>
+  {% endif %}
+  <main id="main" class="app-main" data-page="{{ page }}" data-testid="app-root" tabindex="-1">
+    <div class="page-head">
+      <h1>{{ heading }}</h1>
+      <div class="page-actions" id="page-actions"></div>
+    </div>
+    <div class="page-root" id="page-root">
+      {% block page_root %}
+      <noscript>
+        <div class="notice" data-kind="warning">
+          <div class="notice-body">Sankey Studio needs JavaScript. Turn it on to draw and manage graphs.</div>
+        </div>
+        {% set extra = links|rejectattr("href", "in", nav_ids)|list %}
+        {% if extra %}
+        <ul>
+        {% for link in extra %}
+          <li><a href="{{ link.href }}">{{ link.label }}</a></li>
+        {% endfor %}
+        </ul>
+        {% endif %}
+      </noscript>
+      {% endblock %}
+    </div>
+  </main>
+</div>
+<div class="toast-region" id="toast-region" role="region" aria-label="Notifications" aria-live="polite" aria-relevant="additions text"></div>
+<div class="visually-hidden" id="a11y-polite" role="status" aria-live="polite" aria-atomic="true"></div>
+<div class="visually-hidden" id="a11y-assertive" role="alert" aria-live="assertive" aria-atomic="true"></div>
+<script type="application/json" id="page-data">{{ boot|tojson }}</script>
+{% block page_scripts %}
+<script type="module" src="/static/js/core/shell.js"></script>
+<script type="module" src="/static/js/pages/{{ module }}.js"></script>
+{% endblock %}
+{% endblock %}

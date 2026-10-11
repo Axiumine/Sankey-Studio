@@ -1,0 +1,9 @@
+/* Styles of the editor page. Overwritten by the agent that owns the page; tokens come from
+   tokens.css, shared components from base.css, components.css and layout.css. Only token
+   variables here, no colour literals. */
+
+/* The editor script fills the actions row (jump link, View graph) after the first paint. On a phone it
+   wraps below the heading, so the row keeps its own line (32px) from the start and the form does not jump. */
+@media (max-width: 560px) {
+  .page-actions { flex: 1 1 100%; min-height: 2rem; }
+}

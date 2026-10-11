@@ -1,0 +1,338 @@
+/* Settings page (/settings). Tokens come from tokens.css, shared pieces (card, notice, badge, field,
+   savebar, states) from base.css, components.css and layout.css. Only token variables here, no
+   colour literals. Status colours appear on dots and icons next to ink text, never on the text. */
+
+.settings {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  max-width: 64rem;
+}
+
+/* the skeleton keeps roughly the height of the loaded page, so nothing jumps when it arrives */
+.settings-loading { min-height: 32rem; max-width: 64rem; }
+
+.settings-fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-inline-size: 0;
+}
+
+/* ------------------------------------------------------------------ sections */
+
+.settings-section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3) var(--space-6);
+  min-width: 0;
+}
+
+.settings-section-head h2 { font-size: var(--text-md); }
+
+.settings-section-head p {
+  margin-top: var(--space-1);
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+}
+
+@media (min-width: 900px) {
+  .settings-section { grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr); }
+  .settings-section-head { padding-top: var(--space-1); }
+}
+
+/* ------------------------------------------------------------------ "On this page"
+   The settings column is 64rem wide and the page container 80rem. From 1280px (where the container
+   is at its full width) the 13rem that remain on the right hold a quiet list of the sections that
+   stays in view while the page scrolls (toc.js builds it). Below that the list is hidden and the
+   column fills the container as before. The list sits outside the flow of the column
+   (position: absolute), so it never changes the column's height or gaps. */
+
+.settings-toc { display: none; }
+
+@media (min-width: 1280px) {
+  .settings-toc {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(100% + var(--space-6));
+    display: block;
+    width: 11rem;
+  }
+
+  .settings-toc-inner { position: sticky; top: calc(var(--header-h) + var(--space-5)); }
+}
+
+.settings-toc-title {
+  margin: 0 0 var(--space-2);
+  color: var(--ink-secondary);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.settings-toc ul {
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+}
+
+.settings-toc a {
+  display: block;
+  margin-left: -1px;
+  padding: var(--space-1) var(--space-3);
+  border-left: 2px solid transparent;
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+
+.settings-toc a:hover { background: var(--wash); color: var(--ink); text-decoration: none; }
+
+.settings-toc a[aria-current="location"] {
+  border-left-color: var(--accent);
+  color: var(--ink);
+  font-weight: var(--weight-medium);
+}
+
+/* ------------------------------------------------------------------ error summary */
+
+.settings-summary { scroll-margin-top: var(--space-4); }
+.summary-list { margin: 0; padding-left: 1.1rem; }
+.summary-list li + li { margin-top: var(--space-1); }
+.summary-list .link-button { font: inherit; text-align: left; }
+
+/* ------------------------------------------------------------------ appearance */
+
+.choice-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11.5rem), 1fr));
+  gap: var(--space-3);
+}
+
+.choice {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+
+/* the radio covers its card: the whole card is the click target, and the arrow keys still work */
+.choice-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.choice-body {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--space-3);
+  align-items: center;
+  height: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  transition: border-color var(--motion), background-color var(--motion), box-shadow var(--motion);
+}
+
+.choice-icon {
+  grid-row: span 2;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--radius-md);
+  background: var(--wash);
+  color: var(--ink-secondary);
+}
+
+.choice-label { font-weight: var(--weight-semibold); }
+.choice-text { grid-column: 2; color: var(--ink-secondary); font-size: var(--text-sm); }
+.choice:hover .choice-body { border-color: var(--border-strong); }
+
+.choice-input:checked + .choice-body {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.choice-input:checked + .choice-body .choice-icon {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.choice-input:focus-visible + .choice-body {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------------ storage */
+
+.settings-mongo-block {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--plane);
+}
+
+.settings-report-host:empty { display: none; }
+.settings-report > .icon { margin-top: 2px; }
+
+.report-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+}
+
+.report-stat dt { color: var(--ink-secondary); font-size: var(--text-xs); }
+
+.report-stat dd {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  line-height: 1.2;
+}
+
+.report-ids {
+  max-height: 10rem;
+  margin: var(--space-2) 0;
+  padding: var(--space-2) var(--space-3);
+  overflow: auto;
+  border-radius: var(--radius-sm);
+  background: var(--wash);
+  font-size: var(--text-xs);
+}
+
+/* the "and N more" line under the scrolling id list gets its own space */
+.report-ids + .report-more { margin-top: var(--space-2); }
+
+/* outcome of a probe: the status colour sits on the icon, the sentence stays ink */
+.result-line {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.result-icon { flex: none; display: inline-flex; margin-top: 2px; }
+.result-text { min-width: 0; }
+.result-line[data-kind="ok"] .result-icon { color: var(--status-good); }
+.result-line[data-kind="error"] .result-icon { color: var(--status-critical); }
+.result-line[data-kind="busy"] .result-icon .icon { animation: spin 1s linear infinite; }
+
+.settings-limits {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .settings-limits { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ------------------------------------------------------------------ connections */
+
+.connection-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.connection {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--plane);
+}
+
+.connection-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.connection-heading { gap: var(--space-2); min-width: 0; flex: 1 1 10rem; }
+.connection-heading > .icon { color: var(--ink-secondary); }
+.connection-title { min-width: 0; font-size: var(--text-md); }
+.connection-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+.connection-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--space-3) var(--space-4);
+}
+
+.connection-fields > .span-all { grid-column: 1 / -1; }
+.connection .result-line { margin-top: var(--space-3); }
+
+/* ------------------------------------------------------------------ this server */
+
+.settings .meta-list { row-gap: var(--space-3); }
+.settings .meta-list dd > .hint { margin-top: var(--space-1); }
+
+/* ------------------------------------------------------------------ save bar */
+
+.settings .savebar {
+  bottom: var(--space-3);
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.savebar-state { display: flex; flex: 1 1 12rem; gap: var(--space-2); align-items: center; min-width: 0; }
+.savebar-state .savebar-status { flex: 1 1 auto; }
+
+.status-dot {
+  flex: none;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.savebar[data-state="clean"] .status-dot { background: var(--status-good); }
+.savebar[data-state="dirty"] .status-dot { background: var(--status-warning); }
+.savebar[data-state="saving"] .status-dot { background: var(--accent); }
+.savebar[data-state="dirty"] .savebar-status { color: var(--ink); }
+
+/* a save in progress shows the spinner at full strength (the generic disabled look would fade it) */
+.savebar .btn.is-busy[aria-disabled="true"] { opacity: 1; cursor: progress; }
+
+/* Buttons inside the disabled fieldset of a read-only server: base.css dims `.btn[disabled]`, which a
+   fieldset does not set on its buttons, so they would look live. Not tied to `fieldset:disabled`
+   itself: that is also on for the moment a save runs, and the buttons must not flicker then. */
+.settings[data-readonly="true"] .settings-fieldset .btn {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* A viewport this short (400% zoom, 320 x 256) would be half covered by the bar and hide the field
+   that has focus: the bar then sits at the end of the form instead of floating. */
+@media (max-height: 20rem) {
+  .settings .savebar { position: static; }
+}
+
+@media (max-width: 480px) {
+  .settings .savebar { bottom: var(--space-2); }
+  .savebar-state { flex-basis: 8rem; }
+}
+
+@media (forced-colors: active) {
+  .choice-input:checked + .choice-body { border-color: Highlight; }
+  .settings-toc a[aria-current="location"] { border-left-color: Highlight; }
+  .status-dot { background: CanvasText; }
+}

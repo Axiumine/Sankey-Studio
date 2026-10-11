@@ -1,0 +1,46 @@
+{% extends "page.html" %}
+{#- The error pages (pages.error_page): the app shell of page.html with a static body.
+    Context: page "notfound" (kinds "page", "graph": a 404) or "error" (kinds "database",
+    "folder": the graph store is unreachable, 503; "server": any other error), heading, boot.kind.
+    The text is fixed: nothing of the request (URL, id, query) and nothing of the error (message,
+    details) is ever rendered here. "Reload" is a plain link to the document itself (href="" keeps
+    path and query without writing them into the page), never a script.
+    Only the shell script is loaded (theme switch, loading bar); there is no page module. -#}
+{% from "partials/icons.html" import icon %}
+{% block head %}{% endblock %}
+{% block page_root %}
+{% if boot.kind in ("page", "graph") %}
+<div class="state" data-kind="empty" data-testid="state-empty">
+  <div class="state-icon">{{ icon("alert", 22) }}</div>
+  <p class="state-text">
+    {%- if boot.kind == "graph" -%}
+    This graph does not exist any more, or the link is wrong.
+    {%- else -%}
+    There is nothing at this address, so the link may be wrong or out of date.
+    {%- endif -%}
+  </p>
+  <div class="state-actions"><a class="btn btn-primary" href="/">Back to the library</a></div>
+</div>
+{% else %}
+<div class="state" data-kind="error" data-testid="state-error" role="alert">
+  <div class="state-icon">{{ icon("alert", 22) }}</div>
+  <p class="state-text">
+    {%- if boot.kind == "database" -%}
+    The graph database is not reachable right now. Check that MongoDB is running, then reload.
+    {%- elif boot.kind == "folder" -%}
+    The graphs folder cannot be read right now. Check that it exists and that you can read it, then reload.
+    {%- else -%}
+    The server could not show this page. Reload it, or go back to the library.
+    {%- endif -%}
+  </p>
+  <div class="state-actions">
+    <a class="btn btn-primary" href="" data-testid="state-retry">{{ icon("refresh") }}Reload</a>
+    <a class="btn" href="/">Back to the library</a>
+    <a class="btn" href="/settings">Open Settings</a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+{% block page_scripts %}
+<script type="module" src="/static/js/core/shell.js"></script>
+{% endblock %}

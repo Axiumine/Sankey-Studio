@@ -1,0 +1,246 @@
+/* Layout: app shell (header, nav, banners, main), spacing helpers, responsive grids, the two-pane
+   editor layout and the sticky save bar. Works from 360px up without horizontal page scroll.
+
+   Helpers (compose them in the markup; every one takes its gap from the spacing scale):
+     .stack          vertical rhythm, gap via --gap (default --space-4)
+     .cluster        wrapping row, gap via --gap (default --space-3), items centred
+     .grid           auto-fill grid, columns min --col (default 16rem)
+     .grid-2 .grid-3 fixed column counts on wide screens, one column on phones
+     .editor-layout  two panes (form | preview) from 900px, stacked below
+     .savebar        sticky bottom bar for the editor / settings forms
+*/
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ------------------------------------------------------------------ header */
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.app-header-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  align-items: center;
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: var(--space-2) var(--gutter);
+}
+
+.brand {
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
+  margin-right: auto;
+  color: var(--ink);
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+
+.brand:hover { text-decoration: none; }
+.brand-mark { flex: none; width: 1.5rem; height: 1.5rem; color: var(--accent-text); }
+
+.main-nav { order: 3; width: 100%; }
+
+.main-nav ul {
+  display: flex;
+  gap: var(--space-1);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-h);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--ink-secondary);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+}
+
+.nav-link:hover { background: var(--wash); color: var(--ink); text-decoration: none; }
+.nav-link[aria-current="page"] { background: var(--wash); color: var(--ink); }
+.nav-link.is-section { color: var(--ink); }
+
+.nav-link.nav-cta {
+  margin-left: auto;
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.nav-link.nav-cta:hover { background: var(--accent-hover); color: var(--accent-contrast); }
+.nav-link.nav-cta[aria-current="page"] { box-shadow: inset 0 -3px 0 var(--accent-contrast); }
+
+@media (min-width: 640px) {
+  .main-nav { order: 0; width: auto; margin-right: auto; }
+  .brand { margin-right: 0; }
+  .nav-link.nav-cta { margin-left: var(--space-2); }
+  .app-header-inner { flex-wrap: nowrap; padding-block: 0; min-height: var(--header-h); }
+}
+
+/* ------------------------------------------------------------------ main */
+
+.app-main {
+  flex: 1 0 auto;
+  width: 100%;
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: var(--space-5) var(--gutter) var(--space-7);
+}
+
+.app-main:focus { outline: none; }
+
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-5);
+}
+
+.page-head h1 { flex: 1 1 14rem; min-width: 0; }
+.page-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; min-width: 0; max-width: 100%; }
+.page-sub { margin-top: var(--space-1); color: var(--ink-secondary); }
+.page-root { min-width: 0; }
+
+/* ------------------------------------------------------------------ helpers */
+
+.stack { display: flex; flex-direction: column; gap: var(--gap, var(--space-4)); min-width: 0; }
+.stack-sm { --gap: var(--space-2); }
+.stack-lg { --gap: var(--space-5); }
+
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap, var(--space-3));
+  align-items: center;
+  min-width: 0;
+}
+
+.cluster-between { justify-content: space-between; }
+.cluster-end { justify-content: flex-end; }
+.grow { flex: 1 1 0; min-width: 0; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--col, 16rem)), 1fr));
+  gap: var(--gap, var(--space-4));
+}
+
+.grid > * { min-width: 0; }
+
+.grid-2,
+.grid-3,
+.grid-4 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--gap, var(--space-4));
+}
+
+.grid-2 > *, .grid-3 > *, .grid-4 > * { min-width: 0; }
+
+@media (min-width: 640px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 900px) {
+  .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--space-3) var(--space-4);
+}
+
+.form-grid > .span-all { grid-column: 1 / -1; }
+
+/* ------------------------------------------------------------------ editor layout */
+
+.editor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.editor-pane { min-width: 0; }
+
+@media (min-width: 900px) {
+  .editor-layout { grid-template-columns: minmax(20rem, 5fr) minmax(0, 7fr); gap: var(--space-5); }
+  .editor-pane-preview {
+    position: sticky;
+    top: calc(var(--header-h) + var(--space-4));
+    max-height: calc(100vh - var(--header-h) - 2 * var(--space-4));
+    overflow-y: auto;
+  }
+}
+
+/* ------------------------------------------------------------------ sticky save bar */
+
+.savebar {
+  position: sticky;
+  bottom: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  align-items: center;
+  margin: var(--space-5) calc(var(--gutter) * -1) calc(var(--space-7) * -1);
+  padding: var(--space-3) var(--gutter) calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 -1px 0 var(--border);
+}
+
+.savebar-status { flex: 1 1 12rem; color: var(--ink-secondary); font-size: var(--text-sm); min-width: 0; }
+.savebar-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-left: auto; }
+
+/* a toolbar above a list or table: one row, filters on the left, actions on the right */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  align-items: center;
+  margin-bottom: var(--space-4);
+}
+
+.toolbar .grow { min-width: 12rem; }
+
+@media print {
+  .app-header,
+  .banner,
+  .skip-link,
+  .savebar,
+  .page-actions,
+  .toolbar { display: none !important; }
+  .app-main { max-width: none; padding: 0; }
+  .editor-layout { display: block; }
+  .editor-pane-preview { position: static; max-height: none; overflow: visible; }
+}
+
+/* The theme switch shows the active theme from <html data-theme> alone, so it is right before
+   (and without) JavaScript; core/theme.js adds aria-pressed for assistive technology. */
+:root[data-theme="system"] .theme-switch [data-theme-value="system"],
+:root[data-theme="light"] .theme-switch [data-theme-value="light"],
+:root[data-theme="dark"] .theme-switch [data-theme-value="dark"] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+}

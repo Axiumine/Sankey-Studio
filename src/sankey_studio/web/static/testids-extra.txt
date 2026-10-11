@@ -1,0 +1,90 @@
+# data-testid values used by the shared frontend code that are NOT listed in API.md section 5.
+# One name per line. Lines starting with "#" are comments. tests/web/test_static_policy.py
+# fails when a template or script uses a test id found in neither API.md section 5 nor here.
+# Add a name here (with a comment saying where it is used) instead of renaming an API.md one.
+
+# core/dialog.js: default test ids of confirmDialog (callers can pass their own, e.g. delete-confirm)
+confirm-dialog
+confirm-dialog-confirm
+confirm-dialog-cancel
+
+# core/states.js: shared empty / error / loading blocks
+state-empty
+state-error
+state-retry
+state-loading
+
+# w3-lvc (library, viewer, compare pages)
+# js/library/bundle.js: import flow dialogs and the confirm button
+import-dialog
+import-confirm
+import-report
+# js/library/controller.js: the delete confirmation dialog (its confirm button is delete-confirm)
+delete-dialog
+# js/library/selection-bar.js: the bar that appears while graphs are picked
+selection-bar
+selection-clear
+# js/library/toolbar.js, view.js: reset of the filters, result summary line, empty search result
+library-clear-filters
+library-count
+library-no-results
+# js/viewer/controller.js: the graph was deleted after the page opened
+viewer-missing
+# js/viewer/export.js: colour theme of exported files (light or dark)
+export-theme
+# js/viewer/links-table.js: the details block with the links as a table
+links-table
+# js/compare/card.js, toolbar.js: remove a graph, add a graph, shared category colour note
+compare-remove
+compare-add
+compare-add-select
+compare-shared-colours
+
+# w3-settings (settings page; js/settings/*.js)
+# appearance.js: the three theme cards of the page (the header owns theme-switch)
+settings-theme-option
+# storage.js: the Database field of the MongoDB storage target and the result line of "Test storage"
+settings-storage-database
+settings-storage-status
+# connection-row.js: the result line of "Test connection" (its latency is connection-latency)
+connection-status
+# environment.js: the read-only facts of "This server"
+settings-remote-mode
+settings-writes-allowed
+# report.js: the report shown after "copy existing graphs" and the list of unreadable graph ids
+settings-copy-report
+settings-copy-unreadable
+# save.js: "Save mine anyway" in the dialog that says the settings were changed elsewhere
+settings-conflict-overwrite
+# savebar.js: the state sentence and the "Discard changes" button of the save bar
+settings-save-status
+settings-discard
+
+# w3-edit-b (editor output panels; js/editor/entries, export, savebar)
+# entries/bulk.js: the category input of "Categorise all entries matching this filter"
+categorise-category
+# entries/panel.js: the notice about categorised entries the donut basis leaves out
+entries-basis-hint
+# export/panel.js: which chart the HTML, JSON and CSV buttons describe
+export-data-chart
+# savebar/panel.js: the status line (data-state new|dirty|saved|saving|error|readonly)
+save-status
+
+# w3-edit-a (editor input panels; js/editor/meta, source, transform, style, pages/editor.js)
+# source/panel.js, transform/panel.js, style/panel.js: the section header buttons (transform and style start collapsed)
+section-source
+section-transform
+section-style
+# source/mapping.js: the "first row is a header" checkbox
+source-has-header
+# source/tab-mongo.js: the empty state shown while no MongoDB connection is configured
+mongo-no-connections
+# transform/panel.js: the strict-reading checkbox; transform/editors.js: the category rules table
+transform-strict
+transform-rules
+# pages/editor.js: the link to the viewer, shown once the graph is saved
+view-graph
+
+# w3b (final QA): no id was added in wave 3b. templates/error.html (the HTML not-found page) reuses
+# state-empty; the settings "On this page" list (settings/toc.js) and the upload "Choose a file" button
+# are found by class / role (nav.settings-toc, label.btn in .ed-dropzone-pick), not by test id.

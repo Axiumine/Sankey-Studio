@@ -1,0 +1,29 @@
+<!doctype html>
+{#- Document skeleton. Contract (API.md section 4): the page extends this through page.html.
+    No inline script and no inline handler anywhere (CSP script-src 'self'); the only
+    script bodies are the application/json data block of page.html. theme-init.js is an
+    external classic script in <head> so the theme is set before the first paint.
+    The stored theme is rendered into <html data-theme> (a browser that never visited paints the
+    saved theme at once); data-theme-source says who wins: "server" (writes allowed: the stored
+    value) or "device" (read-only server: this browser's cached choice, if any). -#}
+<html lang="en" data-theme="{{ theme|default('system') }}" data-theme-source="{{ theme_source|default('device') }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  {#- Browser chrome colour: the surface tokens of tokens.css (a test keeps them equal). -#}
+  <meta name="theme-color" content="#fcfcfb" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1a19" media="(prefers-color-scheme: dark)">
+  <title>{% block title %}{{ heading }} - Sankey Studio{% endblock %}</title>
+  <link rel="icon" href="/static/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/css/tokens.css">
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/components.css">
+  <link rel="stylesheet" href="/static/css/layout.css">
+  {% block head %}{% endblock %}
+  <script src="/static/js/core/theme-init.js"></script>
+</head>
+<body>
+{% block body %}{% endblock %}
+</body>
+</html>

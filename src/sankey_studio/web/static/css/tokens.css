@@ -1,0 +1,203 @@
+/* Design tokens of Sankey Studio: the ONLY file that may contain colour literals.
+
+   Themes
+   - :root                                   light (default)
+   - @media (prefers-color-scheme: dark)     dark for "system" and for every theme that is not "light"
+     :root:not([data-theme="light"])
+   - :root[data-theme="dark"]                dark, chosen explicitly
+   The two dark blocks are identical on purpose (CSS has no way to share them); a test keeps them
+   in sync. <html data-theme> is "system" | "light" | "dark" (core/theme-init.js sets it before paint).
+
+   Ink and surface tokens equal render/palette.py TOKENS (the charts use the same ones): a test
+   compares them. Text never wears a data colour; chart colours come from the server figure only.
+
+   Spacing is a 4px scale, radii and shadows are fixed steps, type is the system sans stack.
+
+   Breakpoints (custom properties cannot be used inside @media, so they are documented here and
+   repeated as literals; core code may read them with getComputedStyle):
+     --bp-sm: 480px    large phones
+     --bp-md: 640px    tablets, header goes to one row
+     --bp-lg: 900px    two-pane editor, 3 column grids
+     --bp-xl: 1200px   wide desktop
+*/
+
+:root {
+  color-scheme: light;
+
+  /* ---- ink and surface (== render/palette.py TOKENS, light) ---- */
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-secondary: #52514e;
+  --muted: #898781;
+  --gridline: #e1e0d9;
+  --baseline: #c3c2b7;
+
+  /* ---- chrome that is not in the chart palette ---- */
+  --plane: #f9f9f7;
+  --border: rgba(11, 11, 11, 0.1);
+  --border-strong: var(--muted);
+  --wash: rgba(11, 11, 11, 0.045);
+  --wash-strong: rgba(11, 11, 11, 0.09);
+  --scrim: rgba(11, 11, 11, 0.45);
+
+  /* ---- accent: one blue (sequential steps 500, 550, 600 and 300 of the palette) ---- */
+  --accent: #256abf;
+  --accent-hover: #1c5cab;
+  --accent-active: #184f95;
+  --accent-contrast: #ffffff;
+  --accent-text: #1c5cab;
+  --accent-wash: rgba(37, 106, 191, 0.1);
+  --focus: #2a78d6;
+
+  /* ---- status (fixed in both themes, always paired with an icon and a label) ---- */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+  --danger: #d03b3b;
+  --danger-hover: #b93232;
+  --danger-text: #d03b3b;
+
+  /* ---- type ---- */
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* ---- spacing (4px scale) ---- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+
+  /* ---- shape ---- */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(11, 11, 11, 0.06), 0 0 1px rgba(11, 11, 11, 0.1);
+  --shadow-md: 0 4px 14px rgba(11, 11, 11, 0.1), 0 0 1px rgba(11, 11, 11, 0.12);
+  --shadow-lg: 0 16px 40px rgba(11, 11, 11, 0.2), 0 0 1px rgba(11, 11, 11, 0.16);
+
+  /* ---- layering ---- */
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-header: 20;
+  --z-dropdown: 30;
+  --z-modal: 40;
+  --z-toast: 50;
+  --z-loading: 60;
+
+  /* ---- layout ---- */
+  --container: 80rem;
+  --gutter: 1rem;
+  --header-h: 3.25rem;
+  --control-h: 2rem;
+  --focus-ring: 0 0 0 2px var(--surface), 0 0 0 4px var(--focus);
+  --bp-sm: 480px;
+  --bp-md: 640px;
+  --bp-lg: 900px;
+  --bp-xl: 1200px;
+  --motion: 140ms;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --gutter: 1.5rem;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --surface: #1a1a19;
+    --ink: #f0efec;
+    --ink-secondary: #c3c2b7;
+    --muted: #898781;
+    --gridline: #2c2c2a;
+    --baseline: #383835;
+    --plane: #0d0d0d;
+    --border: rgba(255, 255, 255, 0.1);
+    --border-strong: var(--muted);
+    --wash: rgba(255, 255, 255, 0.06);
+    --wash-strong: rgba(255, 255, 255, 0.11);
+    --scrim: rgba(0, 0, 0, 0.62);
+    --accent: #256abf;
+    --accent-hover: #1c5cab;
+    --accent-active: #184f95;
+    --accent-contrast: #ffffff;
+    --accent-text: #6da7ec;
+    --accent-wash: rgba(109, 167, 236, 0.14);
+    --focus: #6da7ec;
+    --danger: #d03b3b;
+    --danger-hover: #b93232;
+    --danger-text: #e66767;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5), 0 0 1px rgba(255, 255, 255, 0.08);
+    --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.55), 0 0 1px rgba(255, 255, 255, 0.1);
+    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 1px rgba(255, 255, 255, 0.12);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface: #1a1a19;
+  --ink: #f0efec;
+  --ink-secondary: #c3c2b7;
+  --muted: #898781;
+  --gridline: #2c2c2a;
+  --baseline: #383835;
+  --plane: #0d0d0d;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: var(--muted);
+  --wash: rgba(255, 255, 255, 0.06);
+  --wash-strong: rgba(255, 255, 255, 0.11);
+  --scrim: rgba(0, 0, 0, 0.62);
+  --accent: #256abf;
+  --accent-hover: #1c5cab;
+  --accent-active: #184f95;
+  --accent-contrast: #ffffff;
+  --accent-text: #6da7ec;
+  --accent-wash: rgba(109, 167, 236, 0.14);
+  --focus: #6da7ec;
+  --danger: #d03b3b;
+  --danger-hover: #b93232;
+  --danger-text: #e66767;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5), 0 0 1px rgba(255, 255, 255, 0.08);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.55), 0 0 1px rgba(255, 255, 255, 0.1);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+/* Paper is white: print always uses the light tokens, whatever the screen theme is. */
+@media print {
+  :root:root {
+    color-scheme: light;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-secondary: #52514e;
+    --muted: #898781;
+    --gridline: #e1e0d9;
+    --baseline: #c3c2b7;
+    --plane: #fcfcfb;
+    --border: rgba(11, 11, 11, 0.1);
+    --wash: rgba(11, 11, 11, 0.045);
+    --accent-text: #1c5cab;
+    --danger-text: #d03b3b;
+    --shadow-sm: none;
+    --shadow-md: none;
+    --shadow-lg: none;
+  }
+}
