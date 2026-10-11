@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "caps": {
+    "file": 500,
+    "function": 50,
+    "class": 300,
+    "params": 4,
+    "nesting": 4
+  },
+  "violations": {}
+}

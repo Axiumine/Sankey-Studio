@@ -1,0 +1,3 @@
+# Accepted Trivy findings. One ID per line; every entry needs a reason and an expiry:
+#   CVE-YYYY-NNNN exp:YYYY-MM-DD   # why this is not exploitable here
+# Keep this file empty unless a finding is triaged.

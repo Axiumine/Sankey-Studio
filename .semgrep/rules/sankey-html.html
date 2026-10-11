@@ -1,0 +1,20 @@
+<!-- Semgrep rule tests for templates. -->
+<!doctype html>
+<html>
+<body>
+  <!-- ruleid: sankey-template-no-safe-filter -->
+  <p>{{ title | safe }}</p>
+  <!-- ok: sankey-template-no-safe-filter -->
+  <p>{{ title }}</p>
+  <!-- ruleid: sankey-template-no-inline-script -->
+  <script>window.x = 1;</script>
+  <!-- ok: sankey-template-no-inline-script -->
+  <script src="/static/app.js" type="module"></script>
+  <!-- ok: sankey-template-no-inline-script -->
+  <script type="application/json" id="boot">{{ data | tojson }}</script>
+  <!-- ruleid: sankey-template-no-inline-handler -->
+  <button onclick="save()">Save</button>
+  <!-- ok: sankey-template-no-inline-handler -->
+  <button data-action="save">Save</button>
+</body>
+</html>

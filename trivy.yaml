@@ -1,0 +1,41 @@
+# Trivy filesystem scan: dependencies (uv.lock), secrets, IaC misconfigurations, licences.
+# Run through scripts/trivy.sh (docker image aquasec/trivy) or `make trivy`.
+format: table
+exit-code: 1
+severity:
+  - CRITICAL
+  - HIGH
+ignore-unfixed: true
+ignorefile: .trivyignore
+scan:
+  scanners:
+    - vuln
+    - secret
+    - misconfig
+    - license
+  skip-dirs:
+    - .git
+    - .venv
+    - .gitnexus
+    - .claude
+    - .idea
+    - mutants
+    - reports
+    - .qodana
+    - .mypy_cache
+    - .pytest_cache
+    - .ruff_cache
+    - .memray
+    - .e2e-artifacts
+    - htmlcov
+    - node_modules
+  # .env is local, gitignored and holds the Qodana token: never scanned, never reported.
+  skip-files:
+    - .env
+license:
+  # Mirrors licenseRules in qodana.yaml.
+  forbidden:
+    - GPL-2.0
+    - GPL-3.0
+    - AGPL-3.0
+    - SSPL-1.0

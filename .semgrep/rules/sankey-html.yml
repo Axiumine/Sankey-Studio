@@ -1,0 +1,29 @@
+rules:
+  - id: sankey-template-no-safe-filter
+    languages: [generic]
+    severity: ERROR
+    message: The Jinja |safe filter disables escaping. Node names, categories and titles are untrusted.
+    pattern-regex: \|\s*safe\b
+    paths:
+      include:
+        - "*.html"
+
+  - id: sankey-template-no-inline-script
+    languages: [generic]
+    severity: ERROR
+    message: >-
+      The CSP is script-src 'self'. Inline scripts break (and invite XSS). Put code in
+      static/*.js; embed data with <script type="application/json"> and |tojson.
+    pattern-regex: <script(?![^>]*\bsrc=)(?![^>]*type=["']application/json["'])[^>]*>
+    paths:
+      include:
+        - "*.html"
+
+  - id: sankey-template-no-inline-handler
+    languages: [generic]
+    severity: ERROR
+    message: Inline event handlers (onclick=...) are blocked by the CSP. Use addEventListener.
+    pattern-regex: \son[a-z]{3,20}\s*=\s*["']
+    paths:
+      include:
+        - "*.html"

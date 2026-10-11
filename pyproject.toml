@@ -1,0 +1,205 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sankey-studio"
+version = "0.1.0"
+description = "Draw, store and manage Sankey graphs from text files or MongoDB, with a local web UI."
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn>=0.32",
+  "jinja2>=3.1",
+  "pydantic>=2.9",
+  "pydantic-settings>=2.6",
+  "pymongo>=4.10",
+  "plotly>=5.24",
+  "python-multipart>=0.0.12",
+  # Static SVG/PNG export. Needs a Chrome/Chromium install at runtime (see README).
+  "kaleido>=1.0",
+  "choreographer>=1.4",
+]
+
+[project.scripts]
+sankey-studio = "sankey_studio.cli:main"
+
+[dependency-groups]
+dev = [
+  "ruff>=0.8",
+  "mypy>=1.13",
+  "pytest>=8.3",
+  "pytest-cov>=6.0",
+  "pytest-memray>=1.7; sys_platform == 'linux' or sys_platform == 'darwin'",
+  "memray>=1.14; sys_platform == 'linux' or sys_platform == 'darwin'",
+  "httpx>=0.27",
+  # starlette 1.x TestClient prefers httpx2 and emits a StarletteDeprecationWarning at import
+  # when only httpx is installed; under filterwarnings=error that would break every web test.
+  "httpx2>=2.13",
+  "mongomock>=4.2",
+  "mutmut>=3.2",
+  # Browser end-to-end tests (tests/e2e); uses system Chrome or the bundled Chromium.
+  "playwright>=1.50",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sankey_studio"]
+
+# --------------------------------------------------------------------------- ruff
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+extend-exclude = ["mutants"]
+src = ["src", "tests", "scripts"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+  "D",       # docstring style is not enforced; write docstrings where they help
+  "COM812",  # conflicts with the formatter
+  "ISC001",  # conflicts with the formatter
+  "EM",      # inline exception messages are fine
+  "TRY003",  # long messages in exception constructors are fine
+  "FBT",     # boolean flags are normal in pydantic models and FastAPI params
+  "TD",      # todo style
+  "FIX",     # todo presence
+  "CPY",     # copyright headers
+]
+
+[tool.ruff.lint.per-file-ignores]
+# PLC0415: tests import lazily on purpose (modules that land in a later wave); S311: synthetic data.
+"tests/**" = ["S101", "PLR2004", "S105", "S106", "ANN401", "SLF001", "PLC0415", "S311"]
+"scripts/**" = ["T201", "S101", "S311", "PLR2004"]
+"src/sankey_studio/cli.py" = ["T201"]
+# FastAPI resolves route/dependency annotations at runtime: with `from __future__ import annotations`
+# ruff would move those imports under TYPE_CHECKING and every request would silently 422 (TC001-3).
+# Starlette handler signatures `(request, exc)` need unused params (ARG001). Parameter counts are
+# NOT relaxed here: routes take query models / dependency bundles (code cap: 4 parameters).
+"src/sankey_studio/web/**" = ["TC001", "TC002", "TC003", "ARG001"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = [
+  "fastapi.Depends",
+  "fastapi.Query",
+  "fastapi.Path",
+  "fastapi.Body",
+  "fastapi.File",
+  "fastapi.Form",
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 12
+
+[tool.ruff.lint.pylint]
+max-args = 4
+
+[tool.ruff.lint.flake8-type-checking]
+runtime-evaluated-base-classes = [
+  "pydantic.BaseModel",
+  "pydantic_settings.BaseSettings",
+  "sankey_studio.models.base._Model",
+  # subclasses of these keep their field types at runtime
+  "sankey_studio.models.graphs.GraphDraft",
+  "sankey_studio.models.graphs.GraphCreate",
+  "sankey_studio.models.graphs.GraphUpdate",
+  "sankey_studio.models.graphs.GraphDefinition",
+  "sankey_studio.models.graphs.GraphSummary",
+  "sankey_studio.models.settings.AppSettings",
+  "sankey_studio.models.settings.MongoConnection",
+  # the same classes as re-exported by the package (what other modules import)
+  "sankey_studio.models._Model",
+  "sankey_studio.models.GraphDraft",
+  "sankey_studio.models.GraphCreate",
+  "sankey_studio.models.GraphUpdate",
+  "sankey_studio.models.GraphDefinition",
+  "sankey_studio.models.GraphSummary",
+  "sankey_studio.models.AppSettings",
+  "sankey_studio.models.MongoConnection",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["sankey_studio"]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+# --------------------------------------------------------------------------- mypy
+[tool.mypy]
+python_version = "3.14"
+exclude = ["^mutants/"]
+strict = true
+files = ["src", "tests", "scripts"]
+plugins = ["pydantic.mypy"]
+warn_unreachable = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+[[tool.mypy.overrides]]
+# plotly and kaleido ship no py.typed (mongomock does): every value they return is Any.
+module = ["plotly.*", "kaleido.*"]
+ignore_missing_imports = true
+
+# --------------------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config"
+# No ignores on purpose: every dependency is warning-free on import (verified). Do not add one
+# without a comment naming the package and the exact warning.
+filterwarnings = ["error"]
+markers = [
+  "mongo: needs a real MongoDB; runs only when SANKEY_TEST_MONGO_URI is set",
+  "memory: memory-budget test (pytest-memray); run with `make memray`",
+  "slow: slow test (real Chrome export, large inputs)",
+  "e2e: end-to-end test against a live server / real browser; run with `make e2e`",
+]
+norecursedirs = ["mutants", ".venv", "reports", ".git", ".gitnexus", "node_modules"]
+
+[tool.coverage.run]
+source = ["sankey_studio"]
+branch = true
+# Qodana imports this data file (scripts/qodana.sh --coverage-dir reports/coverage).
+data_file = "reports/coverage/.coverage"
+# Live-server e2e tests run uvicorn in a thread.
+concurrency = ["thread"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+precision = 2
+fail_under = 100
+exclude_also = [
+  "if TYPE_CHECKING:",
+  "raise NotImplementedError",
+  # A bare `...` body line, or `def f(): ...` on one line. NOT any line that merely contains three
+  # dots (an f-string such as f"... and {n} more" must stay measured).
+  '^[ \t]*\.\.\.$',
+  ': \.\.\.$',
+  'if __name__ == "__main__":',
+]
+
+[tool.coverage.xml]
+output = "reports/coverage/coverage.xml"
+
+[tool.coverage.html]
+directory = "reports/coverage/html"
+
+# --------------------------------------------------------------------------- mutmut
+# `make mutate` -> `uv run mutmut run`; `make mutate-gate` folds mutants/**/*.meta into a score.
+[tool.mutmut]
+source_paths = ["src/sankey_studio"]
+# Entry points are exercised end to end elsewhere. Only .py files are ever mutated, so the
+# web templates and static assets are out already; this list names the Python entry points.
+do_not_mutate = [
+  "src/sankey_studio/cli.py",
+  "src/sankey_studio/__main__.py",
+]
+# mutmut copies tests/, pyproject.toml and the lock files by itself; the policy and hook tests
+# also read scripts/ and .githooks/ relative to the repo root.
+also_copy = ["scripts/", ".githooks/"]
+# Unit tests only: e2e (live server + Chrome), slow (real export) and memory (memray) are out.
+pytest_add_cli_args = ["-m", "not memory and not e2e and not slow", "-p", "no:cacheprovider", "-q"]

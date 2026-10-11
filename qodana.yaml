@@ -1,0 +1,122 @@
+#-------------------------------------------------------------------------------#
+#               Qodana analysis is configured by qodana.yaml file               #
+#             https://www.jetbrains.com/help/qodana/qodana-yaml.html            #
+#-------------------------------------------------------------------------------#
+version: "1.0"
+
+# Qodana for Python (Ultimate). Needs a licence: Ultimate Plus gives the security (taint)
+# analysis, vulnerable-dependency check and licence audit enabled below.
+# The token is NEVER stored here: scripts/qodana.sh loads QODANA_TOKEN from .env into the
+# environment of the scan process only.
+linter: jetbrains/qodana-python:2026.2
+
+profile:
+  name: qodana.recommended
+
+include:
+  # Ultimate Plus: dependency licence audit + known-vulnerable libraries.
+  - name: CheckDependencyLicenses
+  - name: VulnerableLibrariesGlobal
+  # Taint (injection / path / SSRF) analysis ships with the Ultimate Plus tier inside the
+  # recommended profile; verify the exact inspection ids in the first report's SARIF and add
+  # them here if they need explicit enabling.
+
+exclude:
+  # Secrets and local state must never reach the analysis (or the cloud report).
+  - name: All
+    paths:
+      - .env
+      - .env.example
+      - .venv
+      - .git
+      - .gitnexus
+      - .claude
+      - .idea
+      - mutants
+      - reports
+      - .qodana
+      - .mypy_cache
+      - .pytest_cache
+      - .ruff_cache
+      - .memray
+      - .e2e-artifacts
+      - htmlcov
+      - uv.lock
+  # Generated / vendored front-end assets and test data are not product code.
+  - name: All
+    paths:
+      - src/sankey_studio/web/static/vendor
+  # Semgrep rule fixtures: the code is bait for the rules (unused variables, os.popen,
+  # tempfile.mktemp), so "unused" and "deprecated" are the point.
+  - name: PyUnusedLocalVariableInspection
+    paths:
+      - .semgrep
+  - name: PyDeprecationInspection
+    paths:
+      - .semgrep
+  # tokens.css writes the dark token set twice on purpose: under prefers-color-scheme and under an
+  # explicit data-theme="dark" (docs/ui.md, Theming). CSS cannot share one block between the two.
+  - name: DuplicatedCode
+    paths:
+      - src/sankey_studio/web/static/css/tokens.css
+
+# Python environment for resolving imports and types. scripts/qodana.sh mounts an empty host
+# directory over /data/project/.venv and sets QODANA_PYTHON_PATH to its interpreter, so this builds
+# the venv there; an activation here would not outlive the script. The container user cannot write
+# its HOME (/root), hence the explicit uv directories under Qodana's cache dir (/data/cache). The
+# image has no uv: pip puts it next to its miniconda python. The last command's status decides
+# whether Qodana carries on, so the venv's interpreter is run last.
+# --frozen: never touch uv.lock. Without this venv the IDE has no Python 3.14 language level and
+# reports valid `X | None` hints, `Literal[...]`, dataclasses and `with lock:` blocks as errors.
+bootstrap: |
+  python -m pip install --quiet --disable-pip-version-check uv
+  export UV_CACHE_DIR=/data/cache/uv UV_PYTHON_INSTALL_DIR=/data/cache/uv-python
+  export UV_PYTHON_PREFERENCE=only-managed UV_LINK_MODE=copy
+  uv --version
+  uv sync --all-extras --frozen --python 3.14
+  .venv/bin/python --version
+
+# Licences that may appear in the dependency tree (Ultimate Plus licence audit).
+licenseRules:
+  - keys:
+      - "MIT"
+      - "Apache-2.0"
+      - "BSD-2-Clause"
+      - "BSD-3-Clause"
+      - "ISC"
+      - "PSF-2.0"
+      - "MPL-2.0"
+      - "Unlicense"
+      - "0BSD"
+      - "Python-2.0"
+    allowed:
+      - "MIT"
+      - "Apache-2.0"
+      - "BSD-2-Clause"
+      - "BSD-3-Clause"
+      - "ISC"
+      - "PSF-2.0"
+      - "MPL-2.0"
+      - "Unlicense"
+      - "0BSD"
+      - "Python-2.0"
+  - keys:
+      - "GPL-2.0"
+      - "GPL-3.0"
+      - "AGPL-3.0"
+      - "SSPL-1.0"
+    prohibited:
+      - "GPL-2.0"
+      - "GPL-3.0"
+      - "AGPL-3.0"
+      - "SSPL-1.0"
+
+failureConditions:
+  severityThresholds:
+    critical: 0
+    high: 0
+    moderate: 0
+  # Coverage is produced by `make cov` (reports/coverage/coverage.xml) and imported by scripts/qodana.sh.
+  testCoverageThresholds:
+    fresh: 100
+    total: 100

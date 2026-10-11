@@ -1,0 +1,148 @@
+rules:
+  - id: sankey-no-shell-true
+    languages: [python]
+    severity: ERROR
+    message: subprocess with shell=True allows command injection. Pass an argv list instead.
+    pattern: subprocess.$FUNC(..., shell=True, ...)
+
+  - id: sankey-no-dynamic-code
+    languages: [python]
+    severity: ERROR
+    message: >-
+      eval/exec and unsafe (de)serialisation (pickle, marshal, yaml.load) execute attacker-controlled
+      data. Parse JSON/CSV with the stdlib or use yaml.safe_load.
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: exec(...)
+      - pattern: pickle.load(...)
+      - pattern: pickle.loads(...)
+      - pattern: marshal.load(...)
+      - pattern: marshal.loads(...)
+      - pattern: yaml.load(...)
+      - pattern: yaml.unsafe_load(...)
+
+  - id: sankey-no-os-command
+    languages: [python]
+    severity: ERROR
+    message: os.system/os.popen/tempfile.mktemp are injection or race-condition prone.
+    pattern-either:
+      - pattern: os.system(...)
+      - pattern: os.popen(...)
+      - pattern: tempfile.mktemp(...)
+
+  - id: sankey-no-mongo-writes
+    languages: [python]
+    severity: ERROR
+    message: >-
+      MongoDB writes are only allowed in the graph store. Sources, inspection and rendering are
+      read-only. A deliberate write must carry
+      "# nosemgrep: sankey-no-mongo-writes -- <reason>" on the line.
+    patterns:
+      - pattern: $COLL.$METHOD(...)
+      - metavariable-regex:
+          metavariable: $METHOD
+          regex: ^(insert_one|insert_many|update_one|update_many|replace_one|delete_one|delete_many|find_one_and_delete|find_one_and_replace|find_one_and_update|bulk_write|drop_collection|drop_database|drop_index|drop_indexes|create_index|create_indexes|create_collection)$
+
+  - id: sankey-no-js-in-mongo
+    languages: [python]
+    severity: ERROR
+    message: >-
+      Server-side JavaScript and write stages are forbidden in user-supplied MongoDB queries.
+      Only mongo_safety.py may mention these operators.
+    pattern-either:
+      - pattern: '"$where"'
+      - pattern: '"$function"'
+      - pattern: '"$accumulator"'
+      - pattern: '"$out"'
+      - pattern: '"$merge"'
+    paths:
+      exclude:
+        - "**/mongo_safety.py"
+
+  - id: sankey-no-secret-in-logs
+    languages: [python]
+    severity: ERROR
+    message: Never log secrets (SecretStr values, URIs with credentials). Log mask_uri(...) or the connection name.
+    patterns:
+      - pattern-either:
+          - pattern: $LOG.$LEVEL(..., $S.get_secret_value(), ...)
+          - pattern: $LOG.$LEVEL(..., f"...{$S.get_secret_value()}...", ...)
+      - metavariable-regex:
+          metavariable: $LEVEL
+          regex: ^(debug|info|warning|warn|error|exception|critical|log)$
+
+  - id: sankey-no-secret-in-exceptions
+    languages: [python]
+    severity: ERROR
+    message: Exception messages reach API clients. Never put get_secret_value() into them.
+    pattern-either:
+      - pattern: raise $E(..., $S.get_secret_value(), ...)
+      - pattern: raise $E(..., f"...{$S.get_secret_value()}...", ...)
+
+  - id: sankey-no-outbound-http
+    languages: [python]
+    severity: WARNING
+    message: >-
+      The app talks only to its own client, the local file system and MongoDB. Outbound HTTP
+      from the server is an SSRF / data-leak risk; justify it with nosemgrep if truly needed.
+    pattern-either:
+      - pattern: requests.$M(...)
+      - pattern: httpx.$M(...)
+      - pattern: urllib.request.urlopen(...)
+      - pattern: urllib3.$M(...)
+      - pattern: aiohttp.ClientSession(...)
+
+  - id: sankey-no-unsafe-html
+    languages: [python]
+    severity: ERROR
+    message: >-
+      Disabling Jinja autoescape, Markup() and f-string HTML responses are XSS vectors. Render
+      through templates and pass data via |tojson in a JSON script block.
+    pattern-either:
+      - pattern: Markup(...)
+      - pattern: markupsafe.Markup(...)
+      - pattern: jinja2.Markup(...)
+      - pattern: Environment(..., autoescape=False, ...)
+      - pattern: jinja2.Environment(..., autoescape=False, ...)
+      - pattern: Jinja2Templates(..., autoescape=False, ...)
+      - pattern: HTMLResponse(f"...")
+      - pattern: HTMLResponse(content=f"...")
+
+  - id: sankey-no-cors
+    languages: [python]
+    severity: ERROR
+    message: The API is same-origin only. Do not add CORS; it would defeat the CSRF origin check.
+    pattern-either:
+      - pattern: $APP.add_middleware(CORSMiddleware, ...)
+      - pattern: CORSMiddleware(...)
+
+  - id: sankey-no-wildcard-bind-or-hosts
+    languages: [python]
+    severity: ERROR
+    message: >-
+      There is no login. Never bind to every interface or trust every Host header in code;
+      remote mode is an explicit operator opt-in handled by BootstrapConfig.
+    pattern-either:
+      - pattern: $F(..., host="0.0.0.0", ...)
+      - pattern: $F(..., host="::", ...)
+      - pattern: $F(..., allowed_hosts=["*"], ...)
+
+  - id: sankey-regex-from-variable
+    languages: [python]
+    severity: WARNING
+    message: >-
+      Compiling a regex from a variable can be ReDoS or injection. Use re.escape() for literal
+      user text, or an UPPER_CASE module constant (or an expression rooted at one) for fixed patterns.
+    patterns:
+      - pattern-either:
+          - pattern: re.compile($X, ...)
+          - pattern: re.search($X, ...)
+          - pattern: re.match($X, ...)
+          - pattern: re.fullmatch($X, ...)
+          - pattern: re.findall($X, ...)
+          - pattern: re.finditer($X, ...)
+      - pattern-not: re.$FN("...", ...)
+      - pattern-not: re.$FN(re.escape(...), ...)
+      - metavariable-regex:
+          metavariable: $X
+          regex: ^(?!_?[A-Z][A-Z0-9_]*(\.|$))

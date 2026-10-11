@@ -1,0 +1,17 @@
+rules:
+  - id: sankey-js-no-dom-xss-sinks
+    languages: [javascript]
+    severity: ERROR
+    message: >-
+      innerHTML/outerHTML/insertAdjacentHTML/document.write/eval/new Function turn data into code.
+      Use textContent, createElement or DOM APIs (node and category names are untrusted).
+    patterns:
+      - pattern-either:
+          - pattern: $EL.innerHTML = $X
+          - pattern: $EL.outerHTML = $X
+          - pattern: $EL.insertAdjacentHTML(...)
+          - pattern: document.write(...)
+          - pattern: document.writeln(...)
+          - pattern: eval(...)
+          - pattern: new Function(...)
+      - pattern-not: $EL.innerHTML = ""

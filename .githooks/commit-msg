@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+# commit-msg hook for sankey-studio. Enable once per clone:  make hooks
+#
+# Format:
+#   Human: <type>(<scope>)!: <subject>
+#   AI:    🤖 <type>(<scope>)!: <subject>
+#   - type   : feat|fix|chore|docs|refactor|perf|test|build|ci|style
+#   - scope  : optional, one or more of the repo scopes below, comma separated: feat(web,ui): ...
+#   - "!"    : optional breaking-change marker: feat(web)!: ...
+#   - Subject: max 150 chars. Body: max 10 lines, wrap at 150.
+# Merge/Revert commits and fixup!/squash!/amend! autosquash commits skip the format checks
+# (never the banned-word check).
+#
+# Policy shared with the other repos: no AI attribution inside commit messages. The words
+# Claude/anthropic/Sonnet/Opus and any Co-Authored-By trailer are rejected. The file names
+# CLAUDE.md and .claude/... are not attribution and are allowed.
+
+COMMIT_MSG_FILE="$1"
+MSG=$(head -1 "$COMMIT_MSG_FILE")
+
+TYPES="feat|fix|chore|docs|refactor|perf|test|build|ci|style"
+# Keep in sync with the package layout (src/sankey_studio) and the tooling folders.
+SCOPES="core|sources|mongo|storage|settings|graph|render|export|web|ui|cli|security|e2e|tests|deps|tooling|docs|hooks|ci|release"
+MAX_LEN=150
+
+# --- banned words -----------------------------------------------------------------------
+# Scan everything except git's own comment lines, with the allowed file names removed.
+SCAN=$(grep -vE '^#' "$COMMIT_MSG_FILE" | sed -E 's/CLAUDE\.md//Ig; s#\.claude/[^[:space:]]*##Ig')
+BANNED_RE='Co-Authored-By|\b(Claude|anthropic|Sonnet|Opus)\b'
+if printf '%s\n' "$SCAN" | grep -qiE "$BANNED_RE"; then
+  MATCHED=$(printf '%s\n' "$SCAN" | grep -iE "$BANNED_RE" | head -3)
+  echo ""
+  echo "  BANNED WORD IN COMMIT MESSAGE"
+  echo ""
+  echo "  Commit messages must not contain AI attribution:"
+  echo "    Co-Authored-By · Claude · anthropic · Sonnet · Opus"
+  echo "  (the file names CLAUDE.md and .claude/... are fine)"
+  echo "  Matched:"
+  echo "$MATCHED" | sed 's/^/    /'
+  echo ""
+  exit 1
+fi
+
+# --- skip format checks for git-generated and autosquash commits --------------------------
+if echo "$MSG" | grep -qE "^(Merge |Revert |fixup! |squash! |amend! )"; then
+  exit 0
+fi
+
+# --- subject length -----------------------------------------------------------------------
+if [ "${#MSG}" -gt "$MAX_LEN" ]; then
+  echo ""
+  echo "  COMMIT MESSAGE TOO LONG"
+  echo ""
+  echo "  Subject line is ${#MSG} characters (max $MAX_LEN)."
+  echo "  Got: $MSG"
+  echo ""
+  exit 1
+fi
+
+# --- body limits: max lines and max width -------------------------------------------------
+# Excluded: blank lines, comment lines (#), trailers (Key: value), lines with no whitespace
+# (URLs, long identifiers).
+MAX_BODY_LINES=10
+BODY_LINES=$(tail -n +2 "$COMMIT_MSG_FILE" \
+  | grep -vE '^\s*$' \
+  | grep -vE '^#' \
+  | grep -vE '^[A-Za-z-]+: ' || true)
+
+if [ -n "$BODY_LINES" ]; then
+  BODY_COUNT=$(echo "$BODY_LINES" | wc -l)
+  if [ "$BODY_COUNT" -gt "$MAX_BODY_LINES" ]; then
+    echo ""
+    echo "  COMMIT BODY TOO LONG"
+    echo ""
+    echo "  Body is $BODY_COUNT lines (max $MAX_BODY_LINES, excluding blanks/trailers)."
+    echo "  Keep the body terse: what changed and why. Detail belongs in"
+    echo "  PR descriptions or docs, not the commit message."
+    echo ""
+    exit 1
+  fi
+  WIDE_LINE=$(echo "$BODY_LINES" | grep -E '\s' | awk -v max="$MAX_LEN" 'length($0) > max { print; exit }')
+  if [ -n "$WIDE_LINE" ]; then
+    echo ""
+    echo "  COMMIT BODY LINE TOO WIDE"
+    echo ""
+    echo "  Wrap body lines at $MAX_LEN characters."
+    echo "  Got: $WIDE_LINE"
+    echo ""
+    exit 1
+  fi
+fi
+
+# --- subject format -----------------------------------------------------------------------
+SCOPE_LIST="($SCOPES)(,($SCOPES))*"
+if echo "$MSG" | grep -qE "^(🤖 )?($TYPES)(\($SCOPE_LIST\))?!?: .+"; then
+  exit 0
+fi
+
+echo ""
+echo "  INVALID COMMIT MESSAGE"
+echo ""
+echo "  Got:      $MSG"
+echo ""
+# Valid shape but unknown scope: say so explicitly.
+if echo "$MSG" | grep -qE "^(🤖 )?($TYPES)\([^)]*\)!?: .+"; then
+  echo "  Unknown scope. Allowed: ${SCOPES//|/ | }"
+  echo ""
+  exit 1
+fi
+echo "  Expected:"
+echo "    Human:  <type>(<scope>): <subject>"
+echo "    AI:     🤖 <type>(<scope>): <subject>"
+echo ""
+echo "  Types:  ${TYPES//|/ | }"
+echo "  Scopes: optional, ${SCOPES//|/ | }  (comma separated, e.g. feat(web,ui): ...)"
+echo "  Breaking change: add ! before the colon, e.g. feat(core)!: ..."
+echo ""
+echo "  Examples:"
+echo "    feat(render): add donut chart export"
+echo "    docs: add CLAUDE.md"
+echo "    🤖 fix(sources): reject path traversal in text files"
+echo ""
+exit 1

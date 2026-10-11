@@ -1,0 +1,13 @@
+# Project-local MongoDB for development and the optional `mongo` test marker.
+# Bound to 127.0.0.1:27117 so it can never collide with another local MongoDB (27017).
+services:
+  mongo:
+    image: mongo:8
+    container_name: sankey-studio-mongo
+    ports:
+      - "127.0.0.1:27117:27017"
+    volumes:
+      - sankey-mongo-data:/data/db
+    restart: unless-stopped
+volumes:
+  sankey-mongo-data:
