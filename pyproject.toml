@@ -147,7 +147,11 @@ ignore_missing_imports = true
 # --------------------------------------------------------------------------- pytest
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra --strict-markers --strict-config"
+# A bare `pytest` is the unit suite. Memory-budget tests need `--memray` (make memray): without it the
+# memray allocator hooks abort the interpreter later in the session. The e2e tests keep a Playwright
+# loop alive for the whole session, which breaks later `asyncio.run` unit tests. Both run only through
+# their make targets; any later `-m` on the command line overrides this default.
+addopts = "-ra --strict-markers --strict-config -m 'not memory and not e2e'"
 # No ignores on purpose: every dependency is warning-free on import (verified). Do not add one
 # without a comment naming the package and the exact warning.
 filterwarnings = ["error"]
