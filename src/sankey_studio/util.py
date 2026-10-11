@@ -46,9 +46,10 @@ SAFE_URI_OPTIONS = frozenset(
     }
 )
 
-# The positions ``mask_uri`` writes ``***`` into, and only those: the start of the userinfo
-# (``scheme://[user:]***@``), the whole authority (``scheme://***``) and a whole option value
-# (``key=***``). A password that merely ENDS in ``***`` (``u:abc***@``) is not one of them.
+# The positions ``mask_uri`` writes ``***`` into, and only those: the start of the userinfo (after
+# the scheme and an optional ``user:``, right before the ``@``), the whole authority (right after
+# the scheme) and a whole option value (``key=***``). A password that merely ENDS in ``***`` is
+# not one of them.
 _MASKED_USERINFO_RE = re.compile(
     r"mongodb(?:\+srv)?://(?:[^:@/]*:)?\*{3}@|mongodb(?:\+srv)?://\*{3}\Z", re.IGNORECASE
 )
@@ -56,7 +57,7 @@ _MASKED_OPTION_RE = re.compile(r"(?:\A|[&;])[A-Za-z][A-Za-z0-9]*=\*{3}(?:[&;]|\Z
 
 
 def mask_uri(uri: str) -> str:
-    """Return ``uri`` rebuilt from its safe parts only: ``scheme://[user:***@]hosts[/db][?opts]``.
+    """Return ``uri`` rebuilt from its safe parts only: scheme, masked userinfo, hosts, db, options.
 
     Safe to log or send to the browser. Fails CLOSED: it reconstructs the URI from an allow-list
     instead of redacting known-secret spots, so odd forms cannot leak.
