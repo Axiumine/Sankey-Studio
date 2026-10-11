@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **sankey** (2409 symbols, 4430 relationships, 29 execution flows).
+This project is indexed by GitNexus as **Sankey-Studio** (47671 symbols, 100990 relationships, 833 execution flows).
 
 > Index stale? Run `node .gitnexus/run.cjs analyze --index-only` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? Bootstrap with `npx`, `bunx`, or `pnpm dlx` — e.g. `bunx gitnexus@latest analyze` (npm 11 npx crash; #1939).
 
@@ -26,10 +26,10 @@ This project is indexed by GitNexus as **sankey** (2409 symbols, 4430 relationsh
 
 | Resource | Use for |
 | --- | --- |
-| `gitnexus://repo/sankey/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/sankey/clusters` | All functional areas |
-| `gitnexus://repo/sankey/processes` | All execution flows |
-| `gitnexus://repo/sankey/process/{name}` | Step-by-step execution trace |
+| `gitnexus://repo/Sankey-Studio/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/Sankey-Studio/clusters` | All functional areas |
+| `gitnexus://repo/Sankey-Studio/processes` | All execution flows |
+| `gitnexus://repo/Sankey-Studio/process/{name}` | Step-by-step execution trace |
 
 ## CLI
 
