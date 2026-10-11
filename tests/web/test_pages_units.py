@@ -92,6 +92,15 @@ def test_a_template_from_a_string_is_escaped_too() -> None:
     assert template.render(value=MARKUP) == ESCAPED
 
 
+@pytest.mark.parametrize("raw", [5, None, 1.5, b"abc", {"a": "b"}])
+def test_a_compare_query_that_is_not_a_list_or_a_string_reaches_pydantic_unchanged(
+    raw: object,
+) -> None:
+    with pytest.raises(ValidationError) as caught:
+        pages.ComparePageQuery.model_validate({"ids": raw})
+    assert [error["type"] for error in caught.value.errors()] == ["list_type"]
+
+
 def test_the_health_model_only_ever_says_ok() -> None:
     assert pages.HealthOut().status == "ok"
     assert pages.HealthOut.model_validate({"status": "ok"}).status == "ok"

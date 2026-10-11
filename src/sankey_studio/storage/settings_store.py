@@ -40,6 +40,8 @@ MAX_DETAILS = 20
 SETTINGS_ROOT = "settings"
 SEED_CONNECTION = "default"
 MSG_TOO_LARGE = "Settings are too large to save"
+#: ``json.dumps`` escapes every non-ASCII character, so the file is ASCII (and size == chars).
+FILE_ENCODING = "ascii"
 
 #: ``(st_mtime_ns, st_size, st_ino)`` of ``settings.json``; ``None`` while it does not exist.
 Signature = tuple[int, int, int]
@@ -100,7 +102,7 @@ class SettingsStore:
         """
         doc = dump_settings(settings)
         saved = load_settings(doc)
-        data = json.dumps(doc, indent=2).encode("ascii")
+        data = json.dumps(doc, indent=2).encode(FILE_ENCODING)
         if len(data) > SETTINGS_MAX_BYTES:
             raise SettingsError(MSG_TOO_LARGE)
         path = self._config.settings_file

@@ -61,6 +61,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from functools import cache
 from pathlib import Path
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Annotated, Any, Final, Literal
 
 from fastapi import APIRouter, Query, Request, Response
@@ -107,6 +108,8 @@ PAGE_TEMPLATE: Final = "page.html"
 ERROR_TEMPLATE: Final = "error.html"
 #: HTML is never cached: Back/Forward must ask the server again.
 NO_STORE: Final = "no-store"
+#: The headers of every HTML answer (a constant: ``Cache-Control`` is spelled once, read-only).
+_NO_STORE_HEADERS: Final = MappingProxyType({"Cache-Control": NO_STORE})
 #: What a graph with no visible name is called in headings, titles and link labels.
 UNTITLED: Final = "Untitled graph"
 #: Heading (``<h1>`` and title) of each error page; the key is the ``kind`` of the boot data.
@@ -141,7 +144,6 @@ _UNSEEN_CONTROLS: Final = dict.fromkeys(
     ]
 )
 DEFAULT_THEME: Final = "system"
-DEFAULT_BACKEND: Final = "file"
 
 PageName = Literal["library", "new", "edit", "viewer", "compare", "settings", "notfound", "error"]
 
@@ -214,7 +216,7 @@ def storage_kind(request: Request) -> str:
     try:
         backend = get_services(request).settings().storage_backend
     except SettingsError:
-        backend = DEFAULT_BACKEND
+        return "folder"
     return "database" if backend == "mongo" else "folder"
 
 
@@ -241,7 +243,7 @@ def render_page(request: Request, config: BootstrapConfig, view: PageView) -> Re
         "theme_source": "server" if config.privileged_writes_allowed else "device",
     }
     return TEMPLATES.TemplateResponse(
-        request, view.template, context, view.status_code, {"Cache-Control": NO_STORE}
+        request, view.template, context, view.status_code, _NO_STORE_HEADERS
     )
 
 

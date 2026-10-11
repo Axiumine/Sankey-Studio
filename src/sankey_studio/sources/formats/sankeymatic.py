@@ -72,7 +72,7 @@ class _Scanner:
         start = self._pos + 1
         while True:
             end = self._text.find('"', start)
-            if end < 0:
+            if end == -1:
                 raise RowError("a quoted name is missing its closing quote")
             parts.append(self._text[start:end])
             if self._text[end + 1 : end + 2] != '"':

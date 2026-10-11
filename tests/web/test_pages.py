@@ -63,6 +63,16 @@ def test_a_static_page_renders_its_template(web: WebApp, case: Case) -> None:
     assert response.headers["cache-control"] == "no-store"
 
 
+@pytest.mark.parametrize("path", [case.path for case in CASES])
+def test_a_page_carries_exactly_one_cache_control_header_and_it_is_no_store(
+    web: WebApp, path: str
+) -> None:
+    raw = web.client.get(path).headers.raw
+    assert [(name, value) for name, value in raw if name.lower() == b"cache-control"] == [
+        (b"cache-control", b"no-store")
+    ]
+
+
 def test_the_new_and_settings_pages_carry_only_the_common_boot_data(web: WebApp) -> None:
     common = {"remote_mode": False, "writes_allowed": True, "theme": "system"}
     new = parse(web.client.get("/graphs/new")).data()

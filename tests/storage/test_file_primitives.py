@@ -6,7 +6,7 @@ import errno
 import json
 import math
 import os
-from typing import IO, TYPE_CHECKING, Any, NamedTuple, Self
+from typing import TYPE_CHECKING, NamedTuple
 
 import pytest
 
@@ -18,7 +18,6 @@ from tests.storage.support import ID_A, definition
 
 if TYPE_CHECKING:
     from pathlib import Path
-    from types import TracebackType
 
 # --------------------------------------------------------------------------- error numbers
 
@@ -45,27 +44,21 @@ def test_running_out_of_temporary_names_is_eexist(
 # --------------------------------------------------------------------------- read size
 
 
-class _SpyHandle:
-    """Wraps a real binary file and records every ``read`` size."""
+_REAL_READ = os.read  # ``atomic.os`` is the ``os`` module itself: the spy must not call itself
 
-    def __init__(self, inner: IO[Any], sizes: list[int | None]) -> None:
-        self._inner = inner
-        self._sizes = sizes
 
-    def __enter__(self) -> Self:
-        return self
+class _Reads:
+    """Replaces ``os.read``: records every requested size and returns at most ``chunk`` bytes."""
 
-    def __exit__(
-        self,
-        kind: type[BaseException] | None,
-        value: BaseException | None,
-        trace: TracebackType | None,
-    ) -> None:
-        self._inner.__exit__(kind, value, trace)
+    def __init__(self, chunk: int | None) -> None:
+        self.chunk = chunk
+        self.asked: list[int] = []
+        self.got: list[int] = []
 
-    def read(self, size: int | None = None) -> bytes:
-        self._sizes.append(size)
-        data: bytes = self._inner.read(-1 if size is None else size)
+    def __call__(self, fd: int, size: int) -> bytes:
+        self.asked.append(size)
+        data = _REAL_READ(fd, size if self.chunk is None else min(size, self.chunk))
+        self.got.append(len(data))
         return data
 
 
@@ -80,17 +73,54 @@ def test_a_too_large_file_is_never_read_beyond_the_limit_plus_one(
 ) -> None:
     path = tmp_path / "big"
     path.write_bytes(b"x" * case.file_size)
-    sizes: list[int | None] = []
-    real = os.fdopen
-
-    def spying(fd: int, mode: str, **kwargs: Any) -> _SpyHandle:
-        return _SpyHandle(real(fd, mode, **kwargs), sizes)
-
-    monkeypatch.setattr("sankey_studio.storage.atomic.os.fdopen", spying)
+    reads = _Reads(None)
+    monkeypatch.setattr("sankey_studio.storage.atomic.os.read", reads)
     with pytest.raises(OSError, match="too large") as info:
         read_file_nofollow(path, case.limit)
     assert info.value.errno == errno.EFBIG
-    assert sizes == [case.limit + 1]
+    assert reads.asked == [case.limit + 1]
+    assert reads.got == [case.limit + 1]
+
+
+class Short(NamedTuple):
+    """A read in pieces of ``chunk`` bytes: what ``os.read`` is asked and how much it returns."""
+
+    file_size: int
+    limit: int
+    chunk: int
+    asked: list[int]
+    got: list[int]
+    ok: bool
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        Short(10, 10, 3, [11, 8, 5, 2, 1], [3, 3, 3, 1, 0], True),
+        Short(10, 10, 100, [11, 1], [10, 0], True),
+        Short(4, 10, 3, [11, 8, 7], [3, 1, 0], True),
+        Short(0, 10, 3, [11], [0], True),
+        Short(11, 10, 3, [11, 8, 5, 2], [3, 3, 3, 2], False),
+        Short(50, 10, 3, [11, 8, 5, 2], [3, 3, 3, 2], False),
+        Short(50, 10, 1, [11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1], [1] * 11, False),
+    ],
+)
+def test_a_read_in_pieces_is_reassembled_and_stops_at_the_limit_plus_one(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, case: Short
+) -> None:
+    content = bytes(range(65, 65 + case.file_size))
+    path = tmp_path / "f"
+    path.write_bytes(content)
+    reads = _Reads(case.chunk)
+    monkeypatch.setattr("sankey_studio.storage.atomic.os.read", reads)
+    if case.ok:
+        assert read_file_nofollow(path, case.limit) == content
+    else:
+        with pytest.raises(OSError, match="too large") as info:
+            read_file_nofollow(path, case.limit)
+        assert info.value.errno == errno.EFBIG
+    assert reads.asked == case.asked
+    assert reads.got == case.got
 
 
 # --------------------------------------------------------------------------- graph file format
@@ -106,6 +136,14 @@ def test_a_graph_file_is_two_space_indented_ascii_json() -> None:
     assert b'"name": "Caf\\u00e9"' in data
     assert data.isascii()
     assert json.loads(data) == graph.model_dump(mode="json")
+
+
+def test_a_lone_surrogate_is_escaped_not_encoded() -> None:
+    graph = definition(ID_A).model_copy(update={"name": "a\ud800b"})  # unvalidated, as a bug would
+    data = encode_graph(graph)
+    assert data.isascii()
+    assert b'"name": "a\\ud800b"' in data
+    assert json.loads(data)["name"] == "a\ud800b"
 
 
 def test_a_non_finite_number_is_refused_instead_of_written_as_nan() -> None:

@@ -18,6 +18,10 @@ GRAPH_SUFFIX = ".json"
 #: A graph may hold 2 MB of pasted text, 20k entry choices and 5k manual links.
 MAX_GRAPH_BYTES = 32 * 1024 * 1024
 MSG_TOO_LARGE = "The graph is too large to save"
+#: Two-space indent; every non-ASCII character (a lone surrogate too) is escaped, so the text is
+#: ASCII; ``NaN`` and ``Infinity`` are refused (``ValueError``) instead of written as invalid JSON.
+_ENCODER = json.JSONEncoder(indent=2, ensure_ascii=True, allow_nan=False)
+FILE_ENCODING = "ascii"
 
 
 def graph_filename(graph_id: str) -> str:
@@ -30,7 +34,7 @@ def encode_graph(graph: GraphDefinition) -> bytes:
     The write cap is the read cap (``MAX_GRAPH_BYTES``): a file this module writes can always be
     read back. A longer document is a ``StorageError`` before any byte reaches the disk.
     """
-    data = json.dumps(graph.model_dump(mode="json"), indent=2, allow_nan=False).encode("ascii")
+    data = _ENCODER.encode(graph.model_dump(mode="json")).encode(FILE_ENCODING)
     if len(data) > MAX_GRAPH_BYTES:
         raise StorageError(MSG_TOO_LARGE)
     return data

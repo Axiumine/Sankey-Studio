@@ -76,6 +76,10 @@ class _Scanner:
         self._line += self._buf.count("\n", self._pos, self._pos + count)
         self._pos += count
 
+    def _consume_rest(self) -> None:
+        self._line += self._buf.count("\n", self._pos)
+        self._pos = len(self._buf)
+
     def skip_space(self) -> bool:
         """Skip JSON whitespace. False when only the end of input is left."""
         while True:
@@ -83,7 +87,7 @@ class _Scanner:
             if found is not None:
                 self._consume(found.start() - self._pos)
                 return True
-            self._consume(len(self._buf) - self._pos)
+            self._consume_rest()
             if not self._fill():
                 return False
 
@@ -141,21 +145,25 @@ class _Scanner:
         return line, value
 
 
+def _skip_inside_array(scan: _Scanner) -> None:
+    """Skip blanks; the array cannot end before its closing bracket."""
+    if not scan.skip_space():
+        raise scan.error("the JSON array is not closed")
+
+
 def _array_entries(scan: _Scanner) -> Iterator[tuple[int, object]]:
     """The elements of the array at the cursor (any JSON value; the caller judges them)."""
     scan.take("[")
-    first = True
-    while True:
-        if not scan.skip_space():
-            raise scan.error("the JSON array is not closed")
-        if scan.take("]"):
-            break
-        if not first and not scan.take(","):
-            raise scan.error("expected ',' or ']' between entries")
-        first = False
-        if not scan.skip_space():
-            raise scan.error("the JSON array is not closed")
+    _skip_inside_array(scan)
+    if not scan.take("]"):
         yield scan.entry(_VALUE_START)
+        _skip_inside_array(scan)
+        while not scan.take("]"):
+            if not scan.take(","):
+                raise scan.error("expected ',' or ']' between entries")
+            _skip_inside_array(scan)
+            yield scan.entry(_VALUE_START)
+            _skip_inside_array(scan)
     if scan.skip_space():
         raise scan.error("unexpected data after the JSON array")
 

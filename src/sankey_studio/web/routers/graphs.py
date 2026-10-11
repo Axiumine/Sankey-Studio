@@ -59,6 +59,10 @@ BUNDLE_HEAD: Final = (
 ).encode()
 BUNDLE_TAIL: Final = b"\n  ]\n}"
 _GRAPH_INDENT = "    "
+#: ``json.dumps(graph, indent=2, ensure_ascii=False)`` as an object: non-ASCII text stays as it
+#: is (an emoji is 4 bytes, not the 12 of two ``\uXXXX`` escapes), so the size counted is the UTF-8
+#: served.
+_GRAPH_ENCODER: Final = json.JSONEncoder(indent=2, ensure_ascii=False)
 
 
 router = APIRouter(prefix="/api/v1", route_class=GuardedRoute)
@@ -96,7 +100,7 @@ def copy_of(definition: GraphDefinition) -> GraphCreate:
 
 def _graph_chunk(graph: GraphDefinition, *, first: bool) -> bytes:
     """One graph of the bundle as UTF-8, indented and separated to sit in the ``graphs`` list."""
-    text = json.dumps(graph.model_dump(mode="json"), indent=2, ensure_ascii=False)
+    text = _GRAPH_ENCODER.encode(graph.model_dump(mode="json"))
     nested = text.replace("\n", "\n" + _GRAPH_INDENT)  # a newline inside a string is escaped
     return f"{'' if first else ','}\n{_GRAPH_INDENT}{nested}".encode()
 

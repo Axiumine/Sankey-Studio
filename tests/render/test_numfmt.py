@@ -239,9 +239,9 @@ def si_oracle(value: float, digits: int) -> Oracle:
     """
     exact = Fraction(value)
     exponent = 0
-    while exact >= 10 ** (exponent + 1):
+    while exact >= Fraction(10) ** (exponent + 1):  # Fraction: int ** negative int is a float
         exponent += 1
-    while exact < 10**exponent:
+    while exact < Fraction(10) ** exponent:
         exponent -= 1
     scaled = exact / Fraction(10) ** (exponent - digits + 1)
     count = math.floor(scaled + Fraction(1, 2))
@@ -273,6 +273,29 @@ def test_si_notation_is_exact_half_up_with_the_prefix_picked_after_rounding() ->
         carries += expected.carry
     assert ties > 50
     assert carries > 100
+
+
+PLACES = range(MAX_PRECISION + 1)  # every precision the parser lets through: 0..21
+EXACT_VALUES = [0.1, 1 / 3, 2.5, 0.5, 123456.789, 999999.5, 1e-7, 1e21]
+
+
+@pytest.mark.parametrize("places", PLACES)
+def test_every_allowed_place_count_is_exact_for_fixed_and_percent(places: int) -> None:
+    for value in EXACT_VALUES:
+        assert format_value(value, f",.{places}f") == half_up_text(value, places)
+        assert format_value(value, f".{places}f") == half_up_text(value, places).replace(",", "")
+        percent = half_up_text(value * 100, places).replace(",", "")
+        assert format_value(value, f".{places}%") == percent + "%"
+    assert format_value(2.5, ".0f") == "3"
+    assert format_value(1.0, f".{places}f") == "1" + ("." + "0" * places if places else "")
+
+
+@pytest.mark.parametrize("digits", PLACES)
+def test_every_allowed_digit_count_is_exact_for_si(digits: int) -> None:
+    for value in EXACT_VALUES:
+        assert format_value(value, f".{digits}s") == si_oracle(value, max(digits, 1)).text
+    assert format_value(1234.0, f".{digits}s") == si_oracle(1234, max(digits, 1)).text
+    assert format_value(1234.0, ".0s") == format_value(1234.0, ".1s") == "1k"
 
 
 NON_FINITE = [

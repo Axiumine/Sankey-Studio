@@ -98,14 +98,31 @@ def _discard(tmp: Path) -> None:
         logger.warning("Could not remove the temporary file %s", tmp.name)
 
 
+def _write_all(fd: int, data: bytes) -> None:
+    """``os.write`` may take less than it is given (a signal, a full disk): loop till done."""
+    rest = memoryview(data)
+    while rest:
+        rest = rest[os.write(fd, rest) :]
+
+
+def _read_capped(fd: int, size: int) -> bytes:
+    """Up to ``size`` bytes: fewer at the end of the file, and ``os.read`` may return less."""
+    chunks: list[bytes] = []
+    while size:
+        chunk = os.read(fd, size)
+        if not chunk:
+            break
+        chunks.append(chunk)
+        size -= len(chunk)
+    return b"".join(chunks)
+
+
 def write_atomic(path: Path, data: bytes) -> None:
     """Replace ``path`` with ``data`` (mode 0600) so readers see the old or the new file only."""
     fd, tmp = _open_exclusive(path.parent, path.name)
     try:
-        with os.fdopen(fd, "wb", closefd=False) as handle:
-            handle.write(data)
-            handle.flush()
-            os.fsync(fd)
+        _write_all(fd, data)
+        os.fsync(fd)
         tmp.replace(path)
     except BaseException:
         _discard(tmp)
@@ -121,8 +138,7 @@ def read_file_nofollow(path: Path, limit: int) -> bytes:
     try:
         if not stat.S_ISREG(os.fstat(fd).st_mode):
             raise OSError(errno.EINVAL, "not a regular file")
-        with os.fdopen(fd, "rb", closefd=False) as handle:
-            data = handle.read(limit + 1)
+        data = _read_capped(fd, limit + 1)
     finally:
         os.close(fd)
     if len(data) > limit:

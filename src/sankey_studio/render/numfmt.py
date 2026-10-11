@@ -54,6 +54,8 @@ MAX_PRECISION: Final = 21
 MAX_WIDTH: Final = 100
 #: Exact rounding of a float: up to 309 integer digits plus ``MAX_PRECISION`` decimals fit easily.
 HALF_UP: Final = Context(prec=400, rounding=ROUND_HALF_UP)
+#: ``quantize`` reads only the exponent of its unit; ``ONE.scaleb(e)`` is the unit ``1E<e>``.
+ONE: Final = Decimal(1)
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,7 +105,7 @@ def _fixed(value: float, places: int, comma: str) -> str:
     """``value`` (not negative) to ``places`` decimals; an exact tie rounds up like ``toFixed``."""
     if not math.isfinite(value):
         return str(value)
-    rounded = Decimal(value).quantize(Decimal(1).scaleb(-places, HALF_UP), context=HALF_UP)
+    rounded = Decimal(value).quantize(ONE.scaleb(-places, HALF_UP), context=HALF_UP)
     return format(rounded, f"{comma}.{places}f")
 
 
@@ -115,10 +117,11 @@ def _si(value: float, precision: int) -> tuple[str, str]:
         return "0", ""
     exact = Decimal(value)
     digits = max(precision, 1)
-    unit = Decimal(1).scaleb(exact.adjusted() - digits + 1, HALF_UP)
+    unit = ONE.scaleb(exact.adjusted() - digits + 1, HALF_UP)
     rounded = exact.quantize(unit, context=HALF_UP)  # 999999.5 -> 1.00E+6: the exponent moved on
     step = max(-SI_ORIGIN, min(SI_ORIGIN, rounded.adjusted() // 3))
-    return _trim(format(rounded.scaleb(-3 * step, HALF_UP), "f")), SI_PREFIXES[SI_ORIGIN + step]
+    scaled = rounded.scaleb(-3 * step, HALF_UP)
+    return _trim(f"{scaled:f}"), SI_PREFIXES[SI_ORIGIN + step]
 
 
 def _number(value: float, spec: Spec) -> tuple[str, str]:

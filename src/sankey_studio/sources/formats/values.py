@@ -76,7 +76,7 @@ def clean_name(raw: object, role: str) -> str:
     if "\0" in text:
         raise RowError(f"{role} contains a NUL character")
     try:
-        text.encode("utf-8")
+        text.encode()
     except UnicodeEncodeError:
         raise RowError(f"{role} contains an invalid character") from None
     return text

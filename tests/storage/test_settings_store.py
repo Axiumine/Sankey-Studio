@@ -9,9 +9,10 @@ import threading
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 import pytest
+from pydantic import SecretStr
 
 from sankey_studio.errors import SettingsError
-from sankey_studio.models import AppSettings
+from sankey_studio.models import AppSettings, MongoConnection
 from sankey_studio.storage import SettingsStore, atomic, dump_settings, load_settings
 from sankey_studio.storage import settings_store as module
 from sankey_studio.util import mask_uri
@@ -239,6 +240,21 @@ def test_the_file_is_pretty_printed_ascii_json(tmp_path: Path) -> None:
     assert text.startswith('{\n  "storage_backend": "file",\n  "storage_connection": null,\n')
     assert '\n    "' in text  # nested objects are indented by two more spaces
     assert not text.endswith("\n\n")
+
+
+def test_non_ascii_text_is_escaped_on_disk_and_round_trips(tmp_path: Path) -> None:
+    config = config_for(tmp_path)
+    settings = AppSettings(
+        mongo_connections=[
+            MongoConnection(name="a", uri=SecretStr(SECRET_URI), default_database="caf\u00e9")
+        ]
+    )
+    SettingsStore(config).save(settings)
+    raw = config.settings_file.read_bytes()
+    assert raw.isascii()
+    assert b'"default_database": "caf\\u00e9"' in raw
+    [conn] = SettingsStore(config_for(tmp_path)).load().mongo_connections
+    assert conn.default_database == "caf\u00e9"
 
 
 @pytest.mark.parametrize("mask", [0o000, 0o022, 0o077])
