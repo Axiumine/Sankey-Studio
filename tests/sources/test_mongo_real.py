@@ -132,7 +132,8 @@ def test_exactly_limit_documents_are_not_truncated(server: Server, mode: str) ->
     """The server is asked for one document more than the limit: the three documents here
     are a complete result at limit 3 and a cut one at limit 2."""
     pipeline = [{"$sort": {"source": 1}}] if mode == "aggregate" else []
-    for limit, expected in ((3, []), (2, ["Result truncated at limit 2"])):
+    text_note = "Read 1 text value(s) as numbers"  # the seeded "4" is in the complete result only
+    for limit, expected in ((3, [text_note]), (2, ["Result truncated at limit 2"])):
         diag = Diagnostics()
         spec = server.spec(mode=mode, pipeline=pipeline, limit=limit)
         assert len(list(open_source(spec, server.ctx).iter_links(diag))) == limit
