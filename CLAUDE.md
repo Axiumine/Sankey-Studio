@@ -87,7 +87,7 @@ Package `src/sankey_studio/`. Dependencies point downwards only; never import up
 * Tests mirror `src` paths (`tests/sources`, `tests/storage`, `tests/render`, `tests/web`, `tests/contracts`, `tests/e2e`). Shared fixtures are in `tests/conftest.py` (`bootstrap`, `app_settings`, `mongo_client`, `mongo_clients`, `make_source_ctx`, `source_ctx`, `make_connection`); sub-directories may have their own `conftest.py`. E2E harness lives in `tests/e2e/conftest.py` and `tests/e2e/support/` (see `docs/e2e.md`).
 * Unit tests use mongomock. Real MongoDB only with `@pytest.mark.mongo` and `SANKEY_TEST_MONGO_URI` (project-local compose Mongo: `mongodb://127.0.0.1:27117` after `make mongo-up`). An autouse tripwire blocks accidental real connections and scrubs `SANKEY_*` env vars.
 * Markers: `mongo`, `memory`, `slow`, `e2e` (`--strict-markers`). `filterwarnings = error`, no ignores. No `skip`/`xfail`; `skipif` only for an absent external prerequisite, with a reason.
-* Gate: 100% line AND branch coverage of `src/sankey_studio` (`make cov`). Mutation score >= 90 (`make mutate-gate`): write parametrised boundary tables that assert both sides of every limit, exact messages and defaults.
+* Gate: 100% line AND branch coverage of `src/sankey_studio` (`make cov`). Every code edit comes with the tests that keep it at 100% (see "Before finishing a task"). Mutation score >= 90 (`make mutate-gate`): write parametrised boundary tables that assert both sides of every limit, exact messages and defaults.
 * No sleeps (e2e included): wait on DOM signals, events, barriers or an injectable clock. Chrome, the real server, the clock and Mongo are reached through seams (`_render_image`, `cli._run_server`, `ResultCache` clock, `MongoClients(factory=...)`).
 * Tests obey the caps: <= 4 parameters/fixtures, <= 50 lines, nesting <= 4, files <= 500 lines (split by topic).
 * Suppressions are rationed and checked by `tests/test_policy.py`: <= 5 `# pragma: no cover - reason`; `# noqa: CODE - reason`; `# type: ignore[code]` only in tests; `nosemgrep` names one rule id and a reason; `sankey-no-mongo-writes` waivers only under `storage/`.
@@ -126,6 +126,19 @@ Hooks in `.githooks` (enable with `make hooks`): `pre-commit` runs the code caps
 * Do not commit, stage, push, stash, reset or checkout unless the user asks.
 
 ## Before finishing a task
+
+**NEVER RUN THE FULL SUITE. ALWAYS RUN THE TESTS THAT COVER YOUR CHANGES.** Never run `make test`, `make cov`, `make e2e`, `make e2e-mongo`, `make mutate`, `make mutate-gate`, `make memray`, `make semgrep-test`, `make check`/`ci`/`full`, a bare `pytest`, or a whole `tests/` directory, unless the user explicitly asks in that message. DO run, every time, only the test files or test ids you added or changed plus the ones that exercise the code you edited, and check that your changed lines and branches are covered:
+
+    COVERAGE_FILE=<scratchpad>/.coverage uv run pytest tests/web/test_app.py::test_name tests/web/test_assets.py \
+      --cov=sankey_studio.web.app --cov-branch --cov-report=term-missing --cov-fail-under=0
+
+(`--cov=` names the edited modules; `COVERAGE_FILE` keeps `reports/coverage/` untouched; `--cov-fail-under=0` because a partial run cannot reach the global 100%, so read the missing lines of YOUR changes instead and fix them.) A targeted e2e test runs as `uv run pytest -m e2e tests/e2e/<path>::<test>`. Fix every failure before finishing and report the command and its result. The githooks in `.githooks` run the full suite: do not commit, stage, or run anything that could fire them unless asked. Finish by saying which full `make` checks the user should run.
+
+**ALWAYS WRITE TESTS FOR THE CODE YOU EDIT. COVERAGE MUST STAY AT 100%.** Every change to `src/sankey_studio` ships, in the same task, with tests that cover every new or changed line AND branch (100% line and branch coverage is a hard gate, never "later", never a follow-up). Put them in the mirrored `tests/` path, obey the test caps and the Testing rules above, and fix every existing test that asserted the old behaviour. A UI or API behaviour change also gets an e2e test under `tests/e2e/`. A task without these tests is not finished. Run them (only them, see the rule above) and name the tests you added and the full `make` targets the user should run.
+
+**ALWAYS BROWSER-CHECK YOUR EDITS.** After every implementation that touches the UI, the frontend or the API, start your own server on a port you own (never 8000 or a port you did not start), open the page with the Playwright browser tools, and check each edit works as expected: the element exists and is visible, the interaction changes the state, and the page shows no error (for example "This part could not be loaded"). Re-check after every fix. Report what you checked and what you saw. Stop your server afterwards, and remove screenshots you created. A browser check does not replace the tests; it does not start the githooks.
+
+The checklist below lists what to run when the user asks for verification.
 
 Run `make lint typecheck caps cov` (all must be clean; coverage stays 100%). Add `make e2e` when UI or API behaviour changed, `make semgrep-test semgrep` when `src`, `scripts` or the frontend changed, `make trivy` when dependencies changed. Update `docs/` and `CHANGELOG.md` entries when behaviour changes.
 
