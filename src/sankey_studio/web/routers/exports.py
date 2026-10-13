@@ -78,7 +78,7 @@ def file_stem(job: ExportJob) -> str:
 
 
 def _figure(graph: SankeyGraph, job: ExportJob, services: Services) -> dict[str, Any]:
-    style, theme = job.draft.style, job.query.theme
+    style, theme = job.query.styled(job.draft.style), job.query.theme
     if job.query.chart == "donut":
         return build_donut_figure(graph, style, theme)
     options = FigureOptions(max_links=services.settings().max_drawn_links)

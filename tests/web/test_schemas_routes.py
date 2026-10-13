@@ -16,6 +16,7 @@ from sankey_studio.web.schemas import (
     ExportQuery,
     IdsQuery,
     ListQuery,
+    RenderQuery,
     SampleQuery,
     ThemeQuery,
 )
@@ -26,6 +27,11 @@ app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 
 @app.get("/theme")
 def theme(query: Annotated[ThemeQuery, Query()]) -> dict[str, Any]:
+    return query.model_dump()
+
+
+@app.get("/render")
+def render(query: Annotated[RenderQuery, Query()]) -> dict[str, Any]:
     return query.model_dump()
 
 
@@ -118,6 +124,7 @@ class Route(NamedTuple):
 
 ROUTES = {
     "/theme": Route(ThemeQuery, {}),
+    "/render": Route(RenderQuery, {}),
     "/compare": Route(CompareQuery, {"ids": gid(1)}),
     "/export-ids": Route(IdsQuery, {"ids": gid(1)}),
     "/list": Route(ListQuery, {}),
@@ -176,6 +183,45 @@ def test_export_query_from_the_query_string(client: TestClient) -> None:
     assert huge.status_code == 200  # the pixel cap is resolve_image's job, not the model's
     for bad in ({"width": "100001"}, {"scale": "nan"}, {"format": "pdf"}, {"chart": "pie"}):
         assert client.get("/export", params=bad).status_code == 422
+
+
+SWITCHES = ("node_values", "donut_percent", "donut_value")
+
+
+@pytest.mark.parametrize("path", ["/render", "/export"])
+def test_the_label_switches_default_to_not_chosen(client: TestClient, path: str) -> None:
+    body = client.get(path).json()
+    assert [body[name] for name in SWITCHES] == [None, None, None]
+
+
+@pytest.mark.parametrize("path", ["/render", "/export"])
+@pytest.mark.parametrize(("text", "value"), [("true", True), ("false", False), ("1", True)])
+def test_a_label_switch_is_a_boolean_from_the_query_string(
+    client: TestClient, path: str, text: str, value: object
+) -> None:
+    for name in SWITCHES:
+        response = client.get(path, params={name: text})
+        assert response.status_code == 200
+        body = response.json()
+        assert body[name] is value
+        assert [body[other] for other in SWITCHES if other != name] == [None, None]
+
+
+@pytest.mark.parametrize("path", ["/render", "/export"])
+@pytest.mark.parametrize("name", SWITCHES)
+@pytest.mark.parametrize("bad", ["maybe", "2", "yes please"])
+def test_a_label_switch_that_is_not_a_boolean_is_a_422(
+    client: TestClient, path: str, name: str, bad: str
+) -> None:
+    response = client.get(path, params={name: bad})
+    assert response.status_code == 422
+    assert problems(response) == [(["query", name], "bool_parsing")]
+
+
+def test_render_query_from_the_query_string(client: TestClient) -> None:
+    body = client.get("/render", params={"theme": "dark", "donut_value": "true"}).json()
+    assert (body["theme"], body["donut_value"]) == ("dark", True)
+    assert client.get("/render", params={"theme": "sepia"}).status_code == 422
 
 
 def test_mongo_queries_from_the_query_string(client: TestClient) -> None:

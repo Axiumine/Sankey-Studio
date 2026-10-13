@@ -9,8 +9,11 @@
  *   with `?theme=`; `update(bundle, theme)` then redraws in place (Plotly.react), so nothing jumps.
  *   The donut is drawn when its tab is first opened (a hidden chart has no size to draw at).
  *
+ * - At the right of the tab row sits the display menu (display-menu.js): the switches for the
+ *   values and percentages printed on the charts. `display.onChange(key, on)` is the page's.
+ *
  * Test ids: chart-tab-sankey, chart-tab-donut, sankey-chart, donut-chart, donut-hint (and the
- * ones of parts.js and links-table.js).
+ * ones of display-menu.js, parts.js and links-table.js).
  */
 
 import { announce } from "../core/a11y.js";
@@ -20,6 +23,7 @@ import { icon } from "../core/icons.js";
 import { stripBidi } from "../core/text.js";
 import { errorState, loadingState } from "../core/states.js";
 import { createTabs } from "../core/tabs.js";
+import { createDisplayMenu } from "./display-menu.js";
 import { CHART_CONFIG_OVERRIDE, fitFigure } from "./figure.js";
 import { createLinksTable } from "./links-table.js";
 import { categoryTable, legendList, valueSuffix } from "./parts.js";
@@ -52,8 +56,8 @@ function donutHint(bundle) {
 }
 
 class Charts {
-  /** @param {{bundle: object, graph: {id: string, name: string}, onTab?: (id: string) => void}} options */
-  constructor({ bundle, graph, onTab }) {
+  /** @param {{bundle: object, graph: {id: string, name: string}, display: {values: object, onChange: (key: string, on: boolean) => void}, onTab?: (id: string) => void}} options */
+  constructor({ bundle, graph, display, onTab }) {
     this.graph = graph;
     this.bundle = bundle;
     this.theme = "light";
@@ -63,7 +67,8 @@ class Charts {
     this.legendHolder = h("div", { class: "legend-block" });
     this.categoryHolder = h("div", { class: "stack stack-sm" });
     this.links = createLinksTable(graph);
-    this.tabs = createTabs({ label: "Chart type", tabs: this.tabList(), onSelect: (id) => this.selected(id) });
+    this.menu = createDisplayMenu({ values: display.values, donut: this.donut !== null, onChange: display.onChange });
+    this.tabs = createTabs({ label: "Chart type", tabs: this.tabList(), actions: this.menu.el, onSelect: (id) => this.selected(id) });
     this.el = h("div", { class: "card chart-card" }, h("div", { class: "card-body" }, h("h2", { class: "visually-hidden" }, "Chart"), this.tabs.el));
   }
 
@@ -158,7 +163,13 @@ class Charts {
     ];
   }
 
+  /** Puts a display switch back to `on` (the redraw with the other value failed). */
+  setSwitch(key, on) {
+    this.menu.set(key, on);
+  }
+
   dispose() {
+    this.menu.dispose();
     disposeChart(this.sankey.surface);
     if (this.donut) {
       disposeChart(this.donut.surface);
@@ -168,7 +179,7 @@ class Charts {
 
 /**
  * Builds the chart card (call `update` to fill it).
- * @param {{bundle: object, graph: {id: string, name: string}, onTab?: (id: string) => void}} options
+ * @param {{bundle: object, graph: {id: string, name: string}, display: {values: object, onChange: (key: string, on: boolean) => void}, onTab?: (id: string) => void}} options
  * @returns {Charts}
  */
 export function createCharts(options) {

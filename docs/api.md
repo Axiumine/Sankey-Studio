@@ -371,7 +371,7 @@ in:
            "category_colors": {}, "node_pad": 16, "node_thickness": 18, "link_opacity": 0.4, "arrangement": "snap",
            "value_format": ",.2~f", "value_suffix": "", "show_values_in_labels": false, "font_size": 13,
            "height": 560, "donut": {"basis": "all", "max_slices": 6, "hole": 0.58, "show_percent": true,
-                                    "show_total": true, "sort": "value"}},
+                                    "show_value": false, "show_total": true, "sort": "value"}},
  "name": "Household budget", "description": "Smoke graph", "tags": ["smoke", "demo"],
  "id": "74828c79fb6f4e03913f605ea8b9a79c", "schema_version": 1, "revision": 1,
  "created_at": "2026-10-10T19:47:34.778000Z", "updated_at": "2026-10-10T19:47:34.778000Z"}
@@ -414,13 +414,18 @@ A client then offers "reload" (`GET` the graph) or "save as copy" (`POST /graphs
 | Route | Query | Body | Success |
 |---|---|---|---|
 | `POST /preview` | `theme`: `light` (default) or `dark` | `GraphDraft` | 200 `RenderBundle` |
-| `GET /graphs/{id}/render` | `theme` | none | 200 `RenderBundle` of the saved graph |
+| `GET /graphs/{id}/render` | `theme`; `node_values`, `donut_percent`, `donut_value` (booleans, see below) | none | 200 `RenderBundle` of the saved graph |
 | `GET /compare/render` | `ids`: 1 to 12 distinct graph ids, comma separated or repeated; `theme` | none | 200 list of `RenderBundle`, in the order of `ids` |
 | `POST /entries` | `offset` 0 or more (default 0), `limit` 1 to 500 (default 100), `q` (at most 200 characters), `only_uncategorized` (boolean, default false), `sort`: `value` (default), `source`, `target` or `category` | `GraphDraft` | 200 `EntriesPage` |
 
 `theme` is `light` or `dark` here. The stored setting `system` exists only in the settings; a client resolves it
 itself and asks for a concrete theme. Switching theme is a new request: the colours are chosen by the server and are
 inside the figure.
+
+`node_values`, `donut_percent` and `donut_value` are view-only switches of what the figures print on themselves. They
+override `style.show_values_in_labels`, `style.donut.show_percent` and `style.donut.show_value` for this one request;
+a parameter that is left out keeps what the saved style says. They never change the saved graph (its `revision` and
+`updated_at` stay), and a value other than a boolean is a 422.
 
 Errors: 404 for an unknown graph, 404 `source_not_found` for an unknown Mongo connection, 413 `graph_too_large`,
 422 `validation_error`, `source_error` or `graph_build_error`. A cycle with `on_cycle: "error"` is 422 with a message
@@ -466,6 +471,9 @@ that match the filters, not the page.
 | `height` | integer 1 to 100000 | the figure's own height |
 | `scale` | number above 0 and up to 100 | 2.0 |
 | `transparent` | boolean | false |
+| `node_values` | boolean | the style's `show_values_in_labels` |
+| `donut_percent` | boolean | the style's `donut.show_percent` |
+| `donut_value` | boolean | the style's `donut.show_value` |
 
 Every answer is an attachment with `Content-Disposition: attachment; filename="Household_budget.csv";
 filename*=UTF-8''Household%20budget.csv`, `X-Content-Type-Options: nosniff` and `Content-Security-Policy: sandbox`.
@@ -493,6 +501,9 @@ builds a file name itself (the `Plotly.downloadImage` fallback) should use the s
   formula (starting with `=`, `+`, `-`, `@`, a tab or a carriage return) are prefixed with a quote character.
 - The Sankey SVG and PNG are drawn like on screen, with at most `max_drawn_links` links (a note in the figure says
   "Showing N of M links").
+- `node_values`, `donut_percent` and `donut_value` are the view-only switches of [5.3](#53-render-preview-entries-compare):
+  they change what the figure of this one download prints (SVG, PNG, HTML and JSON; the CSV files are the same) and
+  never the saved graph. A left-out parameter keeps the style of the graph (or of the draft, for `POST /export`).
 - Image size is `width` by (`height`, or the figure's height), multiplied by `scale`, for SVG and PNG alike: with a
   560 pixel high figure, `format=png&width=400&scale=2` gives 800x1120 pixels.
 - `width` and `height` are clamped to 200..4000 and `scale` to 1..4 on the server before the cap is applied; the
@@ -737,13 +748,14 @@ graph keeps at most 200 distinct categories; later ones become uncategorised and
 | `arrangement` | `snap` (default), `perpendicular`, `freeform`, `fixed` |
 | `value_format` | A d3-format string of at most 24 characters from `- + space , . ~ $ %` and letters and digits (default `,.2~f`) |
 | `value_suffix` | At most 20 characters |
-| `show_values_in_labels` | Boolean (default false) |
+| `show_values_in_labels` | Boolean (default false); the value goes on a second line under the node name |
 | `font_size` | 8 to 32 (default 13) |
 | `height` | 240 to 2400 (default 560) |
 | `donut.basis` | `all` (default), `initial` (first-hop entries), `terminal` (last-hop entries) |
 | `donut.max_slices` | 2 to 8 (default 6) |
 | `donut.hole` | 0.3 to 0.85 (default 0.58) |
 | `donut.show_percent`, `donut.show_total` | Booleans, default true |
+| `donut.show_value` | Boolean (default false); the slice value (per `value_format` and `value_suffix`) on every slice, next to the percentage |
 | `donut.sort` | `value` (default) or `name` |
 
 With no categorised link, `color_mode: "category"` behaves like `node`.
@@ -820,7 +832,10 @@ A small example (manual graph, `theme=light`; node and link arrays are real, rep
 
 The donut figure has the same shape; its `data[0]` is `{"type": "pie", "labels": ["Fixed", "Uncategorized"],
 "values": [1200.0, 400.0], "hole": 0.58, "sort": false, "marker": {"colors": [...]}, "textinfo": "label+percent",
-"showlegend": true, ...}` plus a centre annotation with the total.
+"showlegend": true, ...}` plus a centre annotation with the total. `textinfo` lists what a slice prints: the name
+(`label`, only up to four slices; with more, the legend carries it), the value (`text`, filled from
+`style.donut.show_value`) and `percent`; `none` when nothing is asked for. `texttemplate` (absent when
+nothing is printed) sets the order, the one of the switches in the UI: name, percentage, value, each on its own line.
 
 A graph without categories gives `"donut_available": false`, `"donut": null`, `"donut_empty_reason":
 "no_categories"` and `"categories": []`. The donut tab, the category legend and the `category` colour mode are shown
@@ -834,7 +849,8 @@ the isolates U+2066 to U+2069), then escapes `&`, `<` and `>` as entities, which
 characters. Quotes are not escaped, because Plotly does not decode `&quot;`. The result: a node named
 `<a href=javascript:1>x</a><b>y</b><br>` is drawn as exactly that text, never as a link, bold text or a line break,
 and SVG and PNG exports stay valid. Node labels longer than 32 characters are cut in the figure and the full name is
-in the hover text.
+in the hover text. With `show_values_in_labels` the value follows the name after a line break (`<br>` in the label), not
+after a space.
 
 The fields of the bundle that are not figures (`legend[].label`, `categories[].name`, `category_names`, `entries`)
 keep the names as stored; put them in the DOM with `textContent`. A figure text such as `valuesuffix` is

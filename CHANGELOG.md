@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Editor: pick the colour of "One colour" mode in the Colours section (`style.mono_color`), with a reset to the palette colour.
 - Editor: tap a category's colour square in the chart's category table to open the colour picker; the pick is saved as the category colour (`style.category_colors`).
+- Viewer: a display menu (an icon at the right of the chart tabs) with view-only switches for the value under the node names (Sankey) and the percentage and value on each donut slice; they start from the saved style, redraw at once, are sent as `node_values`, `donut_percent` and `donut_value` with `GET /graphs/{id}/render` and every export, and never change the saved graph.
+- Editor: "Show values" for the donut (`style.donut.show_value`, off by default) prints the slice value under the percentage, in the order of the switches.
 - Project scaffold managed with `uv`: `src/` layout, `sankey-studio` console script, dev dependency group.
 - Shared domain contract: pydantic models for sources (text, MongoDB, manual), transforms, styles and saved graphs; columnar `SankeyGraph`; typed domain errors.
 - Optional per-entry categories (from data, glob rules or explicit user choice) with a donut chart that shares the category colour map with the Sankey.
@@ -34,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The value of a node label (`style.show_values_in_labels`, now "Show values under the node names" in the editor) goes on a second line under the name instead of after it.
+- Donut slices show the percentage and/or value on every slice, also with more than four slices (the name stays out and the legend carries it); before, such slices showed nothing.
 - `import_bundle` defaults to the `new_ids` mode; `Services.test_storage` is refused in read-only remote mode.
 - Number formatting rounds exact ties up and re-picks the SI prefix after rounding, like d3-format.
 - Donut downloads are named `<name>-donut.<ext>` (a draft without a title: `graph` and `graph-donut`), so they no longer overwrite the Sankey file of the same graph; names over 80 characters are cut to 74 before `-donut`.
@@ -42,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The chart tabs of the viewer no longer show a vertical scrollbar beside the Donut tab.
 - Static files (`/static/*`) and `/static/vendor/plotly.min.js` now answer `Cache-Control: no-store` (no `ETag`, no `Last-Modified`, never a 304), and every page links its style sheets, scripts and icon under a version prefix (`/static/v-<digest>/css/layout.css`) that nested modules and script-loaded style sheets share, so a browser never keeps showing an old UI after a change, not even with copies it stored before; the active header link (Library, New graph, Settings) is drawn in the accent blue, and "New graph" is no longer always blue.
 - Saving settings above 1 MiB is refused instead of making the next load fail.
 - Page `limit` and `offset` are capped at 2**31-1 (no 503 on the MongoDB backend); graphs above the 32 MiB file cap are refused when saved.

@@ -296,13 +296,15 @@ class BundleOptions:
 
     ``colors`` is the shared category map of the compare view. ``entries_limit`` caps the entries
     preview. ``max_drawn_links`` draws only the top-N links (``None``: all); ``render_bundle`` and
-    ``render_compare`` fill it from ``AppSettings.max_drawn_links`` when it is ``None``.
+    ``render_compare`` fill it from ``AppSettings.max_drawn_links`` when it is ``None``. ``style``
+    replaces ``draft.style`` for the drawing (the viewer's label switches); ``None`` keeps it.
     """
 
     theme: Theme
     colors: ColorMap | None = None
     entries_limit: int = ENTRIES_PREVIEW_LIMIT
     max_drawn_links: int | None = None
+    style: StyleSpec | None = None
 
 
 def preview_entries(
@@ -349,8 +351,9 @@ def _donut(
 
 
 def assemble_bundle(graph: SankeyGraph, draft: GraphDraft, options: BundleOptions) -> RenderBundle:
-    """Everything the page needs for ``graph``, drawn with ``draft.style`` in ``options.theme``."""
-    style, theme = draft.style, options.theme
+    """Everything the page needs for ``graph``, drawn in ``options.theme`` with ``options.style``
+    (``draft.style`` when it is ``None``)."""
+    style, theme = options.style or draft.style, options.theme
     figure_options = FigureOptions(max_links=options.max_drawn_links, colors=options.colors)
     donut, reason = _donut(graph, style, theme, figure_options)
     entries, entries_total = preview_entries(graph, draft.transform, options.entries_limit)

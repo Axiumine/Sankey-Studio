@@ -60,6 +60,7 @@ Browser flows (`tests/e2e/ui/`):
 | `test_draw_graph` | Drawing from pasted CSV, live preview, saving, reload, viewer and library |
 | `test_categorise_*` | Entries table and category tools, the pager, the donut, colour by category |
 | `test_export_*` | Every download of the viewer and the editor, and the browser-drawn fallback when the server answers 501 |
+| `test_viewer_display_*` | The viewer's display menu: icon, panel and its three ways to close, the tab strip, the Sankey and donut switches, the downloads that carry them, the saved style, a failed redraw |
 | `test_sources_*` | Text file and upload tabs, column mapping, the manual table, the MongoDB tab with and without a connection |
 | `test_library_*`, `test_compare_*` | Browsing, actions, bundles, the 409 conflict; the compare cards and the 12-graph limit |
 | `test_settings_*`, `test_readonly_ui` | Limits, MongoDB connections, storage backend, theme; the read-only remote server |
@@ -296,7 +297,7 @@ releases them and reports whether the app aborted one.
 | Modules | Provide |
 |---|---|
 | `ui_a_editor`, `ui_a_entries`, `ui_a_sources`, `ui_a_manual`, `ui_a_mongo` | The editor, the entries table and the source tabs |
-| `ui_a_viewer`, `ui_a_charts`, `ui_a_downloads` | The viewer, `ChartDom` (Sankey, donut and legend read from the Plotly DOM), real downloads and PNG info |
+| `ui_a_viewer`, `ui_a_charts`, `ui_a_downloads`, `ui_a_display` | The viewer, `ChartDom` (Sankey, donut and legend read from the Plotly DOM), real downloads and PNG info, the viewer's display menu and a log of its `/render` and `/export` requests |
 | `ui_a_keyboard`, `ui_a_seed` | `tab_until` and `focus_ring`; seeding a graph through the API |
 | `ui_b_library`, `ui_b_compare`, `ui_b_settings`, `ui_b_editor`, `ui_b_viewer` | The library, compare, settings, a slim editor and the viewer with the figure readers |
 | `ui_b_common`, `ui_b_hold`, `ui_b_hostile` | Viewports, CSS and download helpers, `Hold`, `HostileGraph` and `Inert` |

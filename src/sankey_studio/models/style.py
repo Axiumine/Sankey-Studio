@@ -30,6 +30,8 @@ class DonutStyle(_Model):
     max_slices: int = Field(default=6, ge=2, le=8)
     hole: float = Field(default=0.58, ge=0.3, le=0.85)
     show_percent: bool = True
+    #: The slice value (per ``value_format`` and ``value_suffix``) next to the percentage.
+    show_value: bool = False
     show_total: bool = True
     sort: Literal["value", "name"] = "value"
 

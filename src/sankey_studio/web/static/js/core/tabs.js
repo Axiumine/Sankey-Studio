@@ -3,11 +3,12 @@
  * End move AND activate, `aria-controls`/`aria-labelledby` wired, all panels stay in the DOM
  * (hidden) so form state inside them survives switching.
  *
- * `createTabs({label, tabs, selected, onSelect})` -> `{el, select(id), selected(), panel(id),
+ * `createTabs({label, tabs, selected, actions, onSelect})` -> `{el, select(id), selected(), panel(id),
  * setDisabled(id, bool), setHidden(id, bool)}`.
  * `tabs` is `[{id, label, content: Node, testid, disabled}]`; `selected` is an id (default: the
- * first enabled tab); `onSelect(id)` fires after a change by the user or by `select`; the initial
- * selection is reported in a microtask, so the handler can already use the returned tabs object.
+ * first enabled tab); `actions` is a node placed at the right of the tab row, under the same rule;
+ * `onSelect(id)` fires after a change by the user or by `select`; the initial selection is reported
+ * in a microtask, so the handler can already use the returned tabs object.
  */
 
 import { h, uid } from "./dom.js";
@@ -35,7 +36,8 @@ class Tabs {
       { class: "tabs", role: "tablist", "aria-label": options.label, on: { keydown: (event) => this.onKey(event) } },
       this.items.map((item) => item.button),
     );
-    this.el = h("div", { class: "tabs-block" }, list, this.items.map((item) => item.panel));
+    const head = options.actions ? h("div", { class: "tabs-head" }, list, options.actions) : list;
+    this.el = h("div", { class: "tabs-block" }, head, this.items.map((item) => item.panel));
     this.building = true;
     this.select(options.selected ?? this.enabled()[0]?.id);
     this.building = false;
@@ -113,7 +115,7 @@ class Tabs {
 
 /**
  * Creates the tabs; see the file header for the shape of the options and the result.
- * @param {{label: string, tabs: object[], selected?: string, onSelect?: (id: string) => void}} options
+ * @param {{label: string, tabs: object[], selected?: string, actions?: Node, onSelect?: (id: string) => void}} options
  * @returns {Tabs}
  */
 export function createTabs(options) {

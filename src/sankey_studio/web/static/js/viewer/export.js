@@ -49,10 +49,11 @@ function inRange(value, [low, high]) {
 }
 
 class ExportPanel {
-  /** @param {{graph: {id: string, name: string}, charts: {active: () => string, surface: (kind: string) => HTMLElement | null}}} options */
-  constructor({ graph, charts }) {
+  /** @param {{graph: {id: string, name: string}, charts: {active: () => string, surface: (kind: string) => HTMLElement | null}, display?: () => object}} options  `display` returns the label switches the person changed (sent with every export) */
+  constructor({ graph, charts, display }) {
     this.graph = graph;
     this.charts = charts;
+    this.chosenDisplay = display ?? (() => ({}));
     this.heights = { sankey: 560, donut: 460 };
     this.kind = "sankey";
     this.buildControls();
@@ -181,7 +182,7 @@ class ExportPanel {
     this.note.hidden = true;
     setBusy(button, true);
     try {
-      const query = { chart, format, theme: options.theme, width: options.width, height: options.height, scale: options.scale, transparent: options.transparent || null };
+      const query = { ...this.chosenDisplay(), chart, format, theme: options.theme, width: options.width, height: options.height, scale: options.scale, transparent: options.transparent || null };
       const saved = await downloadExport(`/graphs/${this.graph.id}/export`, { query, chart, fallbackName: `${cleanFilename(this.graph.name, "graph")}.${format}` });
       toast.success(`Saved ${saved.filename}.`);
     } catch (error) {
@@ -218,7 +219,7 @@ class ExportPanel {
 
 /**
  * Builds the export panel.
- * @param {{graph: {id: string, name: string}, charts: object}} options
+ * @param {{graph: {id: string, name: string}, charts: object, display?: () => object}} options
  * @returns {ExportPanel}
  */
 export function createExportPanel(options) {

@@ -9,6 +9,7 @@ from sankey_studio.web.schemas import forms, queries, settings
 
 NAMED_IN_THE_SPEC = [
     "ThemeQuery",
+    "RenderQuery",
     "CompareQuery",
     "IdsQuery",
     "ListQuery",

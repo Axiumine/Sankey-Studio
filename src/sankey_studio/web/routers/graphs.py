@@ -43,7 +43,7 @@ from sankey_studio.storage.bundle import (
     import_bundle,
 )
 from sankey_studio.web.deps import GuardedRoute, ResultCacheDep, ServicesDep
-from sankey_studio.web.schemas import IdsQuery, ListQuery, ThemeQuery
+from sankey_studio.web.schemas import IdsQuery, ListQuery, RenderQuery
 from sankey_studio.web.security import IMPORT_BODY_BYTES, Download, download_response
 
 if TYPE_CHECKING:
@@ -164,13 +164,14 @@ def get_graph(graph_id: str, services: ServicesDep) -> GraphDefinition:
 @router.get("/graphs/{graph_id}/render")
 def render_graph(
     graph_id: str,
-    query: Annotated[ThemeQuery, Query()],
+    query: Annotated[RenderQuery, Query()],
     services: ServicesDep,
     cache: ResultCacheDep,
 ) -> RenderBundle:
-    """Load the saved graph's source and draw it."""
+    """Load the saved graph's source and draw it (``query`` may switch labels on or off)."""
     draft = draft_of(services.graphs().get(graph_id))
-    return render_bundle(services, draft, BundleOptions(theme=query.theme), cache)
+    options = BundleOptions(theme=query.theme, style=query.styled(draft.style))
+    return render_bundle(services, draft, options, cache)
 
 
 @router.post("/graphs", status_code=201)

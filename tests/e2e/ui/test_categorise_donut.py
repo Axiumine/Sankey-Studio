@@ -43,6 +43,7 @@ PARTLY = csv_text(
     ]
 )
 PARTLY_LABELS = ["Living15.5%", "Housing14.6%", "Uncategorized69.9%"]
+MANY_LABELS = ["46.1%", "17.8%", "17.7%", "15.5%", "2.79%"]
 TWELVE = csv_text([(f"Src{i}", f"Dst{i}", 10 + i, f"Cat{i}") for i in range(12)])
 HUES = 8
 
@@ -86,13 +87,14 @@ def test_the_donut_has_percent_labels_a_centre_total_a_tooltip_a_legend_and_a_ta
     expect(editor.tid("sankey-chart")).to_be_hidden()
     expect(editor.tid("export-donut-svg")).to_be_enabled()
 
-    # More than four categories: no direct labels any more, a legend and the table instead.
+    # More than four categories: the slices carry the percentage only (the name is in the legend
+    # and the table), never the name.
     editor.paste(BUDGET_CATEGORISED.csv)
 
     legend = page.locator("[data-testid=donut-chart] .legendtext")
     expect(legend).to_have_text(["Income", "Savings", "Housing", "Food", "Transport"])
     expect(editor.tid("category-row")).to_have_count(5)
-    assert charts.donut_labels() == []
+    assert charts.donut_labels() == MANY_LABELS
     assert charts.donut_center() == "8,240"
     assert "Transport230 (2.79%)" in charts.hover_slice(4)
     editor.expect_stats(nodes=10, links=9, total_in=3800, total_out=3800, columns=4, categories=5)

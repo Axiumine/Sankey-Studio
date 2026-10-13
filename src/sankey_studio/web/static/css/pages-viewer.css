@@ -55,6 +55,33 @@
 
 .chart-card > .card-body { padding: var(--space-3) var(--space-4) var(--space-4); }
 .chart-panel { display: flex; flex-direction: column; gap: var(--space-4); }
+
+/* display menu: the icon at the right of the tab row and its panel of switches */
+.display-menu { position: relative; flex: none; }
+.display-menu .btn-icon { min-height: 2.25rem; }
+.display-menu .btn-icon[aria-expanded="true"] { background: var(--wash-strong); }
+
+.display-panel {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  right: 0;
+  z-index: var(--z-dropdown);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: max-content;
+  max-width: min(20rem, calc(100vw - 2 * var(--space-4)));
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.display-panel[hidden] { display: none; }
+.display-group { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; margin: 0; padding: 0; border: 0; }
+.display-group[hidden] { display: none; }
+.display-legend { padding: 0; color: var(--ink-secondary); font-size: var(--text-sm); font-weight: var(--weight-medium); }
 .chart-panel > * { min-width: 0; }
 
 .chart-hint {

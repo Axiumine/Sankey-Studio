@@ -15,7 +15,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_validator
 
-from sankey_studio.models import ENTRIES_PAGE_MAX, NAME_MAX, TAG_MAX, GraphId, Theme
+from sankey_studio.models import ENTRIES_PAGE_MAX, NAME_MAX, TAG_MAX, GraphId, StyleSpec, Theme
 from sankey_studio.render.options import EntriesOptions, EntrySort, ImageOptions
 from sankey_studio.sources.mongo_inspect import SAMPLE_DEFAULT, SAMPLE_MAX, SAMPLE_MIN
 
@@ -32,6 +32,7 @@ __all__ = [
     "ExportQuery",
     "IdsQuery",
     "ListQuery",
+    "RenderQuery",
     "SampleQuery",
     "ThemeQuery",
     "split_ids",
@@ -75,6 +76,36 @@ CompareIds = Annotated[
 ExportIds = Annotated[
     list[GraphId], BeforeValidator(split_ids), Field(min_length=1, max_length=EXPORT_IDS_MAX)
 ]
+
+
+class _DisplayQuery(_Query):
+    """View-time switches of the labels; ``None`` keeps what the saved style says.
+
+    They never change the saved graph: ``styled`` returns the style the figures are drawn with.
+    """
+
+    node_values: bool | None = None
+    donut_percent: bool | None = None
+    donut_value: bool | None = None
+
+    def styled(self, style: StyleSpec) -> StyleSpec:
+        """``style`` with the chosen switches applied (``style`` itself when none is chosen)."""
+        node = _chosen({"show_values_in_labels": self.node_values})
+        donut = _chosen({"show_percent": self.donut_percent, "show_value": self.donut_value})
+        if not node and not donut:
+            return style
+        dumped = style.model_dump()
+        return StyleSpec.model_validate({**dumped, **node, "donut": {**dumped["donut"], **donut}})
+
+
+def _chosen(switches: dict[str, bool | None]) -> dict[str, bool]:
+    return {name: value for name, value in switches.items() if value is not None}
+
+
+class RenderQuery(_DisplayQuery):
+    """``?theme=&node_values=&donut_percent=&donut_value=`` of ``GET /graphs/{id}/render``."""
+
+    theme: Theme = "light"
 
 
 class ThemeQuery(_Query):
@@ -134,7 +165,7 @@ class EntriesQuery(_Query):
         )
 
 
-class ExportQuery(_Query):
+class ExportQuery(_DisplayQuery):
     """The export parameters of ``GET /graphs/{id}/export`` and ``POST /export``.
 
     ``width``, ``height`` and ``scale`` only have to be sane here: ``resolve_image`` clamps them
