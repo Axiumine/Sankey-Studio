@@ -84,6 +84,8 @@ COLOUR: Final = re.compile(
 URL: Final = re.compile(r"https?://[^\s\"'<>)]+", re.IGNORECASE)
 IMPORT: Final = re.compile(r"""(?:\bfrom\s+|\bimport\s*\(\s*|\bimport\s+)["']([^"']+)["']""")
 STATIC_STRING: Final = re.compile(r"""["'`](/static/[^"'`\s]+)["'`]""")
+#: A file a script names relative to itself (it keeps the ``/static/v-<digest>/`` prefix).
+MODULE_URL: Final = re.compile(r"""new URL\(\s*["']([^"']+)["']\s*,\s*import\.meta\.url\s*\)""")
 CSS_REF: Final = re.compile(r"""url\(\s*["']?([^"')\s]+)["']?\s*\)|@import\s+["']([^"']+)["']""")
 
 
@@ -278,7 +280,7 @@ def test_every_import_and_static_url_in_a_script_resolves() -> None:
     missing: list[str] = []
     for path in own_files(STATIC_DIR, ".js"):
         text = read(path)
-        for ref in [*IMPORT.findall(text), *STATIC_STRING.findall(text)]:
+        for ref in [*IMPORT.findall(text), *STATIC_STRING.findall(text), *MODULE_URL.findall(text)]:
             target = resolve(path, ref)
             if target is not None and not target.is_file():
                 missing.append(f"{rel(path)} -> {ref}")
@@ -302,6 +304,18 @@ def test_the_import_rule_reads_the_forms_of_import() -> None:
     )
     assert IMPORT.findall(text) == ["./a.js", "./b.js", "./c.js", "../d.js"]
     assert STATIC_STRING.findall('const U = "/static/vendor/plotly.min.js";') == [VENDOR_PATH]
+    sheet = 'ensure(new URL("../../css/a.css", import.meta.url).href); new URL("x", base)'
+    assert MODULE_URL.findall(sheet) == ["../../css/a.css"]
+
+
+def test_scripts_name_static_files_relative_to_themselves() -> None:
+    """An absolute ``/static/...`` path would skip the version prefix (a stale browser copy)."""
+    absolute = {
+        rel(path): refs
+        for path in own_files(STATIC_DIR, ".js")
+        if (refs := sorted(set(STATIC_STRING.findall(read(path))) - {VENDOR_PATH}))
+    }
+    assert absolute == {}
 
 
 class Rendered(NamedTuple):

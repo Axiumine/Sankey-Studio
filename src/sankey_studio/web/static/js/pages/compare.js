@@ -11,7 +11,7 @@ import { ensureStyles } from "../library/styles.js";
 
 const { ids, graphs, missing } = boot();
 
-await ensureStyles("/static/css/pages-compare.css");
+await ensureStyles(new URL("../../css/pages-compare.css", import.meta.url).href);
 if (Array.isArray(ids) && Array.isArray(graphs)) {
   const gone = Array.isArray(missing) ? missing.filter((id) => typeof id === "string") : [];
   startCompare({ ids, graphs, missing: gone, root: pageRoot(), actionsRoot: pageActions() });

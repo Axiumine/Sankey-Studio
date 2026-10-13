@@ -31,7 +31,8 @@ function load(href) {
 
 /**
  * Loads `href` as a stylesheet (once) and resolves when it is applied or has failed.
- * @param {string} href  the same-origin path of the stylesheet
+ * @param {string} href  the same-origin URL of the stylesheet; a script passes
+ *   `new URL(<path relative to the script>, import.meta.url).href` so the sheet keeps its version prefix
  * @returns {Promise<void>}
  */
 export function ensureStylesheet(href) {

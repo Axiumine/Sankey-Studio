@@ -11,7 +11,7 @@ import { startViewer } from "../viewer/controller.js";
 
 const { graph } = boot();
 
-await ensureStyles("/static/css/pages-viewer.css");
+await ensureStyles(new URL("../../css/pages-viewer.css", import.meta.url).href);
 if (graph && typeof graph.id === "string") {
   startViewer({ graph, root: pageRoot(), actionsRoot: pageActions() });
 } else {

@@ -8,6 +8,7 @@ and text. A page is safe when its only script is the JSON data block and no inje
 from __future__ import annotations
 
 import json
+import re
 from html.parser import HTMLParser
 from typing import TYPE_CHECKING, Any, NamedTuple
 
@@ -117,8 +118,8 @@ class _Collector(HTMLParser):
 
 
 def unversioned(url: str) -> str:
-    """``url`` without the ``?v=<digest>`` that ``web/assets.py`` appends to static links."""
-    return url.split("?v=", 1)[0]
+    """``url`` without the ``v-<digest>/`` segment ``web/assets.py`` puts after ``/static/``."""
+    return re.sub(r"^/static/v-[0-9a-f]{12}/", "/static/", url)
 
 
 def parse_text(text: str) -> Page:

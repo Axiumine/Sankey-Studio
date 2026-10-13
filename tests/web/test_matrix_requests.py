@@ -98,11 +98,8 @@ def test_every_response_carries_the_security_headers(web: WebApp, endpoint: Endp
 @pytest.mark.parametrize("endpoint", ENDPOINTS, ids=ids(ENDPOINTS))
 def test_api_answers_are_no_store_and_pages_are_not(web: WebApp, endpoint: Endpoint) -> None:
     response = web.client.request(endpoint.method, endpoint.path, content=b"{}")
-    if endpoint.template.startswith("/api/"):
-        assert response.headers["cache-control"] == "no-store"
-    elif endpoint.template == PLOTLY:
-        assert response.headers["cache-control"] == "max-age=3600"
-    elif response.headers["content-type"].startswith("text/html"):
+    never_stored = endpoint.template.startswith("/api/") or endpoint.template == PLOTLY
+    if never_stored or response.headers["content-type"].startswith("text/html"):
         assert response.headers["cache-control"] == "no-store"
     else:
         assert "cache-control" not in response.headers

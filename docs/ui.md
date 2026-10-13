@@ -45,9 +45,13 @@ There is no build step, no bundler and no framework.
 * Each page loads `static/js/core/shell.js` and one page module, `static/js/pages/<module>.js`
   (`new` and `edit` both use `editor.js`). The module imports plain ES modules from `core/`,
   `library/`, `editor/`, `viewer/`, `compare/` and `settings/`.
-* Templates link every `/static` file through `static_url("css/layout.css")`, which appends
-  `?v=<digest>` (the first 12 hex characters of the SHA-256 of the file, `web/assets.py`): a changed file
-  is a new URL, so no browser keeps an old style sheet or script. Static answers are `no-cache`.
+* Templates link every `/static` file through `static_url("css/layout.css")`, which gives
+  `/static/v-<digest>/css/layout.css` (the first 12 hex characters of the SHA-256 of the whole static
+  directory, `web/assets.py`). Modules import each other by relative path and a script loads a style
+  sheet with `new URL("../../css/x.css", import.meta.url)`, never an absolute `/static/...` path (a
+  policy test enforces it), so every file of a page shares the prefix and a new version is a new URL
+  for all of them: no browser keeps an old style sheet or script. Static answers are `no-store`
+  (no `ETag`, never a 304), plotly.js included: the browser keeps nothing between reloads.
 * Markup is built only with `h()` from `core/dom.js` (`createElement`, `setAttribute`,
   `createTextNode`). Every string child is a text node, so a graph name, a category or a server
   message can never become markup.

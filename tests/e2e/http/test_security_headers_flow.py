@@ -161,6 +161,7 @@ def test_errors_carry_the_same_headers_as_successes(
         ("/static/vendor/plotly.min.js", "text/javascript"),
         ("/static/css/tokens.css", "text/css"),
         ("/static/js/core/shell.js", "text/javascript"),
+        ("/static/v-0123456789ab/js/core/shell.js", "text/javascript"),
     ],
 )
 def test_static_files_are_served_locally_with_the_security_headers(
@@ -169,7 +170,7 @@ def test_static_files_are_served_locally_with_the_security_headers(
     response = api.get(path)
     assert response.status_code == 200
     assert response.headers["content-type"].startswith(media)
-    assert_security_headers(response, no_store=False)
+    assert_security_headers(response, no_store=True)
 
 
 def test_a_missing_or_escaping_static_path_is_a_json_404_with_no_file_content(

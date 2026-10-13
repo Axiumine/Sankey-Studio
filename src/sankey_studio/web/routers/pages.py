@@ -127,8 +127,8 @@ PLOTLY_PATH: Final = "/static/vendor/plotly.min.js"
 HEALTH_PATH: Final = "/api/v1/health"
 #: ``text/*`` types get ``; charset=utf-8`` from the response class.
 JS_MEDIA_TYPE: Final = "text/javascript"
-#: One hour: the file only changes when the plotly package is upgraded.
-VENDOR_CACHE: Final = "max-age=3600"
+#: Never stored either: no browser keeps a plotly.js across a server restart or an upgrade.
+VENDOR_CACHE: Final = NO_STORE
 
 #: Embeddings and overrides (U+202A-U+202E) and isolates (U+2066-U+2069): invisible characters that
 #: change how the text around them is drawn. Control characters (NUL, bell, escape, DEL and the C1
@@ -152,7 +152,7 @@ PageName = Literal["library", "new", "edit", "viewer", "compare", "settings", "n
 TEMPLATES: Final = Jinja2Templates(
     env=Environment(loader=FileSystemLoader(TEMPLATES_DIR), autoescape=True)
 )
-#: Every ``/static`` link of a template goes through it (``?v=<digest>``, see ``web/assets.py``).
+#: Every ``/static`` link of a template goes through it (``/static/v-<digest>/``, web/assets.py).
 TEMPLATES.env.globals["static_url"] = static_url
 
 router = APIRouter(tags=["pages"])

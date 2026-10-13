@@ -52,7 +52,7 @@ Related documents: [UI reference](ui.md) (page behaviour and the `data-testid` r
 | Unknown body fields | Rejected with 422 in every request model (`extra="forbid"`). |
 | Unknown query parameters | Rejected with 422 (`query.<name>: Extra inputs are not permitted`) on every route that declares a query model: `GET /graphs`, `GET /graphs/export`, `GET /graphs/{id}/render`, `GET /compare/render`, `POST /preview`, `POST /entries`, both export routes, `GET /mongo/{name}/collections`, `GET /mongo/{name}/sample` and `GET /compare`. Routes without a query model ignore extra parameters. Do not append cache-busting parameters. |
 | Input echo | A 422 never contains the submitted value, only the location and the reason. The location can hold a field name or a key the caller sent (`body.<key>: Extra inputs are not permitted`), and a few reasons name the offending MongoDB operator or pipeline stage, or the node or category names whose colour is not `#rrggbb`, never an argument or a value. An unknown `source.type` lists the allowed types, not the one sent ([section 3.1](#31-envelope)). |
-| Caching | `Cache-Control: no-store` on every `/api/*` response and on every HTML page. Other `/static/*` files are `no-cache` (revalidated with the `ETag`), and every page links them as `/static/<file>?v=<12 hex of the SHA-256 of the content>` (`web/assets.py`), so a changed file is a new URL and a browser can never keep showing an old style sheet or script. `/static/vendor/plotly.min.js` is `max-age=3600`. |
+| Caching | `Cache-Control: no-store` on every `/api/*` response and on every HTML page. Other `/static/*` files are `no-store` too (no `ETag`, no `Last-Modified`, never a 304), and every page links them under a version prefix, `/static/v-<12 hex of the SHA-256 of the whole static directory>/<file>` (`web/assets.py`, computed once per server start). Scripts import each other by relative path and load their style sheets with `new URL(..., import.meta.url)`, so nested modules share the prefix: after a change every file is a new URL, and a copy a browser stored before (even one it would reuse without asking) is never used. The mount drops the prefix (any digest), so `/static/<file>` still works. `/static/vendor/plotly.min.js` is `no-store` as well: the browser keeps nothing, so a server restart always serves the current files. |
 | Order of results | Library lists are newest first (`updated_at` descending). |
 
 ### Request pipeline
@@ -648,7 +648,7 @@ more wait and then answer 503 `busy`.
 | Route | Answer |
 |---|---|
 | `GET /api/v1/health` | 200 `{"status": "ok"}`. A liveness check only; it touches no storage |
-| `GET /static/vendor/plotly.min.js` | 200, `Content-Type: text/javascript; charset=utf-8`, `Cache-Control: max-age=3600`. The `plotly.min.js` of the installed `plotly` package (Plotly.js 4.1.1 at the time of writing, about 4.8 MB). Never a CDN |
+| `GET /static/vendor/plotly.min.js` | 200, `Content-Type: text/javascript; charset=utf-8`, `Cache-Control: no-store`. The `plotly.min.js` of the installed `plotly` package (Plotly.js 4.1.1 at the time of writing, about 4.8 MB). Never a CDN |
 | `GET /static/<path>` | The files of `src/sankey_studio/web/static/` (`css/`, `js/`, `img/`); a missing file is the JSON 404 |
 
 The vendored script is an ordinary route registered before the static mount, so the mount never shadows it.
