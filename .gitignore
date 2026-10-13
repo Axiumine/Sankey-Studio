@@ -5,6 +5,7 @@
 .gitnexus/
 mutants/
 .e2e-artifacts/
+.playwright-mcp/
 .qodana/
 qodana-results/
 .trivy-cache/
