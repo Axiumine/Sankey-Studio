@@ -13,7 +13,7 @@
 {% set current = {"library": "/", "new": "/graphs/new", "settings": "/settings"}.get(page) %}
 {% set section = "/" if page in ("viewer", "edit", "compare") else none %}
 {% block head %}
-  <link rel="stylesheet" href="/static/css/pages/{{ module }}.css">
+  <link rel="stylesheet" href="{{ static_url('css/pages/' ~ module ~ '.css') }}">
 {% endblock %}
 {% block body %}
 <a class="skip-link" href="#main">Skip to main content</a>
@@ -34,7 +34,7 @@
       <nav class="main-nav" aria-label="Main">
         <ul>
         {% for link in links if link.href in nav_ids %}
-          <li><a class="nav-link{% if link.href == '/graphs/new' %} nav-cta{% endif %}{% if link.href == section %} is-section{% endif %}" href="{{ link.href }}" data-testid="{{ nav_ids[link.href] }}"{% if link.href == current %} aria-current="page"{% endif %}>{{ link.label }}</a></li>
+          <li><a class="nav-link{% if link.href == section %} is-section{% endif %}" href="{{ link.href }}" data-testid="{{ nav_ids[link.href] }}"{% if link.href == current %} aria-current="page"{% endif %}>{{ link.label }}</a></li>
         {% endfor %}
         </ul>
       </nav>
@@ -93,7 +93,7 @@
 <div class="visually-hidden" id="a11y-assertive" role="alert" aria-live="assertive" aria-atomic="true"></div>
 <script type="application/json" id="page-data">{{ boot|tojson }}</script>
 {% block page_scripts %}
-<script type="module" src="/static/js/core/shell.js"></script>
-<script type="module" src="/static/js/pages/{{ module }}.js"></script>
+<script type="module" src="{{ static_url('js/core/shell.js') }}"></script>
+<script type="module" src="{{ static_url('js/pages/' ~ module ~ '.js') }}"></script>
 {% endblock %}
 {% endblock %}

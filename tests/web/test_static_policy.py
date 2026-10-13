@@ -20,7 +20,7 @@ import pytest
 from sankey_studio.render.palette import TOKENS
 from sankey_studio.web.app import STATIC_DIR
 from sankey_studio.web.routers.pages import TEMPLATES_DIR
-from tests.web.test_pages_support import parse, parse_text
+from tests.web.test_pages_support import parse, parse_text, unversioned
 from tests.web.test_routes_graphs_support import PLAIN, save
 from tests.web.test_static_policy_support import (
     API_TESTIDS,
@@ -329,7 +329,7 @@ def test_every_static_file_a_page_links_is_served(web: WebApp, rendered: list[Re
         assert len(refs) >= 8, page.path
         for ref in refs:
             response = web.client.get(ref)
-            kind = kinds["." + ref.rsplit(".", 1)[-1]]
+            kind = kinds["." + unversioned(ref).rsplit(".", 1)[-1]]
             assert response.status_code == 200, (page.path, ref)
             assert response.headers["content-type"].startswith(kind), ref
 
@@ -350,7 +350,7 @@ def test_a_page_loads_its_own_module_and_style_sheet(web: WebApp, template: str)
     graph_id = save(web, "Budget", *PLAIN).id
     html = web.client.get(template.format(id=graph_id)).text
     module = PAGE_MODULES[template]
-    refs = static_refs(html)
+    refs = [unversioned(ref) for ref in static_refs(html)]
     assert f"/static/js/pages/{module}.js" in refs
     assert f"/static/css/pages/{module}.css" in refs
     assert refs.index("/static/js/core/theme-init.js") < refs.index(f"/static/js/pages/{module}.js")

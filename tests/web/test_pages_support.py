@@ -116,6 +116,11 @@ class _Collector(HTMLParser):
             self._link = None
 
 
+def unversioned(url: str) -> str:
+    """``url`` without the ``?v=<digest>`` that ``web/assets.py`` appends to static links."""
+    return url.split("?v=", 1)[0]
+
+
 def parse_text(text: str) -> Page:
     """Parse an HTML string."""
     collector = _Collector()

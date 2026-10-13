@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Final
 import pytest
 
 from sankey_studio.models import AppSettings
-from tests.web.test_pages_support import DATA_ID, JSON_TYPE, parse
+from tests.web.test_pages_support import DATA_ID, JSON_TYPE, parse, unversioned
 from tests.web.test_routes_graphs_support import MALFORMED_IDS, PLAIN, UNKNOWN_ID, code, save
 
 if TYPE_CHECKING:
@@ -102,7 +102,10 @@ def test_the_page_loads_only_the_shell_script_and_its_data_block(web: WebApp) ->
     data = [script for script in page.scripts if script.attrs.get("type") == JSON_TYPE]
     assert [script.attrs["id"] for script in data] == [DATA_ID]
     sources = [script.attrs.get("src") for script in page.scripts if script not in data]
-    assert sources == ["/static/js/core/theme-init.js", "/static/js/core/shell.js"]
+    assert [unversioned(src or "") for src in sources] == [
+        "/static/js/core/theme-init.js",
+        "/static/js/core/shell.js",
+    ]
     assert page.find("link", href="/static/css/pages/notfound.css") == []
     assert page.data() == {
         "page": "notfound",
@@ -271,4 +274,4 @@ def test_json_answers_keep_their_own_cache_rules(web: WebApp) -> None:
     plotly = web.client.get("/static/vendor/plotly.min.js")
     assert plotly.headers["cache-control"] == "max-age=3600"
     static = web.client.get("/static/css/tokens.css")
-    assert "cache-control" not in static.headers
+    assert static.headers["cache-control"] == "no-cache"

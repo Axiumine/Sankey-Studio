@@ -76,7 +76,7 @@ def expect_not_found_page(page: WatchedPage, response: Response, heading: str, t
     for shell in ("nav-library", "nav-new", "nav-settings", "theme-switch"):
         expect(page.get_by_test_id(shell)).to_be_visible()
     sources = page.evaluate("[...document.querySelectorAll('script[src]')].map((s) => s.src)")
-    assert [src.rsplit("/", 1)[-1] for src in sources] == [
+    assert [src.rsplit("/", 1)[-1].split("?v=")[0] for src in sources] == [
         "theme-init.js",
         "shell.js",
     ]  # no page module

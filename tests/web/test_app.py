@@ -202,10 +202,22 @@ def test_static_files_are_served_with_the_page_headers(
     assert (served.status_code, served.text) == (200, "hi")
     assert web.app.url_path_for("static", path="hello.txt") == "/static/hello.txt"
     assert served.headers["x-content-type-options"] == "nosniff"
-    assert "cache-control" not in served.headers
+    assert served.headers["cache-control"] == "no-cache"
     assert (missing.status_code, missing.json()) == (404, NOT_FOUND)
     assert wrong_host.status_code == 400
     assert wrong_method.status_code == 405
+
+
+def test_static_files_revalidate_with_the_etag(
+    make_app: AppFactory, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "static").mkdir()
+    (tmp_path / "static" / "hello.txt").write_text("hi", encoding="utf-8")
+    monkeypatch.setattr(app_module, "STATIC_DIR", tmp_path / "static")
+    client = make_app([router]).client
+    etag = client.get("/static/hello.txt").headers["etag"]
+    again = client.get("/static/hello.txt", headers={"If-None-Match": etag})
+    assert (again.status_code, again.headers["cache-control"]) == (304, "no-cache")
 
 
 def test_a_router_route_wins_over_the_static_mount(make_app: AppFactory) -> None:

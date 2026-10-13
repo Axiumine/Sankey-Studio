@@ -73,6 +73,7 @@ from starlette.templating import Jinja2Templates
 from sankey_studio.errors import NotFoundError, SettingsError
 from sankey_studio.models import GraphId
 from sankey_studio.storage.common import summary_of
+from sankey_studio.web.assets import static_url
 from sankey_studio.web.deps import ConfigDep, ServicesDep, get_config, get_services
 from sankey_studio.web.schemas.queries import COMPARE_IDS_MAX, LIST_LIMIT_MAX, split_ids
 
@@ -151,6 +152,8 @@ PageName = Literal["library", "new", "edit", "viewer", "compare", "settings", "n
 TEMPLATES: Final = Jinja2Templates(
     env=Environment(loader=FileSystemLoader(TEMPLATES_DIR), autoescape=True)
 )
+#: Every ``/static`` link of a template goes through it (``?v=<digest>``, see ``web/assets.py``).
+TEMPLATES.env.globals["static_url"] = static_url
 
 router = APIRouter(tags=["pages"])
 support_router = APIRouter()

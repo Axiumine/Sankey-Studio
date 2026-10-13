@@ -22,7 +22,7 @@ from sankey_studio.models import AppSettings
 from sankey_studio.web import errors as web_errors
 from tests.web.conftest import SAME_ORIGIN, new_client
 from tests.web.test_pages_notfound import BROWSER, HOSTILE, HTML, heading_of
-from tests.web.test_pages_support import DATA_ID, JSON_TYPE, parse
+from tests.web.test_pages_support import DATA_ID, JSON_TYPE, parse, unversioned
 from tests.web.test_routes_graphs_support import PLAIN, UNKNOWN_ID, code, save
 
 if TYPE_CHECKING:
@@ -187,7 +187,10 @@ def test_the_page_loads_only_the_shell_script_and_its_data_block(
     data = [script for script in page.scripts if script.attrs.get("type") == JSON_TYPE]
     assert [script.attrs["id"] for script in data] == [DATA_ID]
     sources = [script.attrs.get("src") for script in page.scripts if script not in data]
-    assert sources == ["/static/js/core/theme-init.js", "/static/js/core/shell.js"]
+    assert [unversioned(src or "") for src in sources] == [
+        "/static/js/core/theme-init.js",
+        "/static/js/core/shell.js",
+    ]
     assert page.data() == {
         "page": "error",
         "kind": "folder",

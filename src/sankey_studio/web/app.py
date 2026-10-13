@@ -16,7 +16,6 @@ on at the first request (every request would then be a plain-text 500).
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from pathlib import Path
 from typing import TYPE_CHECKING, Final
 
 from fastapi import FastAPI
@@ -24,6 +23,7 @@ from fastapi.staticfiles import StaticFiles
 
 from sankey_studio.pipeline import ResultCache
 from sankey_studio.services import Services
+from sankey_studio.web import assets
 from sankey_studio.web import routers as router_registry
 from sankey_studio.web.errors import register_error_handlers
 from sankey_studio.web.middleware import (
@@ -39,12 +39,15 @@ if TYPE_CHECKING:
     from contextlib import AbstractAsyncContextManager
 
     from fastapi import APIRouter
+    from starlette.responses import Response
+    from starlette.types import Scope
 
     from sankey_studio.config import BootstrapConfig
     from sankey_studio.web.deps import ResultCacheLike
 
-STATIC_DIR: Final = Path(__file__).parent / "static"
-STATIC_URL: Final = "/static"
+#: The static directory and URL prefix live in ``assets`` (the page links need them too).
+STATIC_DIR: Final = assets.STATIC_DIR
+STATIC_URL: Final = assets.STATIC_URL
 MSG_NOT_BINDABLE: Final = "a non-loopback host needs remote mode (--allow-remote)"
 
 
@@ -65,6 +68,21 @@ def check_allowed_hosts(hosts: Sequence[str]) -> None:
             raise InvalidConfigError(f"allowed_hosts[{index}]", problem)
 
 
+class RevalidatedStaticFiles(StaticFiles):
+    """``StaticFiles`` whose answers must be revalidated (``Cache-Control: no-cache``).
+
+    Without it a browser may reuse a stylesheet or script for days (heuristic freshness from
+    ``Last-Modified``) and show an old UI after an upgrade; with it the ``ETag`` still gives a
+    cheap 304 when nothing changed.
+    """
+
+    async def get_response(self, path: str, scope: Scope) -> Response:
+        """The file answer (200 or 304) with the revalidation header added."""
+        response = await super().get_response(path, scope)
+        response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
 def mount_static(app: FastAPI) -> None:
     """Serve ``web/static`` under ``/static``, after every router.
 
@@ -74,7 +92,7 @@ def mount_static(app: FastAPI) -> None:
     does not exist: Starlette would answer every request for it with a 500.
     """
     if STATIC_DIR.is_dir():
-        app.mount(STATIC_URL, StaticFiles(directory=STATIC_DIR), name="static")
+        app.mount(STATIC_URL, RevalidatedStaticFiles(directory=STATIC_DIR), name="static")
 
 
 def _lifespan(
