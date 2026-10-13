@@ -69,7 +69,7 @@ function mountMeta(container, ctx) {
     maxLength: TAG_MAX,
     separators: ",",
     placeholder: "Type a tag, press Enter",
-    hint: `Up to ${TAGS_MAX} tags, ${TAG_MAX} characters each. Use them to filter the library.`,
+    hint: `Up to ${TAGS_MAX} tags, ${TAG_MAX} characters each, separated by commas. Use them to filter the library.`,
     suggestions: () => suggestions,
     testid: "editor-tags",
     onChange: (items) => store.patch(["meta", "tags"], items),
