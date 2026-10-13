@@ -146,7 +146,22 @@ def test_style_defaults() -> None:
     assert (style.value_suffix, style.show_values_in_labels) == ("", False)
     donut = style.donut
     assert (donut.basis, donut.max_slices, donut.hole) == ("all", 6, 0.58)
-    assert (donut.show_percent, donut.show_total, donut.sort) == (True, True, "value")
+    assert (donut.show_percent, donut.show_value) == (True, False)
+    assert (donut.show_total, donut.sort) == (True, "value")
+
+
+def test_a_style_saved_before_show_value_existed_loads_with_it_off() -> None:
+    old = StyleSpec.model_validate({"donut": {"show_percent": False, "hole": 0.4}})
+    assert (old.donut.show_value, old.donut.show_percent) == (False, False)
+    assert DonutStyle.model_validate({"show_value": True}).show_value is True
+    assert StyleSpec().model_dump()["donut"]["show_value"] is False
+
+
+@pytest.mark.parametrize("bad", ["maybe", 2, [], {}])
+def test_show_value_must_be_a_boolean(bad: object) -> None:
+    with pytest.raises(ValidationError) as caught:
+        DonutStyle.model_validate({"show_value": bad})
+    assert [error["loc"] for error in caught.value.errors()] == [("show_value",)]
 
 
 def test_rule_and_settings_defaults() -> None:

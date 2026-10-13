@@ -19,7 +19,7 @@ export const DEFAULTS = Object.freeze({
   source: { origin: "inline", format: "auto", has_header: true, detect_category: true, encoding: "utf-8", mode: "find", source_field: "source", target_field: "target", value_field: "value", limit: 10000 },
   transform: { min_link_value: 0, on_cycle: "error", strict: false, rules_override: false },
   style: { orientation: "h", color_mode: "node", node_pad: 16, node_thickness: 18, link_opacity: 0.4, arrangement: "snap", value_format: ",.2~f", show_values_in_labels: false, font_size: 13, height: 560 },
-  "style.donut": { basis: "all", max_slices: 6, hole: 0.58, show_percent: true, show_total: true, sort: "value" },
+  "style.donut": { basis: "all", max_slices: 6, hole: 0.58, show_percent: true, show_value: false, show_total: true, sort: "value" },
 });
 
 const KEEP_NULL = new Set(["source.value_field", "transform.entry_categories.[].category"]);

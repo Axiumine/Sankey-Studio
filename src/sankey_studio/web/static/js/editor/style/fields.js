@@ -148,7 +148,7 @@ export function buildStyleFields(store) {
   });
   const format = take(formatField(store), "value_format");
   const suffix = take(suffixField(store), "value_suffix");
-  const labels = checkField(store, { label: "Show values in node labels", path: [...STYLE, "show_values_in_labels"], fallback: false });
+  const labels = checkField(store, { label: "Show values under the node names", path: [...STYLE, "show_values_in_labels"], fallback: false });
   offs.push(labels.off);
   const donut = buildDonut(store, fields, offs);
   const [height, ...looks] = sliders;
@@ -188,8 +188,9 @@ function buildDonut(store, fields, offs) {
   fields["donut.sort"] = sort.f;
   offs.push(sort.off);
   const percent = checkField(store, { label: "Show percentages", path: [...DONUT, "show_percent"], fallback: true });
+  const value = checkField(store, { label: "Show values", path: [...DONUT, "show_value"], fallback: false });
   const total = checkField(store, { label: "Show the total in the middle", path: [...DONUT, "show_total"], fallback: true });
-  offs.push(percent.off, total.off);
-  nodes.push(sort.f.el, h("div", { class: "stack stack-sm" }, percent.el, total.el));
+  offs.push(percent.off, value.off, total.off);
+  nodes.push(sort.f.el, h("div", { class: "stack stack-sm" }, percent.el, value.el, total.el));
   return nodes;
 }

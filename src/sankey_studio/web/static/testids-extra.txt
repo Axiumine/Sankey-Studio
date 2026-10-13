@@ -93,3 +93,9 @@ category-colour
 # js/editor/style/fields.js: One colour picker and its reset button
 style-mono-color
 style-mono-reset
+# js/viewer/display-menu.js: the display menu of the chart card
+display-menu-button
+display-menu-panel
+display-node-values
+display-donut-percent
+display-donut-value

@@ -12,7 +12,6 @@ from sankey_studio.errors import NoCategoriesError
 from sankey_studio.models import StyleSpec
 from sankey_studio.render.colors import ColorMap
 from sankey_studio.render.donut import (
-    DIRECT_LABEL_MAX,
     DONUT_HEIGHT,
     EMPTY_TEXT,
     MAX_TOTAL_FONT,
@@ -95,29 +94,6 @@ def test_category_slices_use_their_own_hue_in_each_theme() -> None:
     for theme in ("light", "dark"):
         trace = pie(folded_figure(theme))
         assert trace["marker"]["colors"][:6] == list(CATEGORICAL[theme][:6])
-
-
-class Labels(NamedTuple):
-    slices: int
-    direct: bool
-
-
-@pytest.mark.parametrize(
-    "case", [Labels(2, True), Labels(3, True), Labels(4, True), Labels(5, False), Labels(8, False)]
-)
-def test_direct_labels_only_up_to_four_slices_and_never_auto(case: Labels) -> None:
-    trace = pie(build_donut_figure(many_categories(case.slices), style(), "light"))
-    assert DIRECT_LABEL_MAX == 4
-    assert trace["textposition"] == ("outside" if case.direct else "none")
-    assert trace["textinfo"] == ("label+percent" if case.direct else "none")
-
-
-def test_percent_labels_follow_show_percent() -> None:
-    graph = many_categories(3)
-    on = pie(build_donut_figure(graph, style(donut={"show_percent": True}), "light"))
-    off = pie(build_donut_figure(graph, style(donut={"show_percent": False}), "light"))
-    assert on["textinfo"] == "label+percent"
-    assert off["textinfo"] == "label"
 
 
 @pytest.mark.parametrize("theme", ["light", "dark"])
@@ -205,12 +181,15 @@ def test_the_hole_and_the_title_come_from_the_style() -> None:
     assert figure["layout"]["paper_bgcolor"] == TOKENS["dark"].surface
 
 
-def test_no_donut_string_carries_markup_except_the_fixed_hover_template() -> None:
+def test_no_donut_string_carries_markup_except_the_fixed_hover_and_text_templates() -> None:
     hostile = "<a href=x>&</a>"
     graph = make_graph([("a", "b", 5.0, hostile), ("a", "c", 2.0, "plain")])
     unchecked = StyleSpec.model_construct(title=hostile, value_suffix=hostile, value_format=hostile)
     figure = build_donut_figure(graph, unchecked, "light")
-    texts = [text for text in strings(figure) if text != pie(figure)["hovertemplate"]]
+    trace = pie(figure)
+    fixed = {trace["hovertemplate"], trace["texttemplate"]}
+    assert trace["texttemplate"] == "%{label}<br>%{percent}"  # placeholders only, no user text
+    texts = [text for text in strings(figure) if text not in fixed]
     assert len(texts) > 5
     assert [text for text in texts if "<" in text or ">" in text] == []
     assert hostile not in texts

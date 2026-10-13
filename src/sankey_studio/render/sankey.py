@@ -29,6 +29,8 @@ ROW_PX = 22
 HEIGHT_BASE = 48
 #: With a legend row the Sankey leaves the top 8% of the plot area to it.
 LEGEND_DOMAIN_TOP = 0.92
+#: Separates the name of a node from its value in the label (the value goes on a line of its own).
+LABEL_BREAK = "<br>"
 NODE_HOVER = "%{customdata[0]}<br>In: %{customdata[1]}<br>Out: %{customdata[2]}<extra></extra>"
 LINK_HOVER = (
     "%{customdata[0]} → %{customdata[1]}<br><b>%{customdata[2]}</b>"
@@ -62,7 +64,7 @@ def node_block(scene: Scene) -> dict[str, Any]:
         name = graph.node_names[node]
         label = escape_label(truncate_label(strip_unseen(name)))
         if style.show_values_in_labels:
-            label += " " + value_text(max(graph.node_in[node], graph.node_out[node]), style)
+            label += LABEL_BREAK + value_text(max(graph.node_in[node], graph.node_out[node]), style)
         labels.append(label)
         hover.append(
             [

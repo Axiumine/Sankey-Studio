@@ -15,11 +15,13 @@ from sankey_studio.web.schemas import (
     ExportQuery,
     IdsQuery,
     ListQuery,
+    RenderQuery,
     SampleQuery,
     ThemeQuery,
 )
 from tests.web.test_schemas_support import Case, check_case, digest, gid
 
+SWITCHES_UNSET = {"node_values": None, "donut_percent": None, "donut_value": None}
 LOW = "greater_than_equal"
 HIGH = "less_than_equal"
 LONG = "string_too_long"
@@ -52,7 +54,9 @@ def test_the_defaults() -> None:
         "height": None,
         "scale": 2.0,
         "transparent": False,
+        **SWITCHES_UNSET,
     }
+    assert RenderQuery().model_dump() == {"theme": "light", **SWITCHES_UNSET}
     assert SampleQuery(database="d", collection="c").n == 5
     assert CompareQuery.model_validate({"ids": gid(1)}).theme == "light"
 
@@ -90,7 +94,14 @@ ENTRIES = [
     Case("only_uncategorized", True),
     Case("only_uncategorized", "maybe", "bool_parsing"),
 ]
+SWITCHES = [
+    *[Case(name, value) for name in SWITCHES_UNSET for value in (True, False, None)],
+    *[Case(name, "maybe", "bool_parsing") for name in SWITCHES_UNSET],
+    *[Case(name, 2, "bool_parsing") for name in SWITCHES_UNSET],
+]
+RENDER = [*THEME, *SWITCHES]
 EXPORT = [
+    *SWITCHES,
     *[Case("chart", name) for name in ("sankey", "donut")],
     Case("chart", "pie", CHOICE),
     *[Case("format", name) for name in ("svg", "png", "html", "json", "csv")],
@@ -141,6 +152,11 @@ def test_theme_query(case: Case) -> None:
     check_case(ThemeQuery, case)
 
 
+@pytest.mark.parametrize("case", RENDER, ids=repr)
+def test_render_query(case: Case) -> None:
+    check_case(RenderQuery, case)
+
+
 @pytest.mark.parametrize("case", LIST, ids=repr)
 def test_list_query_bounds(case: Case) -> None:
     check_case(ListQuery, case)
@@ -176,6 +192,7 @@ def test_the_nan_scale_is_refused_even_as_text() -> None:
 
 REQUIRED: dict[type[BaseModel], dict[str, Any]] = {
     ThemeQuery: {},
+    RenderQuery: {},
     CompareQuery: {"ids": gid(1)},
     IdsQuery: {"ids": gid(1)},
     ListQuery: {},

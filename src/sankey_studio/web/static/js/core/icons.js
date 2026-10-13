@@ -45,6 +45,7 @@ const SHAPES = {
   columns: ["M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7m0-18H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7m0-18v18"],
   "bar-chart": ["M12 20V10M18 20V4M6 20v-4"],
   "pie-chart": ["M21.21 15.89A10 10 0 1 1 8 2.83M22 12A10 10 0 0 0 12 2v10z"],
+  sliders: ["M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"],
   "more-horizontal": [CIRCLE(5, 12, 1), CIRCLE(12, 12, 1), CIRCLE(19, 12, 1)],
 };
 

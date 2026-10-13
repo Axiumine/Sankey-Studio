@@ -3,9 +3,10 @@
 ``ChartDom(page)`` wraps the page and answers what a person sees in a drawn chart:
 
 * Sankey: ``sankey_nodes`` / ``sankey_links`` (counts), ``link_fills()`` (the colour of every
-  link as ``rgb(r, g, b)``), ``node_labels()``.
+  link as ``rgb(r, g, b)``), ``node_labels()``, ``node_label(name)`` (the text of one node).
 * Donut: ``donut_slices`` (count), ``donut_labels()`` (one text per slice, e.g. ``Living15.5%``),
-  ``donut_center()`` (the total in the middle), ``hover_slice(index)`` (the tooltip text).
+  ``donut_center()`` (the total in the middle), ``hover_slice(index)`` (the tooltip text),
+  ``donut_texts`` / ``donut_slice(index)`` (the text printed on the slices).
 * Legend: ``legend_colours()`` maps a legend label to its swatch colour as ``rgb(r, g, b)``, the
   same notation as ``link_fills()``, so the two can be compared.
 
@@ -75,6 +76,13 @@ class ChartDom:
             for text in labels.evaluate_all("els => els.map(e => e.textContent)")
         ]
 
+    def node_label(self, name: str) -> Locator:
+        """The ``<text>`` of the label of the node ``name``.
+
+        Plotly splits a label with ``<br>`` into one ``tspan`` per line (a one-line label has none).
+        """
+        return self.page.locator(f"{SANKEY} text.node-label").filter(has_text=name).first
+
     def expect_counts(self, nodes: int, links: int) -> None:
         """The chart has ``nodes`` nodes and ``links`` links, in the DOM and in its aria-label."""
         expect(self.sankey_nodes).to_have_count(nodes)
@@ -95,6 +103,15 @@ class ChartDom:
             "els => els.map(e => e.textContent)"
         )
         return list(dict.fromkeys((text or "").strip() for text in raw))
+
+    @property
+    def donut_texts(self) -> Locator:
+        """The text printed on the slices (one ``text.slicetext`` per slice that has any)."""
+        return self.page.locator(f"{DONUT} text.slicetext")
+
+    def donut_slice(self, index: int) -> Locator:
+        """The ``<text>`` printed on slice ``index``: ``tspan`` lines such as ``3,800``, ``46%``."""
+        return self.donut_texts.nth(index)
 
     def donut_center(self) -> str:
         center = self.page.locator(f"{DONUT} .annotation-text")

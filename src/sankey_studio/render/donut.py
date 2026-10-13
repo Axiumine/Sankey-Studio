@@ -12,7 +12,7 @@ from sankey_studio.render.palette import OTHER_COLOR, TOKENS, UNCATEGORIZED_COLO
 from sankey_studio.render.text import escape_label, value_text
 
 if TYPE_CHECKING:
-    from sankey_studio.models import SankeyGraph, StyleSpec, Theme
+    from sankey_studio.models import DonutStyle, SankeyGraph, StyleSpec, Theme
     from sankey_studio.render.donut_fold import DonutSlice
     from sankey_studio.render.options import FigureOptions
 
@@ -59,19 +59,68 @@ def pattern_block(slices: list[DonutSlice], palette: list[str], theme: Theme) ->
     }
 
 
+#: Plotly's own order of the flags in ``textinfo`` (the order is meaningless there).
+TEXT_INFO_ORDER = ("label", "text", "percent")
+
+
+def text_parts(donut: DonutStyle, *, direct: bool) -> list[str]:
+    """What a slice prints, in print order: the name (few slices only), the percentage, the value.
+
+    The order is the one of the switches in the viewer menu and of the editor checkboxes. ``text``
+    is the slice value formatted by ``value_text`` (the ``text`` array of the trace).
+    """
+    parts = ["label"] if direct else []
+    if donut.show_percent:
+        parts.append("percent")
+    if donut.show_value:
+        parts.append("text")
+    return parts
+
+
+def text_info(donut: DonutStyle, *, direct: bool) -> str:
+    """Plotly ``textinfo`` of a slice: the flags of ``text_parts`` (``none`` when empty)."""
+    parts = text_parts(donut, direct=direct)
+    return "+".join(sorted(parts, key=TEXT_INFO_ORDER.index)) or "none"
+
+
+def slice_text(donut: DonutStyle, formatted: list[str], *, direct: bool) -> dict[str, Any]:
+    """The text keys of the ``pie`` trace: what a slice prints, where, and in which order.
+
+    ``textinfo`` says what, ``texttemplate`` (it wins in Plotly) says in which order: Plotly itself
+    would print the value before the percentage. Fixed strings only; user text stays in
+    ``labels`` and ``text``.
+    """
+    parts = text_parts(donut, direct=direct)
+    block: dict[str, Any] = {
+        "textinfo": text_info(donut, direct=direct),
+        "textposition": "outside" if direct else ("auto" if parts else "none"),
+    }
+    if parts:
+        block["texttemplate"] = "<br>".join(f"%{{{part}}}" for part in parts)
+    if donut.show_value:
+        block["text"] = formatted
+    return block
+
+
 def pie_trace(
     slices: list[DonutSlice], style: StyleSpec, theme: Theme, colors: ColorMap
 ) -> dict[str, Any]:
-    """The ``pie`` trace: 2px surface gaps, ink text, labels only for a few slices."""
+    """The ``pie`` trace: 2px surface gaps, ink text, the name on a slice for a few slices only.
+
+    Percentage and value go on every slice when asked for (``DonutStyle.show_percent`` and
+    ``show_value``); beyond ``DIRECT_LABEL_MAX`` slices they appear without the name, which the
+    legend and the hover carry.
+    """
     tokens, donut = TOKENS[theme], style.donut
     palette = [slice_color(s, theme, colors) for s in slices]
     direct = len(slices) <= DIRECT_LABEL_MAX
     text_font = font(tokens.ink, style.font_size)
+    formatted = [value_text(s.value, style) for s in slices]
     return {
         "type": "pie",
         "labels": [escape_label(s.name) for s in slices],
         "values": [s.value for s in slices],
-        "customdata": [[value_text(s.value, style)] for s in slices],
+        "customdata": [[text] for text in formatted],
         "hovertemplate": "%{label}<br>%{customdata[0]} (%{percent})<extra></extra>",
         "hole": donut.hole,
         "direction": "clockwise",
@@ -81,8 +130,7 @@ def pie_trace(
             "line": {"color": tokens.surface, "width": 2},
             "pattern": pattern_block(slices, palette, theme),
         },
-        "textinfo": ("label+percent" if donut.show_percent else "label") if direct else "none",
-        "textposition": "outside" if direct else "none",
+        **slice_text(donut, formatted, direct=direct),
         "textfont": text_font,
         "insidetextfont": text_font,
         "outsidetextfont": text_font,

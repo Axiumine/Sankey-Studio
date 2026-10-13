@@ -8,6 +8,10 @@
  * was served (link back to the library); a build error (cycle, unreadable source) shows the
  * server's message with a link to the editor.
  *
+ * The display menu (display-menu.js) switches the values and percentages on the charts. A switch the
+ * person changed is sent with the render request (`chosen`); one they did not touch keeps what the
+ * saved style says. The saved graph is never changed. If the redraw fails the switch goes back.
+ *
  * The header (name, description, tags, revision) starts from the graph summary the server embedded
  * in the page. When the person arrives by the Back button, or the browser restores the page from its
  * back/forward cache, that summary may predate an edit made meanwhile, so it is read again
@@ -26,7 +30,7 @@ import { duplicateGraph, graphHref } from "../library/data.js";
 import { onRestored, reachedByHistory } from "../library/freshness.js";
 import { displayName, withDisplayName } from "../library/names.js";
 import { createCharts } from "./charts.js";
-import { fetchDonutBasis, fetchGraph, fetchRender } from "./data.js";
+import { DEFAULT_VIEW, fetchGraph, fetchRender, fetchViewStyle } from "./data.js";
 import { createExportPanel } from "./export.js";
 import { graphHeader } from "./header.js";
 import { statsStrip, valueSuffix, warningsList } from "./parts.js";
@@ -38,7 +42,8 @@ class ViewerPage {
     this.root = root;
     this.running = null;
     this.parts = null;
-    this.basis = null;
+    this.view = null; // the saved style as far as the viewer needs it (fetchViewStyle), once read
+    this.chosen = {}; // display switches changed on this page: {node_values?, donut_percent?, donut_value?}
     this.body = h("div", { class: "viewer-body stack" });
     this.header = graphHeader(this.graph);
     root.replaceChildren(this.header, this.body);
@@ -114,29 +119,47 @@ class ViewerPage {
     return this.load(effectiveTheme());
   }
 
-  async load(theme) {
+  /** Switches the display option `key` and redraws; a failed redraw puts the switch back. */
+  async choose(key, on) {
+    const before = this.shownValues()[key];
+    this.chosen = { ...this.chosen, [key]: on };
+    if (!(await this.load(effectiveTheme(), "The chart could not be redrawn."))) {
+      this.chosen = { ...this.chosen, [key]: before };
+      this.parts?.charts.setSwitch(key, before);
+    }
+  }
+
+  /** The switches as the menu shows them: what the person changed over the saved style. */
+  shownValues() {
+    return { ...(this.view ?? DEFAULT_VIEW).values, ...this.chosen };
+  }
+
+  /** Draws the graph for `theme`; resolves to false when the request failed (not when it was replaced). */
+  async load(theme, failed = `The ${theme} colours could not be loaded.`) {
     this.running?.abort();
     const mine = new AbortController();
     this.running = mine;
     try {
-      const wantBasis = this.basis === null && !this.parts;
-      const [bundle, basis] = await Promise.all([
-        fetchRender(this.graph.id, theme, mine.signal),
-        wantBasis ? fetchDonutBasis(this.graph.id, mine.signal) : this.basis,
+      const wantView = this.view === null && !this.parts;
+      const [bundle, view] = await Promise.all([
+        fetchRender(this.graph.id, theme, mine.signal, this.chosen),
+        wantView ? fetchViewStyle(this.graph.id, mine.signal) : this.view,
       ]);
-      this.basis = basis;
+      this.view = view;
       await this.show(bundle, theme);
     } catch (error) {
       if (!isAbort(error)) {
-        this.fail(error, theme);
+        this.fail(error, failed);
+        return false;
       }
     }
+    return true;
   }
 
-  fail(error, theme) {
+  fail(error, failed) {
     const failure = reportError(error);
     if (this.parts) {
-      toast.error(`The ${theme} colours could not be loaded. ${failure.friendly}`);
+      toast.error(`${failed} ${failure.friendly}`);
       return;
     }
     if (failure.status === 404) {
@@ -160,7 +183,7 @@ class ViewerPage {
       this.build(bundle);
     }
     const { charts, exporter } = this.parts;
-    charts.setBasis(this.basis);
+    charts.setBasis(this.view?.basis ?? null);
     const suffix = valueSuffix(bundle.figure);
     this.parts.stats.replaceChildren(statsStrip(bundle.stats, { suffix }));
     this.parts.warnings.replaceChildren(...[warningsList(bundle.warnings)].filter(Boolean));
@@ -172,8 +195,9 @@ class ViewerPage {
     this.parts?.charts.dispose();
     const stats = h("div", { class: "viewer-stats" });
     const warnings = h("div", { class: "viewer-warnings-slot" });
-    const charts = createCharts({ bundle, graph: this.graph, onTab: (id) => this.parts?.exporter.setActive(id) });
-    const exporter = createExportPanel({ graph: this.graph, charts });
+    const display = { values: this.shownValues(), onChange: (key, on) => this.choose(key, on) };
+    const charts = createCharts({ bundle, graph: this.graph, display, onTab: (id) => this.parts?.exporter.setActive(id) });
+    const exporter = createExportPanel({ graph: this.graph, charts, display: () => this.chosen });
     this.parts = { charts, exporter, stats, warnings, hasDonut: bundle.donut_available };
     this.body.replaceChildren(stats, warnings, h("div", { class: "viewer-layout" }, charts.el, h("aside", { class: "viewer-aside", "aria-label": "Export" }, exporter.el)));
   }

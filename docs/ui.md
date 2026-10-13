@@ -307,7 +307,10 @@ Details by panel:
 * **Style.** `style-title`, `style-color-mode` (`node`, `layer`, `mono`, `category`; `category` is
   offered only when categories exist or it is already chosen), `style-orientation` (`h` or `v`) and
   `style-height` (240 to 2400). Other fields (spacing, opacity, font size, number format, donut options) have no test id. "Preview
-  colours" (Match page, Light, Dark) is not saved with the graph.
+  colours" (Match page, Light, Dark) is not saved with the graph. The checkbox "Show values under the node names"
+  (`style.show_values_in_labels`; it was "Show values in node labels") puts the value on a second line under the node
+  name. The "Donut chart" group has "Show percentages", "Show values" (`donut.show_value`, off by default: the slice
+  value, next to the percentage) and "Show the total in the middle"; all three are found by their label.
 * **Chart and summary.** `sankey-chart` and `donut-chart` are the Plotly divs. `stats` is a `<dl>` with
   Nodes, Links ("x of y" when the chart draws only the largest links), Total in, Total out, Columns
   and, only when categories exist, Categories. Warnings (`warnings`, items `warning-item`) show
@@ -366,8 +369,23 @@ States:
 
 Behaviour:
 
-* The bundle comes from `GET /graphs/<id>/render?theme=<shown theme>`; a theme change asks again with
+* The bundle comes from `GET /graphs/<id>/render?theme=<shown theme>` (plus the display switches the person
+  changed); a theme change asks again with
   the other theme and redraws in place. After Back or Forward the header is read again.
+* The icon `display-menu-button` ("Chart display options", `aria-expanded`) at the right of the tab row opens
+  `display-menu-panel`, a small panel of view-only switches: `display-node-values` ("Show values under the node
+  names", Sankey), `display-donut-percent` ("Show percentages") and `display-donut-value` ("Show values"), both
+  Donut; the Donut group is hidden when the graph has no donut. The switches start from the saved style
+  (`show_values_in_labels`, `donut.show_percent`, `donut.show_value`). A change redraws at once: the switch
+  a person touched is sent as `node_values`, `donut_percent` or `donut_value` with `GET /graphs/<id>/render` and with
+  every `GET /graphs/<id>/export`, so a download looks like the screen. The saved graph is never changed (a reload
+  starts from the saved style again). If the redraw fails the switch goes back and a toast says "The chart could not
+  be redrawn." The panel closes on Escape (focus returns to the icon), on a press outside it and when focus
+  leaves it; a press on a tab or an export control counts as outside.
+* The Sankey shows the value under the name of each node (two text lines) when its switch is on. A donut slice shows
+  the percentage and/or the value on every slice: with four slices or fewer the name stays on the slice as well, with
+  more the legend and the category table carry the names; with neither switch on the slices are bare. The tab strip
+  has no vertical scrollbar.
 * Tabs `chart-tab-sankey` and `chart-tab-donut` (`role=tab`, Arrow, Home and End keys move and
   activate). `chart-tab-donut` exists only when the graph has categories; otherwise `donut-hint`
   ("Want a donut? Give your links a category: ...") sits under the Sankey. The donut is drawn when its
@@ -382,8 +400,8 @@ Behaviour:
   Total in, Total out, Layers, Categories. Values carry the unit suffix of the style.
 * Export panel: width, height, scale, transparent, file colours (`export-theme`: Light or Dark,
   default Light), Sankey SVG and PNG (shown on the Sankey tab), Donut SVG and PNG (shown on the Donut
-  tab), and HTML, JSON and CSV for the active tab. Each button asks `GET /graphs/<id>/export` and
-  shows `Saved <file>.` The line "Image size: 2,400 × 1,120 px." follows the inputs.
+  tab), and HTML, JSON and CSV for the active tab. Each button asks `GET /graphs/<id>/export` (with the
+  display switches the person changed) and shows `Saved <file>.` The line "Image size: 2,400 × 1,120 px." follows the inputs.
 * Fallback: when the server cannot draw an image (422 `export_too_large`, or 501, 502, 503, 504) the
   browser draws the chart it already shows with Plotly and `export-fallback-note` explains why ("This
   server cannot draw images (Chrome was not found). Your browser drew the image instead, as it looks
@@ -772,6 +790,11 @@ The editor also uses the shell ids `toast`, `confirm-dialog`, `confirm-dialog-co
 | `sankey-chart` | `div[role=img]` | `data-ready`, `data-chart-theme`; `aria-label` "Sankey diagram of <name>: N nodes and M links. The links table below has the same data."; hidden while the Donut tab is active |
 | `donut-chart` | `div[role=img]` | drawn when the tab is first opened; `aria-label` "Donut chart of the categories in <name>" |
 | `donut-hint` | `p` | "Want a donut? ..." when there is no donut; inside the Donut tab when the basis selects nothing |
+| `display-menu-button` | `button` | the icon at the right of the tab row; `aria-label` "Chart display options", `aria-expanded`, `aria-controls` the panel |
+| `display-menu-panel` | `div[role=group]` | the panel of switches; `hidden` while closed; closes on Escape, a press outside and focus leaving |
+| `display-node-values` | `input[type=checkbox]` | "Show values under the node names"; sends `node_values`; view-only |
+| `display-donut-percent` | `input[type=checkbox]` | "Show percentages" (Donut group, hidden without a donut); sends `donut_percent` |
+| `display-donut-value` | `input[type=checkbox]` | "Show values" (Donut group, hidden without a donut); sends `donut_value` |
 | `legend` | `ul` | absent unless the colour mode is `category` or `layer` |
 | `legend-item` | `li` (repeated) | `data-kind` |
 | `category-table` | `table` | in the Donut tab, with a total row |

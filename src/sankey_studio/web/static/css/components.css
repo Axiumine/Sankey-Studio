@@ -126,9 +126,20 @@ button.chip:hover { background: var(--wash); }
   display: flex;
   gap: var(--space-1);
   overflow-x: auto;
+  overflow-y: hidden; /* overflow-x alone makes y scroll too: no vertical scrollbar beside the last tab */
   border-bottom: 1px solid var(--border);
   scrollbar-width: thin;
 }
+
+/* the tab row with a control at its right (the viewer's display menu): one rule under both */
+.tabs-head {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  border-bottom: 1px solid var(--border);
+}
+
+.tabs-head > .tabs { flex: 1 1 auto; min-width: 0; border-bottom: 0; }
 
 .tab {
   flex: none;
@@ -156,7 +167,7 @@ button.chip:hover { background: var(--wash); }
   content: "";
   position: absolute;
   right: var(--space-2);
-  bottom: -1px;
+  bottom: 0; /* inside the tab: a 1px overhang made the strip scroll vertically */
   left: var(--space-2);
   height: 2px;
   border-radius: 2px;

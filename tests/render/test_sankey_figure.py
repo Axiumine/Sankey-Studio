@@ -15,6 +15,7 @@ from sankey_studio.render.options import FigureOptions
 from sankey_studio.render.palette import CATEGORICAL, TOKENS
 from sankey_studio.render.sankey import (
     HEIGHT_BASE,
+    LABEL_BREAK,
     LEGEND_DOMAIN_TOP,
     LINK_HOVER,
     LINK_HOVER_CATEGORY,
@@ -155,15 +156,17 @@ def test_the_trace_level_style_strings_are_escaped() -> None:
     )
 
 
-def test_no_figure_string_carries_markup_except_the_three_fixed_hover_templates() -> None:
+def test_no_figure_string_carries_markup_except_the_hover_templates_and_the_label_break() -> None:
     hostile = "<a href=x>&</a>"
     graph = make_graph([(hostile, "t<i>", 5.0, hostile), ("t<i>", "u", 2.0, None)])
     unchecked = StyleSpec.model_construct(
         title=hostile, value_suffix=hostile, value_format=hostile, show_values_in_labels=True
     )
     figure = build_figure(graph, unchecked, "light")
+    labels = sankey(figure)["node"]["label"]
+    assert all(label.count(LABEL_BREAK) == 1 for label in labels)
     templates = {NODE_HOVER, LINK_HOVER, LINK_HOVER_CATEGORY}
-    texts = [text for text in strings(figure) if text not in templates]
+    texts = [text.replace(LABEL_BREAK, "") for text in strings(figure) if text not in templates]
     assert len(texts) > 20
     assert [text for text in texts if "<" in text or ">" in text] == []
     assert hostile not in texts
@@ -185,8 +188,26 @@ def test_values_in_labels_are_optional() -> None:
         "node"
     ]["label"]
     assert off[0] == "Salary"
-    assert on[0] == "Salary 5,000%"
-    assert on[1] == "Budget 5,800%"
+    assert on[0] == "Salary<br>5,000%"
+    assert on[1] == "Budget<br>5,800%"
+    assert LABEL_BREAK == "<br>"
+
+
+def test_the_value_goes_on_a_line_of_its_own_under_the_name() -> None:
+    graph = budget()
+    look = style(show_values_in_labels=True, value_suffix="USD", value_format=",.1f")
+    labels = sankey(build_figure(graph, look, "light"))["node"]["label"]
+    names = sankey(build_figure(graph, style(), "light"))["node"]["label"]
+    assert labels[0] == "Salary" + LABEL_BREAK + "5,000.0 USD"
+    assert all(label.count(LABEL_BREAK) == 1 for label in labels)
+    assert [label.split(LABEL_BREAK)[0] for label in labels] == names
+
+
+def test_a_cut_or_escaped_name_keeps_its_value_after_the_break() -> None:
+    graph = make_graph([("N" * 40, "a<br>b", 7.0, None)])
+    look = style(show_values_in_labels=True)
+    labels = sankey(build_figure(graph, look, "light"))["node"]["label"]
+    assert labels == ["N" * 32 + "…<br>7", "a&lt;br&gt;b<br>7"]
 
 
 def test_trace_options_follow_the_style() -> None:

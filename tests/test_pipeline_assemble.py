@@ -55,6 +55,7 @@ def test_the_option_defaults() -> None:
     assert options.colors is None
     assert options.entries_limit == 2000
     assert options.max_drawn_links is None
+    assert options.style is None
 
 
 # --------------------------------------------------------------------------- a categorised graph
