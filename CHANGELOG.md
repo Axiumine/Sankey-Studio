@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Editor: pick the colour of "One colour" mode in the Colours section (`style.mono_color`), with a reset to the palette colour.
+- Editor: tap a category's colour square in the chart's category table to open the colour picker; the pick is saved as the category colour (`style.category_colors`).
 - Project scaffold managed with `uv`: `src/` layout, `sankey-studio` console script, dev dependency group.
 - Shared domain contract: pydantic models for sources (text, MongoDB, manual), transforms, styles and saved graphs; columnar `SankeyGraph`; typed domain errors.
 - Optional per-entry categories (from data, glob rules or explicit user choice) with a donut chart that shares the category colour map with the Sankey.

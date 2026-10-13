@@ -699,6 +699,9 @@ Chart and summary:
 | `legend-item` | `li` (repeated) | `data-kind` category or layer |
 | `category-table` | `table` | "Totals by category" |
 | `category-row` | `tr` (repeated) | `data-category`, `data-kind` |
+| `style-mono-color` | `input[type=color]` | the One colour picker; shown only when `style-color-mode` is `mono`, saves `draft.style.mono_color` |
+| `style-mono-reset` | `button` | "Use palette colour"; removes `mono_color` |
+| `category-colour` | `input[type=color]` (repeated) | one per real category, laid over its swatch: a tap opens the colour picker and saves `draft.style.category_colors` |
 | `warnings` | `div` | hidden when empty |
 | `warning-item` | `li` (repeated) | for example "Removed 1 link(s) that closed a cycle" |
 

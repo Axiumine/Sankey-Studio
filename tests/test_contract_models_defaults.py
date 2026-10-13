@@ -142,7 +142,7 @@ def test_graph_defaults() -> None:
 def test_style_defaults() -> None:
     style = StyleSpec()
     assert (style.title, style.orientation, style.arrangement) == (None, "h", "snap")
-    assert (style.node_colors, style.category_colors) == ({}, {})
+    assert (style.node_colors, style.category_colors, style.mono_color) == ({}, {}, None)
     assert (style.value_suffix, style.show_values_in_labels) == ("", False)
     donut = style.donut
     assert (donut.basis, donut.max_slices, donut.hole) == ("all", 6, 0.58)

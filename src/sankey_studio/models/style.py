@@ -58,6 +58,9 @@ class StyleSpec(_Model):
     #: not overridable. Kept apart from ``node_colors`` so a node and a category called
     #: "Housing" can be coloured independently.
     category_colors: dict[str, str] = Field(default_factory=dict, max_length=MAX_COLOR_OVERRIDES)
+    #: ``color_mode="mono"``: the one colour of every node and link (#rrggbb). None keeps the
+    #: palette colour of the theme.
+    mono_color: str | None = None
     node_pad: int = Field(default=16, ge=0, le=100)
     node_thickness: int = Field(default=18, ge=1, le=100)
     link_opacity: float = Field(default=0.4, ge=0.05, le=1.0)
@@ -95,6 +98,13 @@ class StyleSpec(_Model):
             seen.add(category_key(clean))
             out[clean] = color
         return _color_dict(out, "category_colors")
+
+    @field_validator("mono_color")
+    @classmethod
+    def _mono_color(cls, v: str | None) -> str | None:
+        if v is not None and not HEX_COLOR_RE.match(v):
+            raise ValueError("mono_color must be #rrggbb")
+        return v
 
     @field_validator("value_format")
     @classmethod

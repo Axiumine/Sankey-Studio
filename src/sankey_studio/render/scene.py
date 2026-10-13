@@ -89,7 +89,7 @@ def node_color(scene: Scene, node: int) -> str:
     if scene.mode == "layer":
         return layer_color(scene.theme, scene.graph.node_layers[node])
     if scene.mode == "mono":
-        return MONO_COLOR[scene.theme]
+        return scene.style.mono_color or MONO_COLOR[scene.theme]
     if scene.mode == "category":
         return NODE_NEUTRAL
     return scene.node_map.node_color(scene.graph.node_names[node], scene.theme)

@@ -730,6 +730,7 @@ graph keeps at most 200 distinct categories; later ones become uncategorised and
 | `color_mode` | `node` (default), `layer`, `mono`, `category` |
 | `node_colors` | `{node name: "#rrggbb"}`, at most 1000 entries |
 | `category_colors` | `{category: "#rrggbb"}`, at most 1000 entries; `Uncategorized` and `Other` cannot be overridden |
+| `mono_color` | `"#rrggbb"` or absent (default: the palette colour); the colour of every node and link in `mono` mode |
 | `node_pad` | 0 to 100 (default 16) |
 | `node_thickness` | 1 to 100 (default 18) |
 | `link_opacity` | 0.05 to 1 (default 0.4) |

@@ -60,6 +60,29 @@
   background-image: repeating-linear-gradient(135deg, var(--surface) 0 2px, transparent 2px 4px);
 }
 
+/* a category swatch that opens the colour picker: the colour input covers the swatch, so a tap or
+   Enter reaches the input itself */
+.out-colour {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  border-radius: 3px;
+}
+
+.out-colour-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.out-colour:focus-within .out-swatch { outline: 2px solid var(--focus); outline-offset: 2px; }
+
 .out-notice {
   margin: 0;
 }
@@ -465,7 +488,7 @@ html:has(.out-savebar) { scroll-padding-bottom: calc(var(--out-savebar-h, 4rem) 
   }
 }
 
-/* toasts sit bottom left: lift them above the save bar (its real height, taller with a conflict banner) instead of covering it */
+/* toasts sit bottom right: lift them above the save bar (its real height, taller with a conflict banner) instead of covering it */
 @media (min-width: 641px) {
   html:has(.out-savebar) .toast-region { bottom: calc(var(--space-4) + var(--out-savebar-h, 4rem)); }
 }

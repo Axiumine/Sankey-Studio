@@ -125,6 +125,16 @@ def test_bad_category_colours_use_their_own_label() -> None:
     assert message == "Value error, category_colors must be #rrggbb; bad entries: ['Food']"
 
 
+@pytest.mark.parametrize("color", [None, "#a1B2c3", "#000000", "#FFFFFF"])
+def test_the_one_colour_is_a_hex_colour_or_unset(color: str | None) -> None:
+    assert StyleSpec(mono_color=color).mono_color == color
+
+
+@pytest.mark.parametrize("color", ["#fff", "#12345", "#1234567", "#GGGGGG", "red", "", "aabbcc"])
+def test_a_bad_one_colour_is_refused(color: str) -> None:
+    assert first_message(StyleSpec, mono_color=color) == "Value error, mono_color must be #rrggbb"
+
+
 def test_category_colour_keys_are_normalised_checked_and_unique() -> None:
     assert StyleSpec(category_colors={"  Food  x ": "#aabbcc"}).category_colors == {
         "Food x": "#aabbcc"

@@ -88,3 +88,8 @@ view-graph
 # w3b (final QA): no id was added in wave 3b. templates/error.html (the HTML not-found page) reuses
 # state-empty; the settings "On this page" list (settings/toc.js) and the upload "Choose a file" button
 # are found by class / role (nav.settings-toc, label.btn in .ed-dropzone-pick), not by test id.
+# js/editor/chart/summary.js: colour picker laid over a category swatch
+category-colour
+# js/editor/style/fields.js: One colour picker and its reset button
+style-mono-color
+style-mono-reset

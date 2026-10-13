@@ -258,7 +258,7 @@ button.chip:hover { background: var(--wash); }
 .toast-region {
   position: fixed;
   bottom: var(--toast-bottom, var(--space-4));
-  left: var(--space-4);
+  right: var(--space-4);
   z-index: var(--z-toast);
   display: flex;
   flex-direction: column;
