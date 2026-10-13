@@ -272,6 +272,6 @@ def test_json_answers_keep_their_own_cache_rules(web: WebApp) -> None:
     api = web.client.get("/api/v1/graphs")
     assert api.headers["cache-control"] == "no-store"
     plotly = web.client.get("/static/vendor/plotly.min.js")
-    assert plotly.headers["cache-control"] == "max-age=3600"
+    assert plotly.headers["cache-control"] == "no-store"
     static = web.client.get("/static/css/tokens.css")
-    assert static.headers["cache-control"] == "no-cache"
+    assert static.headers["cache-control"] == "no-store"

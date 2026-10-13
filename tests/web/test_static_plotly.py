@@ -57,10 +57,10 @@ def test_the_route_serves_the_plotly_package_file(web: WebApp) -> None:
     assert len(response.content) > 1_000_000
 
 
-def test_the_answer_is_javascript_cached_for_an_hour_with_the_page_headers(web: WebApp) -> None:
+def test_the_answer_is_javascript_never_stored_with_the_page_headers(web: WebApp) -> None:
     headers = web.client.get(PATH).headers
     assert headers["content-type"] == "text/javascript; charset=utf-8"
-    assert headers["cache-control"] == "max-age=3600"
+    assert headers["cache-control"] == "no-store"
     assert headers["x-content-type-options"] == "nosniff"
     assert headers["content-security-policy"] == CSP
     assert headers["cross-origin-resource-policy"] == "same-origin"

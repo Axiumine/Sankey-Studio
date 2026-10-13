@@ -68,7 +68,7 @@ class ChartPanel {
     this.notice = h("div", { class: "notice out-notice", "data-kind": "warning", role: "alert" });
     this.slots = { hint: slot(), notice: slot() };
     this.hint = donutHint();
-    this.summary = createSummary();
+    this.summary = createSummary({ store: this.store });
     this.build();
     this.queued = false;
     this.unsubscribe = [

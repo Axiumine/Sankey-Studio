@@ -14,7 +14,7 @@
  *
  * `show` returns `{dismiss()}`; `toast.clear()` removes all.
  *
- * Placement (the stack is fixed, bottom left on wide screens and along the bottom on phones, see
+ * Placement (the stack is fixed, bottom right on wide screens and along the bottom on phones, see
  * components.css): it never hides the control the user is working with. The module remembers the
  * last control that took focus or a click; when a toast appears (or focus moves while toasts are
  * showing, as it does when a failed form focuses its error summary) and that control would sit

@@ -1,60 +1,57 @@
 """Versioned URLs of the files under ``web/static``: the cache-busting half of the cache policy.
 
-``RevalidatedStaticFiles`` answers ``Cache-Control: no-cache``, but a browser that stored a file
-before that header existed keeps reusing it until its heuristic freshness runs out. The pages
-(``Cache-Control: no-store``) therefore link every style sheet, script and icon as
-``/static/<name>?v=<digest>``: the digest follows the content, so a changed file is a new URL for
-every browser, whatever it cached before. The static mount ignores the query string.
+``UncachedStaticFiles`` answers ``Cache-Control: no-store``, but a browser that stored a file
+before that header existed keeps reusing it, without asking, until its heuristic freshness runs
+out (hours). The pages therefore link every style sheet, script and icon under a version prefix,
+``/static/v-<digest>/<name>``: ``<digest>`` follows the content of the whole static directory, so
+a changed tree is a new URL namespace that no browser has ever stored. Scripts import each other
+with relative paths and load their style sheets relative to ``import.meta.url``, so every file a
+page pulls in (nested modules included) lives under the same prefix. The static mount drops the
+prefix (``unversioned``, any digest) before the lookup; the plain ``/static/<name>`` still works.
 
-``static_url`` is a Jinja global (registered in ``routers.pages``). A name that is not a regular
-file inside the static directory gets the plain URL: the page still renders and the link 404s.
+The digest is computed once per process: an upgrade or an edit takes effect in the namespace at the
+next server start, and the files themselves are never stored by the browser in between.
+
+``static_url`` is a Jinja global (registered in ``routers.pages``).
 """
 
 from __future__ import annotations
 
 import hashlib
-import stat
+import os
+import re
+from functools import cache
 from pathlib import Path
-from typing import TYPE_CHECKING, Final
-
-if TYPE_CHECKING:
-    import os
+from typing import Final
 
 STATIC_DIR: Final = Path(__file__).parent / "static"
 STATIC_URL: Final = "/static"
 #: Hex characters of the SHA-256 digest kept in the URL (48 bits: plenty to tell versions apart).
 DIGEST_LENGTH: Final = 12
-
-#: path -> ((mtime_ns, size), digest). The digest is read again only when the stat changes.
-_digests: dict[Path, tuple[tuple[int, int], str]] = {}
-
-
-def _digest(path: Path, info: os.stat_result) -> str:
-    """The content digest of ``path``, reused while its modification time and size stay put."""
-    key = (info.st_mtime_ns, info.st_size)
-    cached = _digests.get(path)
-    if cached is not None and cached[0] == key:
-        return cached[1]
-    digest = hashlib.sha256(path.read_bytes()).hexdigest()[:DIGEST_LENGTH]
-    _digests[path] = (key, digest)
-    return digest
+#: The first path segment of a versioned static URL.
+VERSION_SEGMENT: Final = re.compile(rf"v-[0-9a-f]{{{DIGEST_LENGTH}}}")
 
 
-def _version(name: str) -> str | None:
-    """The digest of the static file ``name``, or None when it is not a file of the directory."""
-    root = STATIC_DIR.resolve()
-    path = (root / name).resolve()
-    if not path.is_relative_to(root):
-        return None
-    try:
-        info = path.stat()
-        return _digest(path, info) if stat.S_ISREG(info.st_mode) else None
-    except OSError:
-        return None
+@cache
+def tree_version(root: Path) -> str:
+    """Digest of every file under ``root``: relative path and content (path only if unreadable)."""
+    digest = hashlib.sha256()
+    for path in sorted(item for item in root.rglob("*") if item.is_file()):
+        digest.update(path.relative_to(root).as_posix().encode() + b"\0")
+        try:
+            digest.update(path.read_bytes())
+        except OSError:
+            digest.update(b"\0unreadable")
+        digest.update(b"\0")
+    return digest.hexdigest()[:DIGEST_LENGTH]
 
 
 def static_url(name: str) -> str:
-    """``/static/<name>?v=<digest>``; plain ``/static/<name>`` when the file cannot be read."""
-    url = f"{STATIC_URL}/{name}"
-    version = _version(name)
-    return url if version is None else f"{url}?v={version}"
+    """``/static/v-<digest>/<name>``: the URL of a static file under the current version."""
+    return f"{STATIC_URL}/v-{tree_version(STATIC_DIR)}/{name}"
+
+
+def unversioned(path: str) -> str:
+    """``path`` (relative to the static directory) without its leading ``v-<digest>`` segment."""
+    head, sep, rest = path.partition(os.sep)
+    return rest if sep and VERSION_SEGMENT.fullmatch(head) else path

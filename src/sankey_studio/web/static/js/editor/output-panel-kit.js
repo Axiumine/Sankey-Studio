@@ -1,7 +1,7 @@
 /**
  * Small helpers shared by the four OUTPUT panels of the editor (chart, entries, export, savebar).
  *
- * - `ensureOutputStyles()` loads `/static/css/pages-editor-output.css` once and resolves when it is
+ * - `ensureOutputStyles()` loads `css/pages-editor-output.css` once and resolves when it is
  *   applied (or failed: the panels then look plain but still work), so a panel never paints
  *   unstyled and never shifts when the sheet arrives. Panels `await` it before they build DOM.
  * - `hasDrawing(bundle)`: true when the bundle has a chart to draw (at least one node). A graph whose
@@ -26,7 +26,7 @@
 import { h } from "../core/dom.js";
 import { ensureStylesheet } from "../core/stylesheet.js";
 
-const STYLE_HREF = "/static/css/pages-editor-output.css";
+const STYLE_HREF = new URL("../../css/pages-editor-output.css", import.meta.url).href;
 
 /**
  * Loads the stylesheet of the output panels (once).

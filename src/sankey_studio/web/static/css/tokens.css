@@ -48,6 +48,8 @@
   --accent-text: #1c5cab;
   --accent-wash: rgba(37, 106, 191, 0.1);
   --focus: #2a78d6;
+  /* the One colour chart default (== render/palette.py MONO_COLOR), used by the style picker */
+  --chart-mono: #2a78d6;
 
   /* ---- status (fixed in both themes, always paired with an icon and a label) ---- */
   --status-good: #0ca30c;
@@ -143,6 +145,7 @@
     --accent-text: #6da7ec;
     --accent-wash: rgba(109, 167, 236, 0.14);
     --focus: #6da7ec;
+  --chart-mono: #3987e5;
     --danger: #d03b3b;
     --danger-hover: #b93232;
     --danger-text: #e66767;
@@ -173,6 +176,7 @@
   --accent-text: #6da7ec;
   --accent-wash: rgba(109, 167, 236, 0.14);
   --focus: #6da7ec;
+  --chart-mono: #3987e5;
   --danger: #d03b3b;
   --danger-hover: #b93232;
   --danger-text: #e66767;

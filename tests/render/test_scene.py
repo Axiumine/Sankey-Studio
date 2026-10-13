@@ -122,6 +122,16 @@ def test_node_colours_per_mode(theme: Theme) -> None:
     assert node_color(make_scene(graph, style(), theme, None), 1) == CATEGORICAL[theme][1]
 
 
+@pytest.mark.parametrize("theme", ["light", "dark"])
+def test_the_one_colour_replaces_the_palette_colour_in_mono_mode_only(theme: Theme) -> None:
+    graph = budget()
+    mono = make_scene(graph, style(color_mode="mono", mono_color="#123456"), theme, None)
+    assert {node_color(mono, node) for node in range(graph.n_nodes)} == {"#123456"}
+    assert set(link_colors(mono)) == {to_rgba("#123456", mono.style.link_opacity)}
+    node = make_scene(graph, style(color_mode="node", mono_color="#123456"), theme, None)
+    assert node_color(node, 0) == CATEGORICAL[theme][0]
+
+
 def test_layer_mode_steps_with_the_layer() -> None:
     graph = budget()
     scene = make_scene(graph, style(color_mode="layer"), "light", None)

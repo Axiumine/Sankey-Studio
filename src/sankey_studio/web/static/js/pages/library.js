@@ -8,5 +8,5 @@ import { pageActions } from "../core/boot.js";
 import { startLibrary } from "../library/controller.js";
 import { ensureStyles } from "../library/styles.js";
 
-await ensureStyles("/static/css/pages-library.css");
+await ensureStyles(new URL("../../css/pages-library.css", import.meta.url).href);
 startLibrary({ actionsRoot: pageActions() });

@@ -16,7 +16,7 @@ on at the first request (every request would then be a plain-text 500).
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, override
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -39,6 +39,7 @@ if TYPE_CHECKING:
     from contextlib import AbstractAsyncContextManager
 
     from fastapi import APIRouter
+    from starlette.datastructures import Headers
     from starlette.responses import Response
     from starlette.types import Scope
 
@@ -68,18 +69,34 @@ def check_allowed_hosts(hosts: Sequence[str]) -> None:
             raise InvalidConfigError(f"allowed_hosts[{index}]", problem)
 
 
-class RevalidatedStaticFiles(StaticFiles):
-    """``StaticFiles`` whose answers must be revalidated (``Cache-Control: no-cache``).
+#: Validators a browser would keep to revalidate a stored copy; a static answer sends neither.
+_VALIDATORS: Final = ("etag", "last-modified")
 
-    Without it a browser may reuse a stylesheet or script for days (heuristic freshness from
-    ``Last-Modified``) and show an old UI after an upgrade; with it the ``ETag`` still gives a
-    cheap 304 when nothing changed.
+
+class UncachedStaticFiles(StaticFiles):
+    """``StaticFiles`` that no browser stores (``Cache-Control: no-store``, no validators).
+
+    Every request reads the file again and answers 200 (never a 304), so an edited script or
+    style sheet shows on the next reload: nothing survives a server restart in the browser.
+    ``/static/v-<digest>/<name>`` (the page links, see ``assets``) serves ``<name>``.
     """
 
+    @override
+    def get_path(self, scope: Scope) -> str:
+        """The requested file, relative to the directory, without its version prefix."""
+        return assets.unversioned(super().get_path(scope))
+
+    @override
+    def is_not_modified(self, response_headers: Headers, request_headers: Headers) -> bool:
+        """Never: a conditional request (an old stored copy) still gets the whole file."""
+        return False
+
     async def get_response(self, path: str, scope: Scope) -> Response:
-        """The file answer (200 or 304) with the revalidation header added."""
+        """The file answer with ``no-store`` and without ``ETag`` / ``Last-Modified``."""
         response = await super().get_response(path, scope)
-        response.headers["Cache-Control"] = "no-cache"
+        response.headers["Cache-Control"] = "no-store"
+        for name in _VALIDATORS:
+            del response.headers[name]
         return response
 
 
@@ -92,7 +109,7 @@ def mount_static(app: FastAPI) -> None:
     does not exist: Starlette would answer every request for it with a 500.
     """
     if STATIC_DIR.is_dir():
-        app.mount(STATIC_URL, RevalidatedStaticFiles(directory=STATIC_DIR), name="static")
+        app.mount(STATIC_URL, UncachedStaticFiles(directory=STATIC_DIR), name="static")
 
 
 def _lifespan(

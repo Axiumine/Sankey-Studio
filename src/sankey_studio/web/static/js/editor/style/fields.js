@@ -100,6 +100,28 @@ function titleField(store) {
 }
 
 /**
+ * "One colour" picker: shown only in the One colour mode. Empty (the reset button) removes
+ * `mono_color`, so the palette colour of the theme applies. The picker starts on the palette colour
+ * (`--chart-mono`, the token that mirrors it) while nothing is saved.
+ */
+function monoColorField(store) {
+  const control = h("input", { type: "color", class: "ed-color-input", "data-testid": "style-mono-color", "aria-label": "One colour" });
+  const reset = h("button", { type: "button", class: "btn", "data-testid": "style-mono-reset", on: { click: () => store.remove([...STYLE, "mono_color"]) } }, "Use palette colour");
+  const f = field({ label: "One colour", control, hint: "The colour of every node and link in One colour mode." });
+  f.el.append(reset);
+  control.addEventListener("change", (event) => store.patch([...STYLE, "mono_color"], event.target.value));
+  const sync = () => {
+    const style = store.get().draft.style;
+    const saved = style.mono_color ?? null;
+    f.el.hidden = (style.color_mode ?? "node") !== "mono";
+    control.value = saved ?? getComputedStyle(document.documentElement).getPropertyValue("--chart-mono").trim();
+    reset.disabled = saved === null;
+  };
+  const off = store.subscribe(sync, { select: (state) => `${state.draft.style.color_mode}|${state.draft.style.mono_color}`, immediate: true });
+  return { f, off };
+}
+
+/**
  * Builds every style field and binds it to the store.
  * @param {object} store
  * @returns {{fields: Record<string, {setError: (message?: string) => void}>, groups: {title: string, hint?: string, nodes: HTMLElement[]}[], colorMode: HTMLSelectElement, unbind: () => void}}
@@ -116,6 +138,7 @@ export function buildStyleFields(store) {
   const orientation = take(selectField(store, { label: "Direction", options: ORIENTATIONS, path: [...STYLE, "orientation"], fallback: "h", testid: "style-orientation" }), "orientation");
   const colorMode = selectField(store, { label: "Colour nodes and links", options: COLOR_MODES, path: [...STYLE, "color_mode"], fallback: "node", testid: "style-color-mode", hint: "Colours come from the app palette, so the chart stays readable in light and dark." });
   const colorEl = take(colorMode, "color_mode");
+  const monoEl = take(monoColorField(store), "mono_color");
   const arrangement = take(selectField(store, { label: "Dragging nodes", options: ARRANGEMENTS, path: [...STYLE, "arrangement"], fallback: "snap", hint: "How nodes move when you drag them in the chart." }), "arrangement");
   const sliders = NUMBERS.map((spec) => {
     const slider = createSlider({ ...spec, store, path: [...STYLE, spec.key] });
@@ -134,7 +157,7 @@ export function buildStyleFields(store) {
     colorMode: colorMode.f.control,
     groups: [
       { title: "Chart", wide: true, nodes: [title, orientation, height] },
-      { title: "Colours", nodes: [colorEl] },
+      { title: "Colours", nodes: [colorEl, monoEl] },
       { title: "Values", nodes: [format, suffix, labels.el] },
       { title: "Nodes and links", nodes: [...looks, arrangement] },
       { title: "Donut chart", hint: "The donut appears once at least one entry has a category.", nodes: donut },

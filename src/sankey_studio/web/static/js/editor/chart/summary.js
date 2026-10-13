@@ -18,6 +18,7 @@ import { plainText } from "./errors.js";
 const WARNINGS_SHOWN = 3;
 const WARNINGS_MAX = 100;
 const LEGEND_TITLES = { category: "Categories", layer: "Columns", node: "Nodes" };
+const HEX_RE = /^#[0-9a-f]{6}$/i;
 
 function statItem(label, value, hint) {
   return h("div", { class: "out-stat", title: hint ?? null }, h("dt", null, label), h("dd", null, value));
@@ -47,17 +48,43 @@ function legendItem(item) {
   return h("li", { class: "legend-item out-legend-item", "data-testid": "legend-item", "data-kind": item.kind }, swatch(item.color, item.kind), h("span", { class: "out-legend-label" }, item.label), value);
 }
 
-function categoryRow(row) {
+/** The `#rrggbb` form a colour input takes; anything else (null) makes the input show its default. */
+function hexColor(color) {
+  return HEX_RE.test(color ?? "") ? color.toLowerCase() : null;
+}
+
+/**
+ * The swatch of a category row. A real category's swatch is a colour input laid over it: a tap (or
+ * Enter) opens the browser's colour picker, and the pick is saved as that category's colour. Other
+ * and Uncategorized keep a plain swatch, because their colours are fixed.
+ */
+function categorySwatch(row, onPick) {
+  if (row.kind !== "category") {
+    return swatch(row.color, row.kind);
+  }
+  const input = h("input", {
+    type: "color",
+    class: "out-colour-input",
+    "data-testid": "category-colour",
+    "aria-label": `Change the colour of ${row.name}`,
+    title: "Change colour",
+    value: hexColor(row.color),
+    on: { change: (event) => onPick(row.name, event.target.value) },
+  });
+  return h("span", { class: "out-colour" }, swatch(row.color, row.kind), input);
+}
+
+function categoryRow(row, onPick) {
   return h(
     "tr",
     { "data-testid": "category-row", "data-kind": row.kind },
-    h("th", { scope: "row" }, h("span", { class: "out-cat-name" }, swatch(row.color, row.kind), h("span", null, row.name))),
+    h("th", { scope: "row" }, h("span", { class: "out-cat-name" }, categorySwatch(row, onPick), h("span", null, row.name))),
     h("td", { class: "num" }, formatNumber(row.value)),
     h("td", { class: "num" }, formatPercent(row.share, 1)),
   );
 }
 
-function categoryTable(categories, captionId) {
+function categoryTable(categories, captionId, onPick) {
   const total = categories.reduce((sum, row) => sum + row.value, 0);
   const share = categories.reduce((sum, row) => sum + row.share, 0);
   return h(
@@ -65,13 +92,14 @@ function categoryTable(categories, captionId) {
     { class: "table out-cat-table", "data-testid": "category-table" },
     h("caption", { id: captionId, class: "visually-hidden" }, "Totals by category: the donut chart as a table"),
     h("thead", null, h("tr", null, h("th", { scope: "col" }, "Category"), h("th", { scope: "col", class: "num" }, "Value"), h("th", { scope: "col", class: "num" }, "Share"))),
-    h("tbody", null, categories.map(categoryRow)),
+    h("tbody", null, categories.map((row) => categoryRow(row, onPick))),
     h("tfoot", null, h("tr", null, h("th", { scope: "row" }, "Total"), h("td", { class: "num" }, formatNumber(total)), h("td", { class: "num" }, formatPercent(Math.min(share, 1), 1)))),
   );
 }
 
 class Summary {
-  constructor() {
+  constructor(store) {
+    this.store = store;
     this.captionId = uid("cat-caption");
     this.stats = h("dl", { class: "out-stats", "data-testid": "stats", "aria-label": "Chart statistics" });
     this.legendTitle = h("h3", { class: "out-subtitle" });
@@ -109,8 +137,13 @@ class Summary {
     this.categories.replaceChildren(
       h("h3", { class: "out-subtitle" }, "Totals by category"),
       h("p", { class: "out-note" }, "The donut chart as numbers. Colours never carry the meaning alone."),
-      h("div", { class: "table-wrap", role: "region", tabindex: "0", "aria-labelledby": this.captionId }, categoryTable(categories, this.captionId)),
+      h("div", { class: "table-wrap", role: "region", tabindex: "0", "aria-labelledby": this.captionId }, categoryTable(categories, this.captionId, (name, color) => this.setCategoryColour(name, color))),
     );
+  }
+
+  /** Saves a category colour in the draft; the preview redraws, and the table follows the new bundle. */
+  setCategoryColour(name, color) {
+    this.store.patch(["draft", "style", "category_colors", name], color);
   }
 
   updateWarnings(warnings) {
@@ -154,10 +187,11 @@ class Summary {
 }
 
 /**
- * Creates the summary block.
+ * Creates the summary block. Its category colour squares write `draft.style.category_colors`.
+ * @param {{store: object}} ctx  the editor store
  * @returns {{el: HTMLElement, update: (bundle: object | null) => void}}
  */
-export function createSummary() {
-  const summary = new Summary();
+export function createSummary({ store }) {
+  const summary = new Summary(store);
   return { el: summary.el, update: (bundle) => summary.update(bundle) };
 }

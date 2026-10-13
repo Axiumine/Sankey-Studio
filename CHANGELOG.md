@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Editor: pick the colour of "One colour" mode in the Colours section (`style.mono_color`), with a reset to the palette colour.
+- Editor: tap a category's colour square in the chart's category table to open the colour picker; the pick is saved as the category colour (`style.category_colors`).
 - Project scaffold managed with `uv`: `src/` layout, `sankey-studio` console script, dev dependency group.
 - Shared domain contract: pydantic models for sources (text, MongoDB, manual), transforms, styles and saved graphs; columnar `SankeyGraph`; typed domain errors.
 - Optional per-entry categories (from data, glob rules or explicit user choice) with a donut chart that shares the category colour map with the Sankey.
@@ -40,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Static files (`/static/*`) now answer `Cache-Control: no-cache`, and every page links its style sheets, scripts and icon with a content digest (`/static/css/layout.css?v=<digest>`), so a browser never keeps showing an old UI after a change; the active header link (Library, New graph, Settings) is drawn in the accent blue, and "New graph" is no longer always blue.
+- Static files (`/static/*`) and `/static/vendor/plotly.min.js` now answer `Cache-Control: no-store` (no `ETag`, no `Last-Modified`, never a 304), and every page links its style sheets, scripts and icon under a version prefix (`/static/v-<digest>/css/layout.css`) that nested modules and script-loaded style sheets share, so a browser never keeps showing an old UI after a change, not even with copies it stored before; the active header link (Library, New graph, Settings) is drawn in the accent blue, and "New graph" is no longer always blue.
 - Saving settings above 1 MiB is refused instead of making the next load fail.
 - Page `limit` and `offset` are capped at 2**31-1 (no 503 on the MongoDB backend); graphs above the 32 MiB file cap are refused when saved.
 - A CSV record spanning many lines is capped at 64 KiB; the 4096-character line limit counts after a BOM; decode errors name the real line.

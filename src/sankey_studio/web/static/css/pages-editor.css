@@ -105,6 +105,17 @@
 .ed-check { display: flex; flex-direction: column; gap: 2px; }
 .ed-title-group .btn { flex: none; }
 
+/* the One colour picker: a fixed swatch-sized colour input, its reset button sits under the hint */
+.ed-color-input {
+  width: 3rem;
+  height: 2.25rem;
+  padding: 2px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  cursor: pointer;
+}
+
 .ed-notice-list { margin: 0; padding-left: 1.1rem; }
 .ed-notice-list li + li { margin-top: var(--space-1); }
 
