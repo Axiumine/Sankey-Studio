@@ -52,7 +52,7 @@ Related documents: [UI reference](ui.md) (page behaviour and the `data-testid` r
 | Unknown body fields | Rejected with 422 in every request model (`extra="forbid"`). |
 | Unknown query parameters | Rejected with 422 (`query.<name>: Extra inputs are not permitted`) on every route that declares a query model: `GET /graphs`, `GET /graphs/export`, `GET /graphs/{id}/render`, `GET /compare/render`, `POST /preview`, `POST /entries`, both export routes, `GET /mongo/{name}/collections`, `GET /mongo/{name}/sample` and `GET /compare`. Routes without a query model ignore extra parameters. Do not append cache-busting parameters. |
 | Input echo | A 422 never contains the submitted value, only the location and the reason. The location can hold a field name or a key the caller sent (`body.<key>: Extra inputs are not permitted`), and a few reasons name the offending MongoDB operator or pipeline stage, or the node or category names whose colour is not `#rrggbb`, never an argument or a value. An unknown `source.type` lists the allowed types, not the one sent ([section 3.1](#31-envelope)). |
-| Caching | `Cache-Control: no-store` on every `/api/*` response and on every HTML page. `/static/vendor/plotly.min.js` is `max-age=3600`. |
+| Caching | `Cache-Control: no-store` on every `/api/*` response and on every HTML page. Other `/static/*` files are `no-cache` (revalidated with the `ETag`), and every page links them as `/static/<file>?v=<12 hex of the SHA-256 of the content>` (`web/assets.py`), so a changed file is a new URL and a browser can never keep showing an old style sheet or script. `/static/vendor/plotly.min.js` is `max-age=3600`. |
 | Order of results | Library lists are newest first (`updated_at` descending). |
 
 ### Request pipeline

@@ -45,6 +45,9 @@ There is no build step, no bundler and no framework.
 * Each page loads `static/js/core/shell.js` and one page module, `static/js/pages/<module>.js`
   (`new` and `edit` both use `editor.js`). The module imports plain ES modules from `core/`,
   `library/`, `editor/`, `viewer/`, `compare/` and `settings/`.
+* Templates link every `/static` file through `static_url("css/layout.css")`, which appends
+  `?v=<digest>` (the first 12 hex characters of the SHA-256 of the file, `web/assets.py`): a changed file
+  is a new URL, so no browser keeps an old style sheet or script. Static answers are `no-cache`.
 * Markup is built only with `h()` from `core/dom.js` (`createElement`, `setAttribute`,
   `createTextNode`). Every string child is a text node, so a graph name, a category or a server
   message can never become markup.
@@ -109,12 +112,13 @@ included.
 * `#loading-bar` (`loading`, `role=progressbar`, label "Loading") is `hidden` unless a non-quiet API
   request has been running for 150 ms. It is not a page-ready signal.
 * `header.app-header`: the brand link (`aria-label` "Sankey Studio, home"), `nav.main-nav`
-  (`aria-label` "Main") with `nav-library`, `nav-new` (always styled as the primary button) and
+  (`aria-label` "Main") with `nav-library`, `nav-new` and
   `nav-settings`, and the `theme-switch` group (`aria-label` "Colour theme") with three buttons
   `[data-theme-value=system|light|dark]`, accessible names "System theme", "Light theme" and "Dark
   theme", `aria-pressed` following the chosen theme. `aria-current=page` marks `nav-library` on the
   library, `nav-new` on the new-graph page and `nav-settings` on settings; the library link gets the
-  class `is-section` on the editor, viewer and compare pages instead.
+  class `is-section` on the editor, viewer and compare pages instead. The link with `aria-current=page`
+  or `is-section` is the one drawn in the accent (blue) colour; the other links are plain text.
 * `remote-banner` (only when the server was started with `--allow-remote`) and `read-only-banner`
   (only when `writes_allowed` is false, which is remote mode without `--allow-remote-writes`).
 * `main#main.app-main` carries `data-page`, `data-testid="app-root"`, `data-loading` and

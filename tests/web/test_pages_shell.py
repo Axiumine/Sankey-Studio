@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Final, NamedTuple
 
 import pytest
 
-from tests.web.test_pages_support import Page, parse
+from tests.web.test_pages_support import Page, parse, unversioned
 from tests.web.test_routes_graphs_support import PLAIN, save
 
 if TYPE_CHECKING:
@@ -59,7 +59,7 @@ def test_every_page_loads_the_theme_init_shell_and_its_own_module(
 ) -> None:
     page = fetch(web, case)
     sources = [s.attrs for s in page.scripts if "src" in s.attrs]
-    assert [attrs["src"] for attrs in sources] == [
+    assert [unversioned(attrs["src"] or "") for attrs in sources] == [
         THEME_INIT,
         SHELL,
         f"/static/js/pages/{case.module}.js",
@@ -71,11 +71,14 @@ def test_every_page_loads_the_theme_init_shell_and_its_own_module(
 @pytest.mark.parametrize("case", CASES, ids=IDS)
 def test_the_head_links_the_shared_and_the_page_style_sheets(web: WebApp, case: PageCase) -> None:
     page = fetch(web, case)
-    sheets = [a["href"] for a in page.find("link", rel="stylesheet")]
+    sheets = [unversioned(a["href"] or "") for a in page.find("link", rel="stylesheet")]
     expected = [f"/static/css/{name}.css" for name in STYLES]
     assert sheets == [*expected, f"/static/css/pages/{case.module}.css"]
     icon = one(page, "link", rel="icon")
-    assert (icon["href"], icon["type"]) == ("/static/img/favicon.svg", "image/svg+xml")
+    assert (unversioned(icon["href"] or ""), icon["type"]) == (
+        "/static/img/favicon.svg",
+        "image/svg+xml",
+    )
 
 
 def test_the_head_declares_language_viewport_theme_and_theme_colour(web: WebApp) -> None:

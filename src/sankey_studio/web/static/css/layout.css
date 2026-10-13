@@ -73,22 +73,19 @@
 }
 
 .nav-link:hover { background: var(--wash); color: var(--ink); text-decoration: none; }
-.nav-link[aria-current="page"] { background: var(--wash); color: var(--ink); }
-.nav-link.is-section { color: var(--ink); }
 
-.nav-link.nav-cta {
-  margin-left: auto;
+.nav-link[aria-current="page"],
+.nav-link.is-section {
   background: var(--accent);
   color: var(--accent-contrast);
 }
 
-.nav-link.nav-cta:hover { background: var(--accent-hover); color: var(--accent-contrast); }
-.nav-link.nav-cta[aria-current="page"] { box-shadow: inset 0 -3px 0 var(--accent-contrast); }
+.nav-link[aria-current="page"]:hover,
+.nav-link.is-section:hover { background: var(--accent-hover); color: var(--accent-contrast); }
 
 @media (min-width: 640px) {
   .main-nav { order: 0; width: auto; margin-right: auto; }
   .brand { margin-right: 0; }
-  .nav-link.nav-cta { margin-left: var(--space-2); }
   .app-header-inner { flex-wrap: nowrap; padding-block: 0; min-height: var(--header-h); }
 }
 
