@@ -14,7 +14,8 @@ from sankey_studio.render.donut import build_donut_figure
 from sankey_studio.render.legend import legend_items
 from sankey_studio.render.options import EntriesOptions, FigureOptions
 from sankey_studio.render.sankey import build_figure
-from sankey_studio.render.tables import category_table, entries_page
+from sankey_studio.render.tables import NodeRow, category_table, entries_page, nodes_table
+from sankey_studio.render.text import escape_label
 from tests.graph_support import make_graph
 from tests.render.support import budget, many_categories, plain, style
 
@@ -56,6 +57,7 @@ def test_the_option_defaults() -> None:
     assert options.entries_limit == 2000
     assert options.max_drawn_links is None
     assert options.style is None
+    assert options.with_nodes is False
 
 
 # --------------------------------------------------------------------------- a categorised graph
@@ -296,3 +298,78 @@ def test_entries_remember_which_pairs_were_set_explicitly() -> None:
         ("Salary", "Pay", True),
         ("Budget", None, False),
     ]
+
+
+# --------------------------------------------------------------------------- the node rows
+
+HOSTILE = ["<b>bold</b>", "R&D", "evil\u202egnp", "n" * 40, "plain"]
+
+
+def hover_names(bundle: RenderBundle) -> list[str]:
+    """The full (escaped) node name behind every node of the figure, in figure order."""
+    return [row[0] for row in bundle.figure["data"][0]["node"]["customdata"]]
+
+
+def test_no_node_rows_unless_asked_for() -> None:
+    assert bundle_of(budget()).nodes == []
+    assert bundle_of(budget(), with_nodes=False).nodes == []
+
+
+def test_the_node_rows_are_the_graph_nodes_when_everything_is_drawn() -> None:
+    graph = budget()
+    bundle = bundle_of(graph, with_nodes=True)
+    assert bundle.nodes == nodes_table(graph)
+    assert bundle.nodes[1] == NodeRow("Budget", 1, 5800.0, 4800.0)
+
+
+def test_node_rows_line_up_with_the_figure_even_for_hostile_names() -> None:
+    graph = make_graph([(HOSTILE[0], HOSTILE[1], 3.0, None), (HOSTILE[2], HOSTILE[3], 2.0, None)])
+    bundle = bundle_of(graph, with_nodes=True)
+    labels = bundle.figure["data"][0]["node"]["label"]
+    assert len(bundle.nodes) == len(labels) == 4
+    assert [escape_label(row.name) for row in bundle.nodes] == hover_names(bundle)
+    assert [row.name for row in bundle.nodes] == [*HOSTILE[:4]]  # raw: not escaped, not cut
+    assert labels[3].endswith("\u2026")  # the 40-character name is cut in the label only
+
+
+def test_a_cap_leaves_only_the_drawn_nodes_in_the_rows() -> None:
+    graph = budget()
+    bundle = bundle_of(graph, with_nodes=True, max_drawn_links=2)
+    names = [row.name for row in bundle.nodes]
+    assert names == ["Salary", "Budget", "Housing"]
+    assert names == hover_names(bundle)
+    assert len(bundle.figure["data"][0]["node"]["label"]) == 3
+
+
+def test_a_stored_order_decides_the_sequence_of_the_rows_and_of_the_figure() -> None:
+    graph = budget()
+    draft = draft_of(style(node_order=["Cash", "Food"]))
+    bundle = bundle_of(graph, draft, with_nodes=True)
+    assert [row.name for row in bundle.nodes][:3] == ["Cash", "Food", "Salary"]
+    assert [row.name for row in bundle.nodes] == hover_names(bundle)
+    assert bundle.figure["data"][0]["node"]["sort"] == "input"
+
+
+def test_the_order_and_the_cap_work_together_in_the_rows() -> None:
+    draft = draft_of(style(node_order=["Housing", "Savings", "Salary"]))
+    bundle = bundle_of(budget(), draft, with_nodes=True, max_drawn_links=2)
+    assert [row.name for row in bundle.nodes] == ["Housing", "Salary", "Budget"]
+    assert [row.name for row in bundle.nodes] == hover_names(bundle)
+
+
+def test_the_style_override_decides_the_order_of_the_rows() -> None:
+    graph = budget()
+    override = style(node_order=["Cash"])
+    bundle = bundle_of(graph, draft_of(style(node_order=["Food"])), style=override, with_nodes=True)
+    assert bundle.nodes[0].name == "Cash"
+    assert bundle.figure["data"][0]["node"]["label"][0] == "Cash"
+
+
+def test_an_empty_graph_has_no_node_rows() -> None:
+    assert bundle_of(make_graph([]), with_nodes=True).nodes == []
+
+
+def test_the_node_rows_are_part_of_the_json() -> None:
+    dumped = bundle_of(plain(), with_nodes=True).model_dump(mode="json")
+    assert set(dumped["nodes"][0]) == {"name", "layer", "node_in", "node_out"}
+    assert json.loads(json.dumps(dumped)) == dumped

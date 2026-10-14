@@ -70,7 +70,7 @@ def test_each_tab_shows_its_own_input_and_a_file_of_the_sources_folder_is_chosen
     upload_source(api, "flows.csv", FLOWS)
     page.reload()
     editor.expect_ready()
-    editor.name_field.fill(unique_name("From a file"))
+    editor.set_name(unique_name("From a file"))
     source.open_tab("text")
     select = source.tid("source-file-select")
     expect(select).to_contain_text(f"flows.csv ({FLOWS_SIZE})")

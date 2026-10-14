@@ -139,7 +139,7 @@ rendering) under `memray run`, prints `memray stats` and writes a flamegraph to
   Project rules live in `.semgrep/rules/`; registry packs are added unless `SEMGREP_OFFLINE=1`. It
   scans `src` and `scripts`, writes `reports/semgrep.sarif` and prints a readable report. The rules:
   no shell=True, no eval or exec, no OS command injection, no pickle or unsafe YAML; MongoDB writes
-  only in the graph store; no `$where`, `$function`, `$accumulator`, `$out` or `$merge` literals
+  only in the library store (graphs and collections) and the opt-in source write-back, all under `storage/`; no `$where`, `$function`, `$accumulator`, `$out` or `$merge` literals
   outside `mongo_safety.py`; no secrets in logs or exceptions; no outbound HTTP; no unsafe HTML
   (`Markup`, `|safe`, f-string `HTMLResponse`, inline scripts or handlers in templates, DOM XSS sinks
   in JavaScript); no CORS; no wildcard bind or hosts; regex only from escaped text or constants.
@@ -181,7 +181,8 @@ Suppression comments are rationed and checked by `tests/test_policy.py`:
 * `# pragma: no mutate block - <reason>` is allowed only on a `Protocol` class.
 * `# nosemgrep: <rule-id> -- <reason>` names exactly one rule and a reason, sits on the line of the
   finding and is never used in templates or static files. The waiver of `sankey-no-mongo-writes`
-  appears only under `src/sankey_studio/storage/`.
+  appears only under `src/sankey_studio/storage/`: in the graph store, the collection store and
+  `mongo_source_writes.py` (the opt-in source write-back).
 * No `pytest.mark.skip` and no `xfail`. `skipif` and `pytest.skip(...)` only for an absent external
   prerequisite (Chrome, `SANKEY_TEST_MONGO_URI`) and always with a reason.
 

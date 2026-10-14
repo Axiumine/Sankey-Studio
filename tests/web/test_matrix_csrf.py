@@ -1,6 +1,6 @@
 """The CSRF matrix of SPEC section 6 against the FULL app, for every unsafe route of its table.
 
-Every case below runs once per ``(method, path)`` in ``UNSAFE`` (14 routes), so a route added to
+Every case below runs once per ``(method, path)`` in ``UNSAFE`` (20 routes), so a route added to
 ``ALL_ROUTERS`` joins the matrix without an edit. 403 ``forbidden`` and 415
 ``unsupported_media_type`` are answered by the middleware, before routing: the status does not
 depend on the route.
@@ -149,8 +149,8 @@ def test_reads_do_not_need_a_proof(web: WebApp, endpoint: Endpoint) -> None:
         assert web.bare.get(endpoint.path, headers=headers).status_code != 403
 
 
-def test_there_are_fourteen_unsafe_routes_and_one_upload() -> None:
-    assert len(UNSAFE) == 14
+def test_there_are_twenty_unsafe_routes_and_one_upload() -> None:
+    assert len(UNSAFE) == 20
     assert [e.label for e in UNSAFE if "multipart" in e.template] == []
     assert UPLOAD in UNSAFE
-    assert len(OTHER_ROUTES) == 13
+    assert len(OTHER_ROUTES) == 19

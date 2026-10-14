@@ -10,6 +10,7 @@ import pytest
 
 from sankey_studio.errors import NoCategoriesError
 from sankey_studio.render.export import csv_cell, export_csv
+from sankey_studio.util import starts_like_formula
 from tests.graph_support import make_graph
 from tests.render.support import budget, plain
 
@@ -57,6 +58,11 @@ CELLS = [
 @pytest.mark.parametrize("case", CELLS)
 def test_owasp_payload_table(case: Cell) -> None:
     assert csv_cell(case.raw) == ("'" + case.raw if case.guarded else case.raw)
+
+
+@pytest.mark.parametrize("case", CELLS)
+def test_the_guard_is_the_shared_formula_predicate(case: Cell) -> None:
+    assert starts_like_formula(case.raw) is case.guarded
 
 
 def parse(text: str) -> list[list[str]]:

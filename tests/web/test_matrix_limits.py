@@ -107,6 +107,6 @@ def test_a_method_nobody_registered_is_a_405_envelope(web: WebApp, wrong: Wrong)
     assert response.json()["error"]["code"] == "method_not_allowed"
 
 
-def test_the_table_has_fourteen_unsafe_and_twenty_one_safe_endpoints() -> None:
-    assert len(UNSAFE) == 14
-    assert len(ENDPOINTS) - len(UNSAFE) == 21
+def test_the_table_has_twenty_unsafe_and_twenty_three_safe_endpoints() -> None:
+    assert len(UNSAFE) == 20
+    assert len(ENDPOINTS) - len(UNSAFE) == 23

@@ -116,6 +116,19 @@ def test_upgrade_doc_refuses_unusable_schema_versions(version: object) -> None:
         upgrade_doc(_doc(schema_version=version))
 
 
+@pytest.mark.parametrize(
+    ("version", "tail"),
+    [(0, "has an invalid schema version"), (99, "was written by a newer version of sankey-studio")],
+)
+@pytest.mark.parametrize(("args", "noun"), [((), "graph"), (("folder",), "folder")])
+def test_upgrade_doc_names_the_record_in_its_messages(
+    version: int, tail: str, args: tuple[str, ...], noun: str
+) -> None:
+    with pytest.raises(StorageError) as info:
+        upgrade_doc(_doc(schema_version=version), *args)
+    assert info.value.message == f"Stored {noun} {tail}"
+
+
 def test_persisted_shape_ignores_unknown_fields_but_requests_do_not() -> None:
     graph = GraphDefinition.model_validate(_doc(removed_in_later_version=1))
     assert graph.id == "a" * 32
@@ -181,7 +194,8 @@ class _Stub:
     def get(self, graph_id: str) -> GraphDefinition:
         raise NotFoundError(graph_id)
 
-    def create(self, data: GraphCreate) -> GraphDefinition:
+    def create(self, data: GraphCreate, *, folder_id: str | None = None) -> GraphDefinition:
+        del data, folder_id  # the stub only has to match the Protocol signature
         raise NotImplementedError
 
     def update(self, graph_id: str, data: GraphUpdate) -> GraphDefinition:

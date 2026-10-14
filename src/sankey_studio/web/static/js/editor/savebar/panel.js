@@ -6,7 +6,8 @@
  *   was saved (`status.dirty` and `meta` of the store), "Saving..." while a request runs, or the
  *   reason the last save failed.
  * - Save (`save-button`, Ctrl/Cmd+S): POST the first time, PUT with the revision afterwards. The
- *   name is required: an empty one explains itself and moves focus to the name field. After the very
+ *   name is required: an empty one explains itself and opens the details dialog (`ctx.openDetails`,
+ *   else it focuses the name field). After the very
  *   first save the address becomes /graphs/{id}/edit (history.replaceState), no reload.
  * - Save as copy (`save-as-copy`): a new graph from the current draft; the editor continues on it.
  * - Optimistic concurrency: a 409 shows the conflict banner (`conflict-banner`) with Reload
@@ -20,12 +21,12 @@
 import { announce } from "../../core/a11y.js";
 import { reportError } from "../../core/api.js";
 import { h, setBusy } from "../../core/dom.js";
-import { formatRelative } from "../../core/format.js";
 import { icon } from "../../core/icons.js";
 import { editsSettled, focusTestId, plainError } from "../output-panel-kit.js";
 import { reloadGraph, saveCopy, saveGraph } from "./actions.js";
 import { createConflictBanner } from "./banner.js";
 import { trackBarHeight } from "./metrics.js";
+import { describeSave, statusNode } from "./status.js";
 
 const REFRESH_MS = 30000;
 const NAME_PROBLEM = "Give the graph a name before saving.";
@@ -42,6 +43,7 @@ class SaveBar {
     this.api = ctx.api;
     this.toast = ctx.toast;
     this.writable = ctx.boot?.writes_allowed !== false;
+    this.openDetails = ctx.openDetails ?? null;
     this.problem = "";
     this.busy = false;
     this.lastKey = "";
@@ -78,56 +80,17 @@ class SaveBar {
     }
   }
 
-  /** What the status line says right now: `{state, parts}`; a part is `{icon | badge | text | detail}`. */
-  describe() {
-    const { meta, status } = this.store.get();
-    const saved = meta.updated_at && !status.dirty ? `Saved ${formatRelative(meta.updated_at)}` : "";
-    const detail = { detail: [meta.revision ? `Revision ${meta.revision}` : "", saved].filter(Boolean).join(" \u00b7 ") };
-    if (!this.writable) {
-      return { state: "readonly", parts: [{ icon: "lock" }, { text: "Read-only server: saving is turned off. You can still preview and export." }] };
-    }
-    if (this.busy || status.saving) {
-      return { state: "saving", parts: [{ spinner: true }, { text: "Saving..." }] };
-    }
-    if (this.problem) {
-      return { state: "error", parts: [{ icon: "alert" }, { text: this.problem }] };
-    }
-    if (!meta.id) {
-      return { state: "new", parts: [{ badge: "Not saved yet" }, detail] };
-    }
-    if (status.dirty) {
-      return { state: "dirty", parts: [{ badge: "Unsaved changes" }, detail] };
-    }
-    return { state: "saved", parts: [{ icon: "check-circle" }, { text: "All changes saved" }, detail] };
-  }
-
-  partNode(part) {
-    if (part.icon) {
-      return icon(part.icon, { size: 15 });
-    }
-    if (part.spinner) {
-      return h("span", { class: "spinner" });
-    }
-    if (part.badge) {
-      return h("span", { class: "badge", "data-status": "warning" }, part.badge);
-    }
-    if (part.detail !== undefined) {
-      return part.detail ? h("span", { class: "out-save-detail" }, part.detail) : null;
-    }
-    return h("span", null, part.text);
-  }
-
   paint() {
     const meta = this.store.get().meta;
     if (this.problem === NAME_PROBLEM && meta.name.trim() !== "") {
       this.problem = "";
     }
-    const view = this.describe();
+    const view = describeSave({ meta, status: this.store.get().status, busy: this.busy, problem: this.problem, writable: this.writable });
     const key = JSON.stringify(view);
     if (key !== this.lastKey) {
       this.lastKey = key;
       this.status.dataset.state = view.state;
-      this.status.replaceChildren(...view.parts.map((part) => this.partNode(part)).filter(Boolean));
+      this.status.replaceChildren(...view.parts.map((part) => statusNode(part)).filter(Boolean));
     }
     const locked = !this.writable;
     setBusy(this.saveButton, this.busy);
@@ -174,7 +137,11 @@ class SaveBar {
     this.problem = NAME_PROBLEM;
     this.paint();
     announce(this.problem, { assertive: true });
-    focusTestId("editor-name");
+    if (this.openDetails) {
+      this.openDetails({ problem: "name" });
+    } else {
+      focusTestId("editor-name");
+    }
     return true;
   }
 

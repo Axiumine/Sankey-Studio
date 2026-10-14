@@ -21,7 +21,8 @@ from tests.e2e.support.pages import AppPage
 from tests.e2e.support.ui_a_editor import EditorPage
 from tests.e2e.support.ui_a_keyboard import focus_ring, focused, tab_until
 from tests.e2e.support.ui_a_viewer import ViewerPage
-from tests.e2e.support.uiwait import wait_charts, wait_page, wait_shell
+from tests.e2e.support.ui_a_wizard import NewGraphWizard
+from tests.e2e.support.uiwait import wait_charts, wait_editor, wait_page, wait_shell
 
 if TYPE_CHECKING:
     import httpx
@@ -30,7 +31,6 @@ if TYPE_CHECKING:
     from tests.e2e.support.watch import WatchedPage
 
 HEADER_ORDER = ["skip-link", "brand", "nav-library", "nav-new"]
-THEME_BUTTONS = ["System theme", "Light theme", "Dark theme"]
 MIN_RING_PX = 2.0
 
 
@@ -66,6 +66,7 @@ def test_an_empty_library_invites_a_first_graph_and_the_header_links_reach_every
     library.nav("new").click()
     wait_page(page, "new")
     expect(library.heading).to_have_text("New graph")
+    expect(library.tid("new-wizard")).to_be_visible()
     assert page.url == live_server.url_for("/graphs/new")
 
     library.nav("settings").click()
@@ -123,19 +124,25 @@ def test_a_graph_can_be_created_and_saved_with_the_keyboard_alone(
     assert focus_ring(page)[0] == "solid"
     assert focus_ring(page)[1] >= MIN_RING_PX
     page.keyboard.press("Enter")
-    editor = EditorPage(page, live_server)
-    editor.expect_ready()
-
-    assert tab_until(page, "editor-name") == [
-        *HEADER_ORDER,
-        "nav-settings",
-        *THEME_BUTTONS,
-        "editor-name",
-    ]
+    wizard = NewGraphWizard(page)
+    wizard.expect_showing()
+    expect(wizard.tid("editor-name")).to_be_focused()  # the wizard starts on the name
     name = unique_name("Keyboard graph")
     page.keyboard.type(name)
+    tab_until(page, "wizard-next")
+    page.keyboard.press("Enter")
+    wizard.expect_step("source")
     tab_until(page, "source-content")
     page.keyboard.type(BUDGET.csv)
+    tab_until(page, "wizard-create")
+    page.keyboard.press("Enter")
+    wizard.expect_gone()
+    editor = EditorPage(page, live_server)
+    wait_editor(page)
+
+    assert tab_until(page, "graph-settings-button") == ["graph-settings-button"]
+    assert tab_until(page, "chart-tab-sankey") == ["chart-tab-sankey"]
+    assert tab_until(page, "chart-settings-button")[-1] == "chart-settings-button"
     editor.wait_preview()
     editor.expect_stats(nodes=10, links=9, total_in=3800, total_out=3800, columns=4)
     tab_until(page, "save-button")

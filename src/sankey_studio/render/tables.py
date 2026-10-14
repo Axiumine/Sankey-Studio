@@ -15,6 +15,8 @@ from sankey_studio.render.donut import slice_color
 from sankey_studio.render.donut_fold import donut_slices
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from sankey_studio.models import SankeyGraph, StyleSpec, Theme, TransformSpec
     from sankey_studio.render.options import EntriesOptions
 
@@ -123,12 +125,20 @@ def entries_page(
     return EntriesPage(rows=ordered[offset : offset + limit], total=len(ordered))
 
 
+def drawn_node_rows(graph: SankeyGraph, nodes: Sequence[int]) -> list[NodeRow]:
+    """The rows of the given nodes, in the given order (raw names: not escaped, not scrubbed).
+
+    With ``Drawn.nodes`` this is the row list that lines up with ``figure.data[0].node.label``.
+    """
+    return [
+        NodeRow(graph.node_names[i], graph.node_layers[i], graph.node_in[i], graph.node_out[i])
+        for i in nodes
+    ]
+
+
 def nodes_table(graph: SankeyGraph) -> list[NodeRow]:
     """Every node with its layer and flows, in node order."""
-    return [
-        NodeRow(name, graph.node_layers[i], graph.node_in[i], graph.node_out[i])
-        for i, name in enumerate(graph.node_names)
-    ]
+    return drawn_node_rows(graph, range(graph.n_nodes))
 
 
 def category_table(

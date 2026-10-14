@@ -54,7 +54,12 @@ def _seed(repo: FileGraphRepository) -> list[GraphDefinition]:
 
 
 def _bundle(*graphs: Any) -> dict[str, Any]:
-    return {"format": BUNDLE_FORMAT, "version": BUNDLE_VERSION, "graphs": list(graphs)}
+    return {
+        "format": BUNDLE_FORMAT,
+        "version": BUNDLE_VERSION,
+        "graphs": list(graphs),
+        "folders": [],
+    }
 
 
 def _dump(graph: GraphDefinition) -> dict[str, Any]:
@@ -66,7 +71,7 @@ def _dump(graph: GraphDefinition) -> dict[str, Any]:
 
 def test_the_format_and_limits() -> None:
     assert BUNDLE_FORMAT == "sankey-studio/graphs"
-    assert BUNDLE_VERSION == 1
+    assert BUNDLE_VERSION == 2
     assert MAX_BUNDLE_GRAPHS == 1000
     assert MAX_REPORTED_ERRORS == 50
     assert (BundleError.status_code, BundleError.code) == (422, "bundle_error")
@@ -85,7 +90,7 @@ def test_export_all_lists_every_graph_in_listing_order(file_repo: FileGraphRepos
     graphs = _seed(file_repo)
     out = export_bundle(file_repo)
     assert out == _bundle(*[_dump(g) for g in graphs])
-    assert list(out) == ["format", "version", "graphs"]
+    assert list(out) == ["format", "version", "graphs", "folders"]
 
 
 def test_export_of_an_empty_store(file_repo: FileGraphRepository) -> None:
@@ -326,7 +331,7 @@ def test_at_most_fifty_errors_are_listed_but_all_are_counted(
 def test_a_backend_failure_aborts_the_import(
     file_repo: FileGraphRepository, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    def down(_graph: Any) -> Any:
+    def down(_graph: Any, **_options: Any) -> Any:
         raise StorageError("backend down")
 
     monkeypatch.setattr(file_repo, "create", down)
@@ -372,13 +377,18 @@ BAD_BUNDLES = [
     BadBundle("list", [], NOT_A_BUNDLE),
     BadBundle("none", None, NOT_A_BUNDLE),
     BadBundle("text", "bundle", NOT_A_BUNDLE),
-    BadBundle("no format", {"version": 1, "graphs": []}, NOT_A_BUNDLE),
-    BadBundle("other format", {"format": "other", "version": 1, "graphs": []}, NOT_A_BUNDLE),
-    BadBundle("case", {"format": BUNDLE_FORMAT.upper(), "version": 1, "graphs": []}, NOT_A_BUNDLE),
+    BadBundle("no format", {"version": 2, "graphs": []}, NOT_A_BUNDLE),
+    BadBundle("other format", {"format": "other", "version": 2, "graphs": []}, NOT_A_BUNDLE),
+    BadBundle("case", {"format": BUNDLE_FORMAT.upper(), "version": 2, "graphs": []}, NOT_A_BUNDLE),
     BadBundle("no version", {"format": BUNDLE_FORMAT, "graphs": []}, "Unsupported bundle version"),
     BadBundle(
-        "version 2",
-        {"format": BUNDLE_FORMAT, "version": 2, "graphs": []},
+        "version 1",
+        {"format": BUNDLE_FORMAT, "version": 1, "graphs": []},
+        "Unsupported bundle version",
+    ),
+    BadBundle(
+        "version 3",
+        {"format": BUNDLE_FORMAT, "version": 3, "graphs": []},
         "Unsupported bundle version",
     ),
     BadBundle(
@@ -388,12 +398,12 @@ BAD_BUNDLES = [
     ),
     BadBundle(
         "text version",
-        {"format": BUNDLE_FORMAT, "version": "1", "graphs": []},
+        {"format": BUNDLE_FORMAT, "version": "2", "graphs": []},
         "Unsupported bundle version",
     ),
     BadBundle(
         "float version",
-        {"format": BUNDLE_FORMAT, "version": 1.0, "graphs": []},
+        {"format": BUNDLE_FORMAT, "version": 2.0, "graphs": []},
         "Unsupported bundle version",
     ),
     BadBundle(
@@ -402,16 +412,16 @@ BAD_BUNDLES = [
         "Unsupported bundle version",
     ),
     BadBundle(
-        "no graphs", {"format": BUNDLE_FORMAT, "version": 1}, "The bundle has no list of graphs"
+        "no graphs", {"format": BUNDLE_FORMAT, "version": 2}, "The bundle has no list of graphs"
     ),
     BadBundle(
         "graphs dict",
-        {"format": BUNDLE_FORMAT, "version": 1, "graphs": {}},
+        {"format": BUNDLE_FORMAT, "version": 2, "graphs": {}},
         "The bundle has no list of graphs",
     ),
     BadBundle(
         "graphs text",
-        {"format": BUNDLE_FORMAT, "version": 1, "graphs": "x"},
+        {"format": BUNDLE_FORMAT, "version": 2, "graphs": "x"},
         "The bundle has no list of graphs",
     ),
 ]

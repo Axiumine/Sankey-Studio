@@ -94,6 +94,7 @@ def broken_server(make_server: ServerFactory, monkeypatch: pytest.MonkeyPatch) -
         raise RuntimeError(f"disk exploded at {server.data_dir}/internal-detail")
 
     monkeypatch.setattr(server.services, "graphs", boom)
+    monkeypatch.setattr(server.services, "folders", boom)  # the library page lists through these
     return server
 
 

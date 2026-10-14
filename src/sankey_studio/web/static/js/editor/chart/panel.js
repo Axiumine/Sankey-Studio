@@ -11,6 +11,8 @@
  * - a bundle with zero nodes (every row skipped, or every link filtered out by Transform) is not drawn
  *   (Plotly cannot draw it): the frame says why, the donut hint stays away;
  * - the Donut tab exists only when `donut_available`; otherwise a hint explains how to get one.
+ * The header ends with a tool group (`ctx.chartTools`, `div.out-chart-tools`, made by the editor page:
+ * the chart settings gear; other features append buttons), which also holds the "Updating" label.
  * Test ids: `sankey-chart`, `donut-chart`, `chart-tab-sankey`, `chart-tab-donut`, `donut-hint`
  * (+ stats, legend, category table and warnings from ./summary.js). Charts are disposed with the
  * panel (`dispose()`).
@@ -21,9 +23,11 @@ import { h, uid } from "../../core/dom.js";
 import { icon } from "../../core/icons.js";
 import { errorState } from "../../core/states.js";
 import { focusTestId, hasDrawing, plainError, present, sentence, slot } from "../output-panel-kit.js";
+import { editsFor } from "../edits/index.js";
 import { requestPreview } from "../preview.js";
 import { describePreviewError, isTransient, previewError } from "./errors.js";
 import { buildOverlay, noLinksReason, overlayFor, setOverlay } from "./frame-state.js";
+import { eventsFor, markNodeOrder, mountNodeTools } from "./node-actions.js";
 import { createSummary } from "./summary.js";
 import { createViewTabs } from "./view-tabs.js";
 
@@ -65,6 +69,10 @@ class ChartPanel {
     this.frames.sankey.surface.setAttribute("data-testid", "sankey-chart");
     this.frames.donut.surface.setAttribute("data-testid", "donut-chart");
     this.status = h("span", { class: "out-updating-label", "aria-hidden": "true", hidden: true }, h("span", { class: "spinner" }), "Updating");
+    this.tools = ctx.chartTools ?? h("div", { class: "out-chart-tools" });
+    this.tools.prepend(this.status);
+    this.edits = editsFor(ctx);
+    this.nodeTools = mountNodeTools({ store: this.store, tools: this.tools, edits: this.edits, surface: this.frames.sankey.surface });
     this.notice = h("div", { class: "notice out-notice", "data-kind": "warning", role: "alert" });
     this.slots = { hint: slot(), notice: slot() };
     this.hint = donutHint();
@@ -90,7 +98,7 @@ class ChartPanel {
       "section",
       { class: "card out-card out-chart", "aria-labelledby": titleId },
       h("h2", { id: titleId, class: "visually-hidden" }, "Chart"),
-      h("div", { class: "out-chart-head" }, this.tabs.el, this.status),
+      h("div", { class: "out-chart-head" }, this.tabs.el, this.tools),
       h("div", { class: "out-chart-body" }, this.slots.hint, this.slots.notice, panels.sankey, panels.donut),
       this.summary.el,
     );
@@ -209,6 +217,7 @@ class ChartPanel {
         this.drawn[view] = null;
       }
     }
+    markNodeOrder(this.frames.sankey.surface, null);
   }
 
   drawActive() {
@@ -228,14 +237,19 @@ class ChartPanel {
     this.drawError[view] = null;
     this.syncOverlay(view);
     const { surface } = this.frames[view];
-    draw(surface, figure, { label: chartLabel(view, bundle) }).then(
-      () => this.afterDraw(view, null),
+    const nodeEvents = view === "sankey" ? eventsFor(bundle, { edits: this.edits }) : undefined;
+    draw(surface, figure, { label: chartLabel(view, bundle), nodeEvents }).then(
+      () => this.afterDraw(view, null, figure),
       (error) => this.afterDraw(view, error, figure),
     );
   }
 
   afterDraw(view, error, figure) {
     if (!error) {
+      const bundle = this.store.get().bundle;
+      if (view === "sankey" && bundle?.figure === figure) {
+        markNodeOrder(this.frames.sankey.surface, bundle);
+      }
       return;
     }
     if (this.drawn[view] === figure) {
@@ -250,6 +264,8 @@ class ChartPanel {
       off();
     }
     this.clearPlots();
+    this.nodeTools.dispose();
+    this.status.remove();
     this.container.replaceChildren();
   }
 }

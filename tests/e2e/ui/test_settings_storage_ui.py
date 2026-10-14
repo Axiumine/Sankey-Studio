@@ -13,6 +13,7 @@ from playwright.sync_api import expect
 
 from tests.e2e.support.builders import mongo_settings, unique_name
 from tests.e2e.support.clients import json_of, seed_graph
+from tests.e2e.support.ui_b_folders import seed_filed_graph, seed_folder
 from tests.e2e.support.ui_b_settings import SettingsPage
 
 if TYPE_CHECKING:
@@ -113,13 +114,44 @@ def test_switching_to_mongo_with_copying_moves_the_graphs_and_keeps_the_original
     expect(report).to_have_attribute("data-copied", "3")
     expect(report).to_have_attribute("data-skipped", "0")
     expect(report).to_have_attribute("data-unreadable", "0")
+    expect(report).to_have_attribute("data-folders", "0")
     expect(report).to_contain_text("Your graphs were copied to the new location.")
+    expect(report).not_to_contain_text("Collections")  # none to report: no empty rows
     assert settings.stored()["storage_backend"] == "mongo"
     assert mongo_count(live_server) == 3
     assert listed(api) == graphs  # the same ids, now read from MongoDB
     assert len(list(live_server.graphs_dir.glob("*.json"))) == 3  # nothing was deleted
     settings.page.goto("/")
     expect(settings.tid("graph-card")).to_have_count(3)
+
+
+def test_copying_to_mongo_brings_the_collections_and_where_each_graph_sits(
+    settings: SettingsPage, api: httpx.Client
+) -> None:
+    folder = seed_folder(api, unique_name("Kept"))
+    graph = seed_filed_graph(api, unique_name("Filed"), folder["id"])
+    settings.goto()
+    settings.choose_mongo_storage("main", DATABASE)
+    settings.save()
+    settings.expect_toast("Settings saved. 1 graph copied to the new location.", "success")
+    report = settings.tid("settings-copy-report")
+    expect(report).to_have_attribute("data-folders", "1")
+    expect(report).to_have_attribute("data-folders-skipped", "0")
+    expect(report).to_contain_text("Collections copied")
+    expect(report).to_contain_text("Collections skipped")
+    items = json_of(api.get("/api/v1/folders"))["items"]  # now read from MongoDB
+    assert [item["name"] for item in items] == [folder["name"]]
+    assert json_of(api.get(f"/api/v1/graphs/{graph['id']}"))["folder_id"] == folder["id"]
+
+
+def test_the_database_hint_names_where_graphs_and_collections_are_kept(
+    settings: SettingsPage,
+) -> None:
+    settings.goto()
+    settings.tid("settings-storage-backend").select_option("mongo")
+    storage = settings.page.locator("#settings-storage")
+    expect(storage).to_contain_text("MongoDB collection sankey_studio_graphs")
+    expect(storage).to_contain_text("collections (groups of graphs) into sankey_studio_collections")
 
 
 def test_switching_without_copying_leaves_the_graphs_behind_until_you_switch_back(

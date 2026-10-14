@@ -6,6 +6,9 @@ is used only when the caller asked to overwrite. Names are compared casefolded, 
 and ``a.csv`` collide; listing the directory and publishing happen under an exclusive ``flock`` on
 the directory, so uploads of case variants cannot race (threads and processes alike). A filesystem
 without ``flock`` publishes unserialised. Operating-system failures become ``StorageError``.
+
+``edit_file`` is the write-back: it replaces the content of an EXISTING managed file (never
+creates one) through the same fd-based checks, under the same directory lock, via a part file.
 """
 
 from __future__ import annotations
@@ -13,10 +16,12 @@ from __future__ import annotations
 import fcntl
 import io
 import itertools
+import logging
 import os
 import secrets
 import stat
 from contextlib import suppress
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -24,6 +29,7 @@ from typing import TYPE_CHECKING
 from sankey_studio.errors import (
     ConflictError,
     PayloadTooLargeError,
+    SourceEditRefused,
     SourceNotFoundError,
     StorageError,
     UnsafeSourceError,
@@ -41,9 +47,12 @@ from sankey_studio.sources.files.types import SourceFileInfo
 from sankey_studio.sources.formats.lines import LineReader
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from typing import IO
 
     from sankey_studio.sources.files.types import SaveRequest
+
+logger = logging.getLogger(__name__)
 
 #: ``list_files`` scans directories up to this many levels below the sources directory.
 MAX_DEPTH = 3
@@ -214,3 +223,130 @@ def save_stream(request: SaveRequest, stream: IO[bytes]) -> SourceFileInfo:
             os.close(dir_fd)
     except OSError:
         raise StorageError("the upload could not be stored") from None
+
+
+# --------------------------------------------------------------------------- write-back
+
+
+@dataclass(frozen=True, slots=True)
+class FileEdit:
+    """Arguments of ``read_text`` / ``edit_file``: the file ``name`` below ``sources_dir``.
+
+    ``encoding`` decodes and re-encodes the content; ``max_bytes`` is the largest file handled.
+    """
+
+    sources_dir: Path
+    name: str
+    encoding: str
+    max_bytes: int
+
+
+def _read_all(fd: int, request: FileEdit) -> bytes:
+    """The whole file through a bounded loop (it may have grown since ``fstat``)."""
+    chunks: list[bytes] = []
+    total = 0
+    try:
+        while chunk := os.read(fd, CHUNK_BYTES):
+            total += len(chunk)
+            if total > request.max_bytes:
+                raise SourceEditRefused("file_too_large")
+            chunks.append(chunk)
+    except OSError:
+        raise SourceEditRefused("unreadable") from None
+    return b"".join(chunks)
+
+
+def _decode(data: bytes, encoding: str) -> str:
+    """Strict decode: ``bytes.decode`` keeps every line ending as it is on disk."""
+    try:
+        return data.decode(encoding)
+    except UnicodeDecodeError, LookupError:
+        raise SourceEditRefused("unreadable") from None
+
+
+def _encode(text: str, encoding: str) -> bytes:
+    """Encode BEFORE any part file exists: a character the encoding lacks refuses the edit."""
+    try:
+        return text.encode(encoding)
+    except UnicodeEncodeError:
+        raise SourceEditRefused("unrepresentable") from None
+
+
+#: ``(inode, size, mtime_ns, ctime_ns)``: what proves the file is the one that was read.
+type Stamp = tuple[int, int, int, int]
+
+
+def _stamp(info: os.stat_result) -> Stamp:
+    return info.st_ino, info.st_size, info.st_mtime_ns, info.st_ctime_ns
+
+
+def _read_leaf(dir_fd: int, leaf: str, request: FileEdit) -> tuple[str, Stamp, int]:
+    """Decoded text, the stamp and the permission bits of the existing regular file ``leaf``."""
+    opened = open_leaf(dir_fd, leaf, request.name)
+    try:
+        if opened.size > request.max_bytes:
+            raise SourceEditRefused("file_too_large")
+        info = os.fstat(opened.fd)
+        data = _read_all(opened.fd, request)
+    finally:
+        os.close(opened.fd)
+    return _decode(data, request.encoding), _stamp(info), stat.S_IMODE(info.st_mode)
+
+
+def read_text(request: FileEdit) -> str:
+    """The decoded content of the file, for a dry run (no lock, nothing written).
+
+    ``SourceEditRefused`` with reason ``file_too_large`` or ``unreadable``; the path errors of
+    ``located``/``open_leaf`` (``UnsafeSourceError``, ``SourceNotFoundError``) pass through.
+    """
+    with located(request.sources_dir, request.name) as (dir_fd, leaf):
+        return _read_leaf(dir_fd, leaf, request)[0]
+
+
+def _current_stamp(dir_fd: int, leaf: str) -> Stamp | None:
+    try:
+        return _stamp(os.stat(leaf, dir_fd=dir_fd, follow_symlinks=False))
+    except FileNotFoundError:  # removed or renamed away meanwhile
+        return None
+
+
+def _write_and_replace(dir_fd: int, leaf: str, payload: bytes, before: tuple[Stamp, int]) -> None:
+    """Write the part file, check the stamp once more, then replace ``leaf`` atomically."""
+    stamp, mode = before
+    part = f".{secrets.token_hex(8)}{PART_SUFFIX}"
+    fd = os.open(part, _PART_FLAGS, PART_MODE, dir_fd=dir_fd)  # O_EXCL: ours to remove
+    try:
+        with os.fdopen(fd, "wb") as out:
+            out.write(payload)
+            out.flush()
+            os.fchmod(out.fileno(), mode)
+            os.fsync(out.fileno())
+        if _current_stamp(dir_fd, leaf) != stamp:
+            raise ConflictError("The file changed while it was being edited")
+        os.replace(part, leaf, src_dir_fd=dir_fd, dst_dir_fd=dir_fd)
+        os.fsync(dir_fd)
+    finally:
+        with suppress(OSError):
+            os.unlink(part, dir_fd=dir_fd)
+
+
+def edit_file(request: FileEdit, rewrite: Callable[[str], str]) -> int:
+    """Replace the content of the existing managed file by ``rewrite(content)``; bytes written.
+
+    Under the directory lock: read (bounded, strict decode), ``rewrite`` (pure; a
+    ``SourceEditRefused`` leaves the file alone), encode, write a ``.part`` file with the same
+    permission bits, re-check the ``(inode, size, mtime, ctime)`` stamp, then ``os.replace`` and
+    fsync the directory. ``ConflictError`` when the file changed meanwhile; ``StorageError`` (no
+    path in the message) on an OS failure. Ownership and ACLs are not preserved and a hard link
+    to the file is broken by the replace.
+    """
+    with located(request.sources_dir, request.name) as (dir_fd, leaf):
+        _lock(dir_fd)
+        text, stamp, mode = _read_leaf(dir_fd, leaf, request)
+        payload = _encode(rewrite(text), request.encoding)
+        try:
+            _write_and_replace(dir_fd, leaf, payload, (stamp, mode))
+        except OSError:
+            raise StorageError("the file could not be written") from None
+    logger.info("source write: file=%r bytes=%d", request.name, len(payload))
+    return len(payload)

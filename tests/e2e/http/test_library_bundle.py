@@ -96,7 +96,7 @@ def test_the_bundle_is_one_utf8_json_download_in_the_order_asked(origin: Origin)
         'attachment; filename="sankey-studio-graphs.json"'
     )
     bundle = answer.json()
-    assert (bundle["format"], bundle["version"]) == ("sankey-studio/graphs", 1)
+    assert (bundle["format"], bundle["version"]) == ("sankey-studio/graphs", 2)
     assert [graph["id"] for graph in bundle["graphs"]] == ids
     assert UNICODE_NAME in answer.content.decode("utf-8")  # raw UTF-8 ...
     assert "\\u" not in answer.text  # ... not \uXXXX escapes
@@ -198,14 +198,19 @@ def test_keeping_the_ids_keeps_revisions_and_dates_and_refuses_a_second_import(
 
 MALFORMED = [
     pytest.param(
-        {"format": "something/else", "version": 1, "graphs": []}, "not a sankey-studio", id="format"
+        {"format": "something/else", "version": 2, "graphs": []}, "not a sankey-studio", id="format"
     ),
     pytest.param([], "not a sankey-studio", id="a-list"),
     pytest.param("text", "not a sankey-studio", id="a-string"),
     pytest.param(
-        {"format": "sankey-studio/graphs", "version": 2, "graphs": []},
+        {"format": "sankey-studio/graphs", "version": 3, "graphs": []},
         "Unsupported bundle version",
         id="version",
+    ),
+    pytest.param(
+        {"format": "sankey-studio/graphs", "version": 1, "graphs": []},
+        "Unsupported bundle version",
+        id="version-1-is-no-longer-read",
     ),
     pytest.param(
         {"format": "sankey-studio/graphs", "version": True, "graphs": []},
@@ -213,15 +218,15 @@ MALFORMED = [
         id="bool-version",
     ),
     pytest.param(
-        {"format": "sankey-studio/graphs", "version": 1}, "no list of graphs", id="no-graphs"
+        {"format": "sankey-studio/graphs", "version": 2}, "no list of graphs", id="no-graphs"
     ),
     pytest.param(
-        {"format": "sankey-studio/graphs", "version": 1, "graphs": {}},
+        {"format": "sankey-studio/graphs", "version": 2, "graphs": {}},
         "no list of graphs",
         id="graphs-object",
     ),
     pytest.param(
-        {"format": "sankey-studio/graphs", "version": 1, "graphs": [{}] * 1001},
+        {"format": "sankey-studio/graphs", "version": 2, "graphs": [{}] * 1001},
         "at most 1000 graphs",
         id="too-many",
     ),
@@ -246,7 +251,7 @@ def test_one_bad_graph_never_blocks_the_good_ones(
     secret = unique_name("PRIVATE-NAME")
     bundle = {
         "format": "sankey-studio/graphs",
-        "version": 1,
+        "version": 2,
         "graphs": [good[0], {"name": secret}, 5, good[1], {**good[1], "name": ""}],
     }
     with make_client(target) as second:

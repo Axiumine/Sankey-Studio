@@ -85,6 +85,7 @@ def test_the_donut_has_percent_labels_a_centre_total_a_tooltip_a_legend_and_a_ta
         ["Living1,28015.5%", "Housing1,20014.6%", "Uncategorized5,76069.9%"]
     )
     expect(editor.tid("sankey-chart")).to_be_hidden()
+    editor.open_export()
     expect(editor.tid("export-donut-svg")).to_be_enabled()
 
     # More than four categories: the slices carry the percentage only (the name is in the legend
@@ -132,6 +133,7 @@ def test_link_colours_by_category_recolour_the_sankey_and_extra_categories_fold_
     charts = ChartDom(page)
     by_node = Counter(charts.link_fills())
     expect(editor.tid("legend-item")).to_have_count(0)
+    editor.open_section("style")  # the chart settings popover closes when the page is used
     mode.select_option("category")
     editor.wait_preview()
 
@@ -173,7 +175,7 @@ def test_categories_and_rules_survive_save_reload_and_show_in_the_viewer(
     editor = open_editor(page, live_server, BUDGET.csv)
     entries = EntriesPanel(page)
     name = unique_name("Categorised budget")
-    editor.name_field.fill(name)
+    editor.set_name(name)
     entries.set_category("Budget", "Rent", "Housing")
     entries.search("Food")
     entries.bulk_categorise("Living")
@@ -183,9 +185,9 @@ def test_categories_and_rules_survive_save_reload_and_show_in_the_viewer(
     graph_id = editor.save()
 
     saved = json_of(api.get(f"/api/v1/graphs/{graph_id}"))
-    assert [
-        (e["source"], e["target"], e["category"]) for e in saved["transform"]["entry_categories"]
-    ] == [("Budget", "Rent", "Housing")]
+    # the typed category is written into the pasted data (write-through), not kept as an override
+    assert saved["transform"].get("entry_categories", []) == []
+    assert "Budget,Rent,1200,Housing" in saved["source"]["content"].splitlines()
     assert [(r["pattern"], r["category"]) for r in saved["transform"]["category_rules"]] == [
         ("*Food*", "Living")
     ]

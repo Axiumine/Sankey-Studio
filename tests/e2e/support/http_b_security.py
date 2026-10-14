@@ -53,7 +53,9 @@ PAGE_DATA: Final = re.compile(
 )
 SCRIPT_TAG: Final = re.compile(r"<script\b([^>]*)>", re.IGNORECASE)
 INLINE_HANDLER: Final = re.compile(r"\son[a-z]+\s*=", re.IGNORECASE)
-BUNDLE: Final = {"format": "sankey-studio/graphs", "version": 1, "graphs": []}
+BUNDLE: Final = {"format": "sankey-studio/graphs", "version": 2, "graphs": [], "folders": []}
+MOVE: Final = {"ids": ["0" * 32], "folder_id": None}
+EDIT: Final = {"op": "add_entry", "source": "a", "target": "zz", "value": 1}
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,15 +77,29 @@ WRITE_ROUTES: Final = (
     Route("delete", "DELETE", f"{API}/graphs/{{gid}}", "none"),
     Route("duplicate", "POST", f"{API}/graphs/{{gid}}/duplicate", "none"),
     Route("import", "POST", f"{API}/graphs/import", "json", BUNDLE),
+    Route("move", "POST", f"{API}/graphs/move", "json", MOVE),
+    Route("folder-create", "POST", f"{API}/folders", "json", {"name": "attack"}),
+    Route(
+        "folder-update",
+        "PUT",
+        f"{API}/folders/{{gid}}",
+        "json",
+        {"name": "attack", "parent_id": None, "revision": 1},
+    ),
+    Route("folder-delete", "DELETE", f"{API}/folders/{{gid}}", "none"),
     Route("settings", "PUT", f"{API}/settings", "json", {"max_links": 150}),
     Route("storage-test", "POST", f"{API}/settings/storage/test", "json", {}),
     Route("mongo-test", "POST", f"{API}/settings/mongo/main/test", "none"),
     Route("upload", "POST", f"{API}/sources/files", "multipart", ("attack.csv", b"a,b,1\n")),
     Route("delete-source", "DELETE", f"{API}/sources/files/keep.csv", "none"),
+    Route(
+        "edit-write", "POST", f"{API}/edits/write", "json", {"draft": graph_draft(), "edit": EDIT}
+    ),
 )
 SAFE_POST_ROUTES: Final = (
     Route("preview", "POST", f"{API}/preview", "json", graph_draft()),
     Route("entries", "POST", f"{API}/entries", "json", graph_draft()),
+    Route("edit-plan", "POST", f"{API}/edits/plan", "json", {"draft": graph_draft(), "edit": EDIT}),
     Route("export", "POST", f"{API}/export?format=csv", "json", graph_draft()),
     Route("detect", "POST", f"{API}/sources/detect", "json", {"sample": "a,b,1"}),
 )
@@ -108,6 +124,7 @@ class Snapshot:
     """What must survive an attack unchanged."""
 
     graphs: Any
+    folders: Any
     settings: Any
     sources: list[str]
     graph_files: list[str]
@@ -115,9 +132,10 @@ class Snapshot:
 
 
 def snapshot(client: httpx.Client, server: LiveServer) -> Snapshot:
-    """Graph list with revisions, the settings answer and file, and the files on disk."""
+    """Graph and folder lists, the settings answer and file, and the files on disk."""
     return Snapshot(
         graphs=json_of(client.get(f"{API}/graphs")),
+        folders=json_of(client.get(f"{API}/folders")),
         settings=json_of(client.get(f"{API}/settings")),
         sources=_names(server.sources_dir),
         graph_files=_names(server.graphs_dir),

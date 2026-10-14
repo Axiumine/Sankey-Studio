@@ -8,8 +8,14 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from sankey_studio.storage import FileGraphRepository, MongoGraphRepository, MongoStoreTarget
+from sankey_studio.storage import (
+    FileGraphRepository,
+    MongoFolderRepository,
+    MongoGraphRepository,
+    MongoStoreTarget,
+)
 from sankey_studio.storage.base import MONGO_GRAPHS_COLLECTION
+from sankey_studio.storage.files import FileFolderRepository
 from tests.storage.support import Ticker
 
 if TYPE_CHECKING:
@@ -21,6 +27,7 @@ if TYPE_CHECKING:
 
     from sankey_studio.mongo import MongoClients
     from sankey_studio.storage.base import GraphRepository
+    from sankey_studio.storage.folders_base import FolderRepository
 
 STORE_DATABASE = "sankey_studio"
 STORE_TARGET = MongoStoreTarget("test", STORE_DATABASE)
@@ -83,3 +90,40 @@ def env(
     """Every shared behaviour test runs once per backend."""
     repo: GraphRepository = file_repo if request.param == "file" else mongo_repo
     return RepoEnv(request.param, repo, clock)
+
+
+@dataclass(slots=True)
+class FolderEnv:
+    """A folder repository and the graph repository that shares its store."""
+
+    kind: str
+    folders: FolderRepository
+    graphs: GraphRepository
+    clock: Ticker
+
+
+@pytest.fixture
+def file_folders(tmp_path: Path, clock: Ticker) -> FileFolderRepository:
+    """Folders of the SAME directory (lock, index) as the ``file_repo`` fixture."""
+    return FileFolderRepository(tmp_path / "graphs", clock=clock)
+
+
+@pytest.fixture
+def mongo_folders(mongo_clients: MongoClients, clock: Ticker) -> MongoFolderRepository:
+    """Folders of the SAME database as the ``mongo_repo`` fixture (graphs and folders)."""
+    return MongoFolderRepository(mongo_clients, STORE_TARGET, clock=clock)
+
+
+@pytest.fixture(params=["file", "mongo"])
+def folder_env(
+    request: pytest.FixtureRequest,
+    clock: Ticker,
+) -> FolderEnv:
+    """Every shared folder test runs once per backend, each with the graph repository it shares."""
+    if request.param == "file":
+        graphs: GraphRepository = request.getfixturevalue("file_repo")
+        folders: FolderRepository = request.getfixturevalue("file_folders")
+    else:
+        graphs = request.getfixturevalue("mongo_repo")
+        folders = request.getfixturevalue("mongo_folders")
+    return FolderEnv(str(request.param), folders, graphs, clock)

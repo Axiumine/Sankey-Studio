@@ -74,7 +74,7 @@ def test_a_stale_save_shows_the_banner_and_reload_or_save_as_copy_get_out_of_it(
     assert tabs.a.page.watch.matching(r"^http 409: PUT ")
     tabs.a.tid("conflict-reload").click()  # way out 1: drop my edit
     expect(banner).to_be_hidden()
-    expect(tabs.a.name_field).to_have_value(name_b)
+    tabs.a.expect_name(name_b)
     expect(tabs.a.status).to_contain_text("Revision 2")
     expect(tabs.a.status).to_contain_text("All changes saved")
     name_a, name_b3 = tabs.collide(3, "second")  # way out 2: keep both versions

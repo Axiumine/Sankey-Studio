@@ -1,12 +1,11 @@
-/* Layout: app shell (header, nav, banners, main), spacing helpers, responsive grids, the two-pane
-   editor layout and the sticky save bar. Works from 360px up without horizontal page scroll.
+/* Layout: app shell (header, nav, banners, main), spacing helpers, responsive grids and the sticky
+   save bar (the editor's own rows are in pages-editor.css). Works from 360px up without horizontal page scroll.
 
    Helpers (compose them in the markup; every one takes its gap from the spacing scale):
      .stack          vertical rhythm, gap via --gap (default --space-4)
      .cluster        wrapping row, gap via --gap (default --space-3), items centred
      .grid           auto-fill grid, columns min --col (default 16rem)
      .grid-2 .grid-3 fixed column counts on wide screens, one column on phones
-     .editor-layout  two panes (form | preview) from 900px, stacked below
      .savebar        sticky bottom bar for the editor / settings forms
 */
 
@@ -168,27 +167,6 @@
 
 .form-grid > .span-all { grid-column: 1 / -1; }
 
-/* ------------------------------------------------------------------ editor layout */
-
-.editor-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
-  align-items: start;
-}
-
-.editor-pane { min-width: 0; }
-
-@media (min-width: 900px) {
-  .editor-layout { grid-template-columns: minmax(20rem, 5fr) minmax(0, 7fr); gap: var(--space-5); }
-  .editor-pane-preview {
-    position: sticky;
-    top: calc(var(--header-h) + var(--space-4));
-    max-height: calc(100vh - var(--header-h) - 2 * var(--space-4));
-    overflow-y: auto;
-  }
-}
-
 /* ------------------------------------------------------------------ sticky save bar */
 
 .savebar {
@@ -228,8 +206,6 @@
   .page-actions,
   .toolbar { display: none !important; }
   .app-main { max-width: none; padding: 0; }
-  .editor-layout { display: block; }
-  .editor-pane-preview { position: static; max-height: none; overflow: visible; }
 }
 
 /* The theme switch shows the active theme from <html data-theme> alone, so it is right before

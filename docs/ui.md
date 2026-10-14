@@ -69,8 +69,8 @@ There is no build step, no bundler and no framework.
 
 | Page | URL | `main[data-page]` | `h1` and title | Script |
 |---|---|---|---|---|
-| Library | `/` (`?q=&tag=&sort=&page=`) | `library` | Graphs | `pages/library.js` |
-| New graph | `/graphs/new` | `new` | New graph | `pages/editor.js` |
+| Library | `/` (`?q=&tag=&sort=&page=&folder=`) | `library` | Graphs | `pages/library.js` |
+| New graph | `/graphs/new` (`?folder=<id>`) | `new` | New graph | `pages/editor.js` |
 | Editor | `/graphs/<id>/edit` | `edit` | Edit `<name>` | `pages/editor.js` |
 | Viewer | `/graphs/<id>` | `viewer` | the graph name | `pages/viewer.js` |
 | Compare | `/compare?ids=a,b,c` | `compare` | Compare graphs | `pages/compare.js` |
@@ -82,8 +82,8 @@ There is no build step, no bundler and no framework.
 * A graph whose name is empty once control and bidirectional characters are removed is called
   `Untitled graph` in every heading, title, card, menu, dialog and toast (the editor heading is
   `Edit Untitled graph`). The stored name is never rewritten; only the display falls back.
-* The editor heading is `New graph` until the first save; afterwards it is `Edit <name>` and follows
-  the Name field.
+* The editor heading is `New graph` while the graph has no name, `New graph: <name>` while an unsaved
+  graph has one, and `Edit <name>` once it is saved; it follows the name.
 * Every HTML page answers `Cache-Control: no-store`, so Back and Forward ask the server again.
 * After the first save of a new graph the address becomes `/graphs/<id>/edit` through
   `history.replaceState`: there is no navigation or load event.
@@ -96,8 +96,8 @@ Every page embeds `page`, `remote_mode`, `writes_allowed` and `theme`. Extra key
 
 | Page | Extra keys |
 |---|---|
-| Library | `graphs` (up to 200 newest `GraphSummary` objects), `total` |
-| New graph | `graph: null` |
+| Library | `graphs` (up to 200 newest `GraphSummary` objects directly in the open collection), `total`, `folders` (every collection with its graph and child counts), `folder` (the open collection's id, `null` at the top level) |
+| New graph | `graph: null`, `folder_id` (the existing collection `?folder=` names, else `null`) |
 | Editor and viewer | `graph` (a `GraphSummary`: `id`, `name`, `description`, `tags`, `source_type`, `revision`, `updated_at`) |
 | Compare | `ids` (every id of the address, deduplicated, at most 12), `graphs` (summaries of the ones that exist), `missing` (ids with no graph) |
 | Settings | none |
@@ -149,7 +149,16 @@ Behaviour shared by every page:
 * **Dialogs** (`confirm-dialog` and the page-specific ones) are `role=dialog` with `aria-modal`. While
   one is open `#app` is `inert`, `html` has the class `is-modal`, Tab is trapped, Esc or a
   mousedown on the backdrop cancels, and focus returns to the opener. A dangerous confirmation
-  (delete, replace file) starts on its Cancel button, so pressing Enter right away cancels.
+  (delete, replace file) starts on its Cancel button, so pressing Enter right away cancels. A dialog
+  can show an X in its header (`dialog-close`) that closes like Esc. Dialogs may stack (the consent
+  question opens above the Add dialog): Esc closes only the newest.
+* **Popovers and menus** (`core/popover.js`, `core/menu.js`). A popover is NOT modal: the page stays
+  usable behind it, only one is open at a time, Esc closes it and returns the focus to its trigger,
+  a press outside it or the focus leaving it closes it without moving the focus, and print hides it.
+  A menu is a popover with the ARIA menu-button keys: Enter, Space, a click or ArrowDown on the button
+  open it on the first item (ArrowUp on the last), the arrows wrap, Home and End jump, Tab closes it, and
+  choosing an item closes it with the focus back on the button before the item's action runs (so a
+  dialog it opens returns the focus there).
 * **Read-only servers.** Controls marked `data-writes` are disabled with the title "Not available:
   this server is read-only" (links lose their `href`). Previews and exports keep working.
 * **Shared state blocks** (`core/states.js`): `state-empty` (title, message, optional actions),
@@ -159,11 +168,15 @@ Behaviour shared by every page:
 
 ## Library
 
-`/` lists the saved graphs, 12 cards per page.
+`/` lists the saved graphs of the open collection, 12 cards per page. The top level lists the graphs that
+sit in no collection. A collection is called "collection" in every visible text and `folder` in every
+identifier, address and test id.
 
-Layout: the page actions hold a group "Bundle" with Import and Export; then, on a read-only server,
-a note; the toolbar (search, sort, "Clear filters", tag chips); the results (count line, optional
-note, card grid); the pager (`nav`, label "Pages of graphs"); the selection bar.
+Layout: the page actions hold the buttons "New collection" and, inside a collection, "New graph here",
+then a group "Bundle" with Import and Export; then, on a read-only server, a note; the breadcrumb (inside
+a collection); the toolbar (search, sort, "Clear filters", tag chips); the "Collections (N)" block of
+cards for the open level; the results (count line, optional note, card grid); the pager (`nav`, label
+"Pages of graphs"); the selection bar.
 
 States:
 
@@ -171,7 +184,9 @@ States:
 |---|---|
 | Loading | `state-loading` "Loading graphs", only when the first paint cannot use the boot data (a filter in the address, or arrival by Back or Forward) |
 | Ready | `graph-card` elements and `library-count` ("Showing 1-12 of 32 graphs" with an en dash; "5 graphs" when everything fits one page; filters are appended, for example `matching "rent"` or `tagged "demo"`) |
-| Empty library | `library-empty` ("No graphs yet"; "Create your first graph" and "Import a bundle" actions when writes are allowed, a read-only sentence otherwise) |
+| Empty library | `library-empty` ("No graphs yet"; "Create your first graph" and "Import a bundle" actions when writes are allowed, a read-only sentence otherwise). Shown only when there is no graph and no collection at all |
+| Empty collection | `library-folder-empty` (an open collection with no graph and no sub-collection: "New graph here" and "New collection"; on a read-only server a sentence and no buttons). A level that has collections but no graphs shows a plain hint ("There are no graphs outside the collections." or "...directly in this collection."), never "No graphs yet" |
+| Missing collection | `library-folder-missing` ("This collection no longer exists", a link "Back to the library"): a well-formed id in the address that names no collection. No list request is made and there is no "New collection" |
 | No match | `library-no-results` ("No graphs match", with a "Clear filters" button) |
 | Error | `state-error` "The library could not be loaded" with `state-retry` |
 | Selection | `selection-bar` visible while at least one card is ticked |
@@ -195,7 +210,41 @@ Behaviour:
   description, tags, a source badge (Text data, Manual table or MongoDB), "Updated <relative time>",
   `Rev N` and the actions Edit, Duplicate and Delete (accessible names `Edit "<name>"` and so on).
   Duplicate and Delete carry `data-writes`.
-* Duplicate creates `<name> (copy)` and shows the toast `Created "<name> (copy)".` with an "Open
+* **Collections.** `/?folder=<id>` is a real link, so reload, Back, Forward and "open in a new tab" need
+  no script. Anything that is not a 32-hex id reads as the top level (no error). The first paint uses the
+  boot data (`graphs`, `folders`, `folder`) and makes no list request. While there is no search text and no
+  tag, the list, count, pager and sort stay inside the open collection (`GET /graphs?folder=root|<id>`,
+  the sorts other than `updated-desc` load that collection's graphs only); a search or a tag looks at
+  EVERY collection (no `folder` is sent), hides the breadcrumb and the collection cards, shows
+  `library-scope-note` ("Searching all collections.") and puts a chip `graph-folder` with the path
+  ("Finance / Q3 reports", a link to that collection) on each result.
+* `folder-breadcrumb` reads `Library / A / B`: `folder-crumb` is on every link, "Library" included, and the
+  last one has `aria-current=page`. It is hidden at the top level, while searching and for a missing
+  collection; long names are cut with an ellipsis.
+* The collection cards sit in `folder-grid` under "Collections (N)": a `folder-card` (`data-folder-id`)
+  with the name link `folder-open`, "N graphs, M collections", and the buttons Rename (`folder-rename`),
+  Move (`folder-move`) and Delete (`folder-delete`). `folder-new` ("New collection") and `folder-new-graph`
+  ("New graph here", a link to `/graphs/new?folder=<id>`) are in the page actions, not in the block; both
+  are hidden while searching and "New collection" is hidden inside a collection that is already 8 levels
+  deep. A graph card gets `graph-move` ("Move") once at least one collection exists, and the selection bar
+  `selection-move` ("Move to collection"; the cap of 12 is shared with compare).
+* `folder-dialog` creates and renames (`folder-name-input`, `folder-name-error`, `folder-name-confirm`):
+  Enter submits (not while composing), an empty name keeps the dialog ("Give the collection a name."), so
+  does a taken name ("A collection with this name already exists in that place. Choose another name."), a
+  second Enter while the request runs sends nothing, and the field stops at 100 characters. `move-dialog`
+  is a radio tree, "Library (top level)" first and the collections below it, children indented by their
+  depth: `move-option` is the label of each radio (`data-folder-id`, `root` for the top level) and
+  `move-confirm` ("Move here") stays disabled until a choice is made. Places that cannot be chosen stay
+  visible, disabled, with their reason ("already here", "inside the collection being moved", "too deep (at
+  most 8 levels)"); the arrow keys choose and Tab reaches "Move here". A refused move shows its sentence
+  in `folder-name-error`, which is the error line of this dialog too. `folder-delete-dialog` starts on
+  Cancel, says how many graphs and collections move up to the library and that no graph is deleted, and
+  `folder-delete-confirm` deletes.
+* When a collection was changed elsewhere, a 404 or a stale revision (409 `conflict`) from a collection
+  write shows a toast ("That collection no longer exists..." or "...was changed elsewhere..."), reloads the
+  list and closes the dialog; any other failure stays in the dialog under the field. After a create, rename
+  or move the card's link takes the focus; after a graph move the summary line does.
+* Duplicate creates `<name> (copy)` (in the collection of the original) and shows the toast `Created "<name> (copy)".` with an "Open
   copy" button; the list reloads and the copy comes first in "Recently updated".
 * Delete opens `delete-dialog` (`Delete "<name>"?`, focus on Cancel, confirm button `delete-confirm`
   labelled "Delete graph"); Esc cancels and returns focus to that card's Delete button; confirming
@@ -204,38 +253,111 @@ Behaviour:
   12 graphs at a time") and `compare-limit-message` appears. `compare-open` links to
   `/compare?ids=a,b,...`; with fewer than two ticked it stays visible with `aria-disabled=true` and
   no `href`.
-* `library-export` reads "Export" and then "Export all (N)", "Export results (n)" (filter active),
-  "Export selected (k)" (cards ticked) or "Export newest 200 of 1,010" (more than 200 graphs; a toast
-  repeats the reason). It downloads `sankey-studio-graphs.json`.
+* `library-export` reads "Export" and then "Export all (N)" (no collections), "Export top-level graphs (N)"
+  (at the top level when collections exist), "Export this collection (N)" (inside one; disabled while it is
+  empty), "Export results (n)" (filter active), "Export selected (k)" (cards ticked) or "Export newest 200
+  of 1,010" (more than 200 graphs; a toast repeats the reason). It downloads `sankey-studio-graphs.json`,
+  a version 2 bundle that also carries the collections of the exported graphs (parents first).
 * Import: `library-import` is a `<label class="btn">` around a visually hidden file input (accepts
   `.json`); use `set_input_files` on it. A readable bundle opens `import-dialog` ("Import graphs",
-  "This bundle holds N graphs.", Cancel and `import-confirm` "Import"), then `import-report`
-  ("Import finished", "Imported N graphs.", and "N graphs could not be imported." with the first
-  problems; "Nothing was imported" when none went in). A file that is not a bundle gives an error
+  "This bundle holds N graphs and M collections.", a line saying that a collection which already exists in
+  the same place is reused, Cancel and `import-confirm` "Import"), then `import-report`
+  ("Import finished", "Imported N graphs and M collections.", and "N graphs could not be imported." with
+  the first problems, among them lines `collection N: ...`; "Nothing was imported" when none went in). A file that is not a bundle gives an error
   toast instead of a dialog. On a read-only server the label has `aria-disabled=true` and the input
   is disabled.
+* **Read-only servers.** Browsing collections, opening them and exporting work; every write control
+  (`folder-new`, `folder-new-graph`, rename, move, delete, `graph-move`, `selection-move`) carries
+  `data-writes`, is disabled with the usual title and "New graph here" loses its `href`. The note says
+  duplicating, deleting, moving and importing are turned off. An empty collection says "This server is
+  read-only, so graphs cannot be created or moved here." and has no buttons.
 
 ## Editor
 
 `/graphs/new` and `/graphs/<id>/edit` share one page. The editor keeps the draft in a store and asks
 `POST /api/v1/preview` for a bundle 300 ms after the last change.
 
-Layout, from 900 px up: the left pane holds the panels `meta`, `source`, `transform` and `style`
-(elements `div[data-panel=...]`); the right pane `#editor-output` is sticky and holds `chart` and
-`export`; below both panes, full width, come `entries` (with its own bounded scroll) and `savebar`
-(a sticky bar). Below 900 px everything stacks and the chart follows the form. The page actions hold
-"Go to the chart" (a link to `#editor-output`) and `view-graph` ("View graph", hidden until the graph
-is saved). Below 560 px the action row keeps its own line so the form does not jump when it fills.
+Layout, top to bottom: the title row (the `h1` and, right after it, the gear `graph-settings-button`,
+then the page actions `view-graph` ("View graph", hidden until the graph is saved)); the chart row
+`div.ed-chart-row#editor-output`, full width, with the chart panel (`div[data-panel=chart]`: the tab
+strip and, at the right of the header, the chart tools `div.out-chart-tools`: "Order nodes", "Reset
+order" while an order is stored, and the gear `chart-settings-button`); the form row `div.ed-form-row`
+with the panels `source` and `transform` side by side from 900 px (stacked below); then `entries` (with its
+own bounded scroll) and `savebar` (a sticky bar). The chart is NOT sticky: while you edit Source or
+Transform it scrolls out of view, and there is no "Go to the chart" link. Below 560 px the action row keeps
+its own line so the form does not jump when it fills.
 
-The sections Data source, Transform and Style are native `<details>` elements whose `<summary>` is
-`section-source`, `section-transform` or `section-style`. Data source is open by default; Transform
-and Style are closed, and their fields are in the DOM but hidden until the summary is clicked. The
-open or closed choice of each section is remembered in `localStorage` (`sankey-studio.editor.sections`).
+The sections Data source and Transform are native `<details>` elements whose `<summary>` is
+`section-source` or `section-transform`. Data source is open by default; Transform is closed, and its
+fields are in the DOM but hidden until the summary is clicked. The open or closed choice of each is
+remembered in `localStorage` (`sankey-studio.editor.sections`). Style (`section-style`) and Export live
+in the chart settings popover, below.
+
+**The title row.** `graph-settings-button` ("Graph settings", a gear) is a sibling right after the `h1` and
+opens the menu `graph-settings-menu` with "Edit details" (`graph-settings-details`) and "Change data
+source" (`graph-settings-source`); it is an ARIA menu button (see the shell keys above). The gear carries
+a red dot and the name "Graph settings, N problems" while the server rejected the name, description or
+tags.
+
+* **Graph details** (`details-dialog`, modal, with an X `dialog-close`): name, description and tags, bound to
+  the draft as you type (the heading, the dirty flag and the preview follow). "Done" (`details-done`)
+  validates the name only: an empty name keeps the dialog, shows "Give the graph a name so you can find
+  it later." and focuses the field. Esc, the X and the backdrop close without validating; the focus returns
+  to the gear. A second request for the dialog (the gear again, Save, Ctrl+S) reuses the open one.
+* **Change data source** (`change-source-dialog`): one radio per kind, `change-source-kind-text|paste|
+  upload|manual|mongo` (the current one is preselected and marked "(current)"; MongoDB is disabled with "No
+  MongoDB connection is configured" unless it is the current kind). Choosing the kind that is already in use
+  makes the primary button read "Edit source settings": it only closes the dialog and focuses the inline tab,
+  because the source settings are edited inline. Choosing another kind reads "Change source"
+  (`change-source-apply`) and swaps the source through the same cache as the inline tab strip, so going
+  back restores what was typed. When the graph holds graph-only edits (category edits, added entries, a
+  stored node order) a note says "Changing the source drops N category edits unless you keep them." and the
+  checkbox `change-source-keep` ("Keep my graph-only edits", off = dropped) appears. After applying, the
+  Data source section is open and the inline tab `source-tab-<kind>` is selected and focused. The inline tab
+  strip asks the same question (a dialog "Keep your edits to this graph?" with Cancel, "Drop them", "Keep
+  them"; Cancel leaves the tab and the draft alone).
+
+**The new-graph wizard.** `/graphs/new` first shows an inline card `new-wizard` (`data-step` is `details` or
+`source`; `#page-root[data-wizard]` mirrors it). It never POSTs, so it works on a read-only server.
+
+* Step 1 (`wizard-step-details`): heading "Name your graph", then name, description and tags (the same
+  `editor-name|description|tags` as the details dialog). The name is focused; Enter in it is Next
+  (`wizard-next`); an empty name shows "Give the graph a name so you can find it later." and stays.
+  `wizard-cancel` is a link to `/` (or `/?folder=<id>` when `?folder=` named a collection).
+* Step 2 (`wizard-step-source`): "Where does the data come from?" with the five source tabs (the same
+  implementation as the editor's), the checkbox `source-has-header` ("The first row is a header", for the
+  text tabs; the F3 case is a headerless paste) and a hint per tab. `wizard-back` returns with the values
+  kept. `wizard-later` ("Do it later") exists for Paste and Manual while they are empty and starts an
+  empty graph of that kind; Text file, Upload and MongoDB need a choice first. `wizard-create` reads "Start
+  editing" and is disabled until the source has input; under the buttons "Nothing is saved until you press
+  Save." (read-only server: "This server is read-only: you can draw, not save.").
+* Typed input is protected by the leave guard ("Leave without saving?"). Finishing removes the wizard,
+  focuses `#main`, announces "Editing <name>" and mounts the editor, which starts as "Not saved yet" with a
+  dirty draft; `#page-root[data-ready=true]` appears only then. Each step change announces "Step N of 2: ...".
+* `/graphs/new?folder=<id>` carries the collection into the editor (`store.meta.folder_id`, never part of the
+  saved body): the first Save creates the graph with `POST /graphs?folder=<id>`. If the collection is gone
+  by then (404) the graph is saved at the top level and a warning toast says so ("That collection no
+  longer exists, so the graph was saved at the top level of the library.").
+
+**The chart settings popover.** `chart-settings-button` ("Chart settings", a gear in the chart header,
+`aria-expanded`) opens `chart-settings-panel` (a non-modal `role=dialog` under the gear, `hidden` while
+closed) with the tabs `chart-settings-tab-style` and `chart-settings-tab-export` (the Style section, open and
+not remembered, and the Export card) and a close button `chart-settings-close`. The chart stays visible and
+live behind it, so a typed title or a changed colour shows at once.
+
+* Opening it from the gear shows the tab used last (Style the first time). Esc or the X closes it and
+  returns the focus to the gear; a press or the focus outside closes it without moving the focus; Tab on the
+  open gear enters the panel. Print hides it, and at 390 px it stays inside the window.
+* While the server rejects a style value (a 422 on `style.*`) the gear shows a red dot and the name "Chart
+  settings, N problems", and opening it selects Style with the field error. Clearing the value removes the
+  dot.
+* Every `export-*` control and `section-style` is inside this panel: open it before using them.
 
 Page states:
 
 | State | What is on screen |
 |---|---|
+| Wizard | `/graphs/new` only: `new-wizard` is on the page and `#page-root` has no `data-ready` yet |
 | Loading | `state-loading` "Loading the editor"; `#page-root` has no `data-ready` yet |
 | Load error | `state-error` "The graph could not be loaded" with `state-retry`; or, for a graph deleted after the page opened, `state-empty` "This graph no longer exists" with a link back to the library |
 | Ready | `#page-root[data-ready=true]`: the graph and settings are loaded and every panel is mounted (the first chart may still be drawing) |
@@ -267,7 +389,8 @@ What appears when (the DOM keeps hidden elements, so check visibility, not prese
 * `source-format` and the block "How to read the data" exist for the three text tabs. The column
   pickers (`source-column-*`), `source-has-header` and `source-no-category-switch` are visible only
   for a CSV or TSV source that has data. `source-column-category` reads "Auto (none found)" when the
-  data has no category column.
+  data has no category column (headerless data with fewer than four columns included) and "Auto (col 4)"
+  for headerless data with a fourth column.
 * `chart-tab-donut` is absent unless the graph has categories. `donut-hint` is absent when it has
   categories (or nothing to draw). `category-table`, `category-row` and the legend items appear with
   categories; legend items exist only in the `category` and `layer` colour modes.
@@ -281,10 +404,20 @@ What appears when (the DOM keeps hidden elements, so check visibility, not prese
 
 Details by panel:
 
-* **Name, description, tags.** Name is required (at most 200 characters), description at most 2,000,
-  tags up to 20 of 40 characters each (chip input: type and press Enter or a comma). An empty name
-  shows the field errors "Give the graph a name so you can find it later." and the status "Give the
-  graph a name before saving." and no request is sent.
+* **Name, description, tags.** They live in the details dialog (above) and in step 1 of the wizard. Name is
+  required (at most 200 characters), description at most 2,000, tags up to 20 of 40 characters each (chip
+  input: type and press Enter or a comma). Save with an empty name opens the details dialog with "Give
+  the graph a name so you can find it later.", sets the status "Give the graph a name before saving."
+  and sends no request.
+* **Paste.** `source-content` has an icon button `source-clear` inside the box, at its top right
+  (accessible name "Clear the pasted data", title "Clear"); it exists only while the box holds text and is
+  one Tab stop right after the box. Click, Enter or Space empties the box, keeps the focus in it,
+  announces "Cleared", draws the empty state "Nothing to draw yet" and shows the toast "Cleared" with
+  Undo, which puts the text back (the focus stays in the box and the preview is asked again). The toast
+  is retired as soon as the box holds anything else (typing, pasting, an example, Undo itself) or another
+  source tab is chosen, so Undo never overwrites newer data; clearing twice dismisses the first toast.
+  Without a header (`source-has-header` unticked) the fourth column is the category:
+  `source-column-category` reads "Auto (col 4)", and `source-no-category-switch` turns that off.
 * **Source.** Upload tab: a dashed drop zone ("Drop a file here, or", a styled `label.btn` "Choose a
   file", "No file chosen" or the chosen name, "csv, tsv, txt, json, ndjson or sankey, up to N MB.");
   `source-upload-input` is a visually hidden 1 x 1 px input fed by `set_input_files`; dropping works
@@ -304,7 +437,7 @@ Details by panel:
   `transform-merge-nodes` and `transform-rules` (editable tables; a bulk rule from the entries panel
   shows up in `transform-rules`), `transform-on-cycle` (`error`: "Stop and show an error", `break`:
   "Drop the links that close the loop") and `transform-strict`.
-* **Style.** `style-title`, `style-color-mode` (`node`, `layer`, `mono`, `category`; `category` is
+* **Style** (in the chart settings popover). `style-title`, `style-color-mode` (`node`, `layer`, `mono`, `category`; `category` is
   offered only when categories exist or it is already chosen), `style-orientation` (`h` or `v`) and
   `style-height` (240 to 2400). Other fields (spacing, opacity, font size, number format, donut options) have no test id. "Preview
   colours" (Match page, Light, Dark) is not saved with the graph. The checkbox "Show values under the node names"
@@ -315,6 +448,43 @@ Details by panel:
   Nodes, Links ("x of y" when the chart draws only the largest links), Total in, Total out, Columns
   and, only when categories exist, Categories. Warnings (`warnings`, items `warning-item`) show
   three at a time with "Show N more warnings" (at most 100 are kept).
+* **Dragging nodes.** In the Sankey a bar can be dragged with every `arrangement` except `fixed`, in both
+  orientations. The new order of every drawn column is saved in the draft (`style.node_order`, so the graph
+  becomes unsaved), the chart redraws in that order after about half a second and a toast says "Node order
+  saved with this graph. Editing the data rows does not move the bars until you press Reset order." with
+  Undo. A drag that ends in the order the bars were DRAWN in when the press began stores nothing (the
+  drawn order is read from the chart, because without a stored order Plotly lays the columns out by itself and
+  that can differ from the order of the rows). Undo takes back only its own edit: a newer Undo toast replaces
+  the older one, and an Undo whose parts were changed again meanwhile says "Undo is no longer possible: the
+  graph changed after this edit." and changes nothing. The rows of the data follow best effort (pasted text, the manual table, a file the graph may
+  write; never MongoDB). When the new rows would change a colour, the colours are pinned in the style in
+  the same step (Undo takes both back) and a second toast says "N colours were pinned so the chart keeps
+  its colours."; if the pins would not fit in the style, a toast says "Rows were not reordered because
+  that would change the colours. The order is kept in this graph." once per source (a file whose rows
+  could not be written says "Order kept in this graph only."). A plain click, a
+  press beside the bars and a right click do nothing. In snap mode a bar must be dragged clearly past its
+  neighbour or it settles back. `chart-reset-order` ("Reset order", in the chart tools) is visible while an
+  order is stored and returns to the automatic layout; manual row edits never move the bars while an order
+  is stored. The viewer, compare and every export draw the stored order.
+* **Order nodes** (`chart-order-open`, "Order nodes", in the chart tools; disabled with the title "The nodes
+  cannot move while Dragging nodes is set to Fixed." for `fixed`, and when nothing can be ordered). It opens
+  `order-dialog`: an intro, one section per drawn column ("Column n of N"), and a row per node with
+  `order-up` and `order-down` (accessible names "Move <name> up|down", disabled at the ends). A press swaps
+  the node in the list, keeps the focus on it (on the other button when the pressed one became disabled),
+  announces "<name> moved to position i of n" and saves the whole order through the same path as a drag.
+  "Done" (no test id) or Esc closes the dialog and returns the focus to the button. This is the keyboard and
+  single-pointer way to do what a drag does.
+* **Clicking a node.** A click on a BAR of the Sankey (never on a link, never after a drag) opens the "Add a
+  flow" dialog for that node. A bar that nothing leaves (a sink) gets a flow that ENDS at it (the target is
+  filled in, the source is focused); every other bar gets a flow that STARTS at it (the source is filled in,
+  the target is focused). The dialog then shows the fieldset `add-entry-direction` with the radios
+  `add-entry-from-node` ("The new flow starts at <node>") and `add-entry-to-node` ("The new flow ends at
+  <node>"); choosing the other one swaps source and target (what was typed for the other end follows it),
+  retitles the dialog ("Add a flow from <node>" or "Add a flow into <node>", the name cut at 60 characters),
+  keeps the focus on the radio so the arrow keys work, and refreshes the hints. The click works with every
+  arrangement. The bars are mouse-only: `entries-add` is the keyboard twin. Touch without hover can click a
+  bar only when the arrangement is `fixed`. When the source names no file or collection yet, the click shows
+  the toast of the disabled button instead of the dialog.
 * **Entries.** One row per source and target pair, 100 rows per page (`entries-row` counts the
   current page, `entries-total` the whole: "9 entries", or "3 of 9 entries" while filtered).
   `category-cell` is an `<input list>`: Enter commits and moves to the next row (Shift+Enter to the
@@ -326,7 +496,61 @@ Details by panel:
   button adds ONE glob rule (`*text*`, matching source or target names) and shows the toast `Rule
   added: names containing "Food" get "Living". You can edit it under Transform.` with Undo.
   `entries-sort` options: `value`, `source`, `target`, `category`. The search clears on Esc.
-* **Export.** Width (200 to 4000, default 1200), height (200 to 4000, empty means the figure's),
+* **Typing a category is a data edit.** Pasted text gains or updates the category column (a `category`
+  header is added when there is none; headerless rows get a fourth cell), the manual table fills the
+  Category of every link of the pair (pairs of merged nodes are found), and a text file or a MongoDB
+  collection first asks the consent question below. A screen reader hears "Category saved in your data" for
+  text and manual links; a file or collection shows the toast "Updated N row(s)/document(s) in <target>.". When the data had no
+  category at all, the other rows legitimately stay uncategorised, so after the first category a toast says
+  "N other entries have no category." with "Show them", which ticks `entries-uncategorized-only` (once per
+  page). When the edit cannot go into the data (an aggregate source, a refused value, a read-only
+  server) it stays in the graph (`transform.entry_categories`) and one fixed info toast says why, once per
+  reason and source.
+* **Add entry.** The Entries card header holds `entries-add` ("Add entry"; always shown, and disabled with a
+  title - "Choose a file first." or "Choose a collection first." - while a Text file or MongoDB source
+  names nothing yet) and the chip `entries-overlays`. The button opens `add-entry-dialog` ("Add a flow",
+  modal) with Source (`add-entry-source`), Target (`add-entry-target`), Value (`add-entry-value`) and an
+  optional Category (`add-entry-category`); node names and categories are offered as suggestions. Enter
+  submits (not while composing). The first problem, in reading order, goes to the one `role=alert` line
+  `add-entry-error`, the field gets `aria-invalid` and the focus, and typing clears it: names of 1 to 200
+  characters without control characters and different from each other, a finite value above 0 ("1 200" and
+  "1e3" are read, "1,5" is refused) and a category that is not "Uncategorized" or "Other". Under Source
+  and Target the hint "New node: <name> will be created." appears for a name the chart does not have.
+  `add-entry-submit` ("Add") is busy while the edit runs; `add-entry-cancel` and Esc close the dialog and
+  return the focus to `entries-add`. An answer with a sentence (a loop, the 5,000-link cap, a stale draft)
+  stays in the dialog. For a file or collection source the consent dialog opens above this one and Esc
+  closes only the newest. Success closes the dialog; the toast reads "Entry added." with Undo when the
+  entry went into pasted text, manual links or the graph only, and "Added 1 row in <file>." or "Added 1
+  document in <target>." when it was written to a file or collection.
+* **Graph-only edits.** `entries-overlays` ("Graph-only edits (N)", hidden at 0) counts the category edits,
+  added entries and the custom node order that live in the graph and not in the data. It opens
+  `overlays-dialog`: "These edits are stored in this graph, not in your data." and a row per item ("Budget to
+  Rent: category Housing", "Budget to Food: no category", "Budget to Gifts: 50, category Fun", "Custom node
+  order (3 nodes)") with `overlay-remove`. Remove changes the draft at once (the table and the chart
+  follow, the graph becomes unsaved) and moves the focus to the next Remove or to Done; at most 200 rows
+  are listed; an empty list reads "No graph-only edits are left."; closing returns the focus to the chip, or
+  to `entries-add` when the chip left. `entries-unmatched` is a notice above the toolbar: "N of your
+  category edits no longer match an entry (the names changed). They are ignored and listed under
+  Graph-only edits."
+* **Consent dialog.** For a text file or a MongoDB `find` source the first data edit opens
+  `write-back-dialog` ("Change your data too?"). It names the target, repeats the edit ("Entry Budget to
+  Rent: category Housing."), says the change is immediate, not part of Save and cannot be undone here,
+  that other graphs reading the file change too (a file) or that the database user needs write permission
+  (a collection), and "The file will be re-formatted." for JSON. The answers: `write-back-accept` ("Update
+  the source") writes now and saves the answer with the graph; `write-back-decline` ("Keep in this graph",
+  initial focus) keeps this one edit in the graph and is remembered for the page session and the same
+  target only, never saved; `write-back-never` ("Keep in this graph, don't ask again") saves that choice
+  with the graph; `write-back-cancel` (Cancel, Esc, the backdrop) does nothing and the cell rolls back
+  quietly. Edits of one target that arrive while the dialog is open (Enter, Enter, Enter) wait on the SAME
+  dialog. The answer is bound to the file or collection: a different one asks again. On a read-only server
+  there is no dialog and one toast says "This server is read-only here: your change stays in this graph and
+  is not written to the source."
+* **Write-back status.** With a file or collection chosen, the Source panel shows `source-write-back`: a
+  line "Edits to the data: ask me each time | written to the source | kept in this graph" and the button
+  "Ask me again" (disabled until a choice is stored) that resets the saved choice. It is a status, never a
+  way to grant consent: only the dialog grants. It falls back to "ask me each time" when the file or
+  collection changes. Its helper text repeats the facts of the dialog.
+* **Export** (in the chart settings popover, tab Export). Width (200 to 4000, default 1200), height (200 to 4000, empty means the figure's),
   scale (0.5 to 4, default 2), transparent background, file colours (`export-theme`: Light, Dark,
   "Same as the preview"; default Light), and the buttons. The line "Images come out 2,400 x 1,120 px."
   follows the inputs. The options are remembered in `localStorage` (`sankey-studio.export`). The export card stays
@@ -483,13 +707,17 @@ Behaviour:
   read-only."; when the save fails "Applied, but not saved." plus one info toast). The System card
   reads "Follows your device (now light)." or "(now dark)" for what the device does now.
 * **Storage.** `settings-storage-backend` (`file` "Files on this computer" or `mongo`).
-  `settings-storage-connection` and `settings-storage-database` show only for `mongo`. A switch can
-  copy the existing graphs (`settings-migrate`, "Copy my N existing graphs to the new location"). On a
+  `settings-storage-connection` and `settings-storage-database` show only for `mongo`, with the hint "The
+  graphs go into the MongoDB collection sankey_studio_graphs of this database, and the library's own
+  collections (groups of graphs) into sankey_studio_collections."; the connection needs write permission on
+  both and "Test storage" probes both. A switch can copy the existing graphs and their collections
+  (`settings-migrate`, "Copy my N existing graphs to the new location"). On a
   read-only server it is unticked and disabled ("Not available: this server is read-only, so nothing
   can be copied."). `settings-test-storage` writes its result into `settings-storage-status`
   ("Storage is reachable and writable."). After a copy `settings-copy-report` (`role=status`,
-  `tabindex=-1`, `data-copied`, `data-skipped`, `data-unreadable`) shows Copied, "Already there,
-  skipped" and "Could not be read"; `settings-copy-unreadable` lists up to 50 ids followed by "And N
+  `tabindex=-1`, `data-copied`, `data-skipped`, `data-unreadable`, `data-folders`, `data-folders-skipped`)
+  shows Copied, "Already there, skipped" and "Could not be read", and, only when either is not zero,
+  "Collections copied" and "Collections skipped"; `settings-copy-unreadable` lists up to 50 ids followed by "And N
   more that are not listed."; its button "Dismiss the copy report" moves focus to
   `settings-test-storage`. Switching to files while the old MongoDB is unreachable fails with the
   summary, a toast and the hint to untick "Copy my existing graphs" and save again.
@@ -573,10 +801,12 @@ console line for it and Playwright reports the response status.
 
 ## data-testid reference
 
-`data-testid` values are a contract: end-to-end tests select by them, so they are never renamed. The
-list has 173 distinct ids. The base list of 127 is kept in `tests/web/test_static_policy_support.py`
-(it mirrors the id table in [api.md](api.md)); the other 46, used by the shared frontend code, are in
-`src/sankey_studio/web/static/testids-extra.txt`. `tests/web/test_static_policy.py` fails when a
+`data-testid` values are a contract: end-to-end tests select by them, so they are never renamed or
+removed. The list has 257 distinct ids (count them with the two files below, not by hand). The base list
+of 127 is kept in `tests/web/test_static_policy_support.py` (it mirrors the id table in [api.md](api.md));
+the other 130, used by the shared frontend code, are in `src/sankey_studio/web/static/testids-extra.txt`
+(append-only: add an id with a shell `>>` and a comment, never by editing the file). A few dynamic ids
+(`change-source-kind-<tab>`, `source-column-<role>`) are built from a fixed set and are not listed one by one. `tests/web/test_static_policy.py` fails when a
 template or script uses an id found in neither. To add an id, use a kebab-case literal in the
 template or script and list it in `testids-extra.txt` with a comment saying where it is used.
 
@@ -601,6 +831,7 @@ presence, for hidden elements. A dynamic id such as `source-column-<role>` is bu
 | `confirm-dialog` | `div[role=dialog]` | generic dialog: unsaved-changes guards, "Replace the existing file?", the settings conflict dialog |
 | `confirm-dialog-confirm` | `button` | confirm button of `confirm-dialog` (renamed by callers such as `delete-confirm`) |
 | `confirm-dialog-cancel` | `button` | cancel button; initial focus of dangerous confirmations |
+| `dialog-close` | `button` | the X in the header of a dialog that asks for one (the details dialog); closes like Esc |
 | `state-empty` | `div` | empty block (title, message, actions); also the not-found card |
 | `state-error` | `div[role=alert]` | error block; also the card of the 503 and 500 error pages |
 | `state-retry` | `button` | "Try again" inside `state-error`; on the server-rendered error pages the "Reload" link (`a`, `href=""`) |
@@ -641,6 +872,31 @@ and so on), the upload button `label.btn` "Choose a file" inside `.ed-dropzone-p
 | `selection-clear` | `button` | "Clear selection" |
 | `compare-open` | `a` | link to `/compare?ids=a,b,...`; `aria-disabled` with fewer than two ticked |
 | `compare-limit-message` | `p[role=status]` | hidden until 12 are ticked |
+| `folder-new` | `button` | "New collection", in the page actions; `data-writes`; hidden while searching and inside a collection 8 levels deep |
+| `folder-new-graph` | `a` | "New graph here" (`/graphs/new?folder=<id>`), in the page actions; only inside a collection; `data-writes` |
+| `folder-breadcrumb` | `nav` | `Library / A / B`; hidden at the top level, while searching and for a missing collection |
+| `folder-crumb` | `a` (repeated) | every link of the breadcrumb, "Library" included; the last has `aria-current=page` |
+| `folder-grid` | `ul` | the "Collections (N)" block of cards of the open level |
+| `folder-card` | `article` (repeated) | `data-folder-id`; "N graphs, M collections" |
+| `folder-open` | `a` (repeated) | name link to `/?folder=<id>` |
+| `folder-rename` | `button` (repeated) | opens `folder-dialog` with the name selected; `data-writes` |
+| `folder-move` | `button` (repeated) | opens `move-dialog`; `data-writes` |
+| `folder-delete` | `button` (repeated) | opens `folder-delete-dialog`; `data-writes` |
+| `folder-dialog` | `div[role=dialog]` | create and rename |
+| `folder-name-input` | `input[type=text]` | at most 100 characters |
+| `folder-name-error` | `p[role=alert]` | "Give the collection a name.", a taken name, and the refusal line of `move-dialog` |
+| `folder-name-confirm` | `button` | "Create" or "Rename" |
+| `move-dialog` | `div[role=dialog]` | radio tree of places for a graph, the selection or a collection |
+| `move-option` | `label` (repeated) | the label of one radio; `data-folder-id` (`root` is the top level); disabled with a reason when impossible |
+| `move-confirm` | `button` | "Move here"; disabled until a place is chosen |
+| `folder-delete-dialog` | `div[role=dialog]` | initial focus on Cancel; says how many graphs and collections move up |
+| `folder-delete-confirm` | `button` | deletes the collection (never a graph) |
+| `graph-move` | `button` (repeated) | "Move" on a graph card; only once a collection exists; `data-writes` |
+| `selection-move` | `button` | "Move to collection" in the selection bar; `data-writes` |
+| `graph-folder` | `a` (repeated) | chip with the collection path on a search result; links to that collection |
+| `library-folder-empty` | `div` | an open collection with nothing in it |
+| `library-folder-missing` | `div` | the address names a well-formed id that is no collection |
+| `library-scope-note` | `p` | "Searching all collections." while a search or tag is active and collections exist |
 
 ### Editor
 
@@ -648,10 +904,47 @@ Name, description, tags and the page actions:
 
 | data-testid | element | notes |
 |---|---|---|
-| `editor-name` | `input[type=text]` | required to save; at most 200 characters |
-| `editor-description` | `textarea` | at most 2,000 characters |
-| `editor-tags` | `input[type=text]` | the input inside the chip list; Enter or a comma adds a chip |
+| `editor-name` | `input[type=text]` | required to save; at most 200 characters; inside `details-dialog` and in wizard step 1 |
+| `editor-description` | `textarea` | at most 2,000 characters; same places |
+| `editor-tags` | `input[type=text]` | the input inside the chip list; Enter or a comma adds a chip; same places |
 | `view-graph` | `a` | "View graph"; hidden until the graph has an id |
+
+Title row, dialogs and wizard:
+
+| data-testid | element | notes |
+|---|---|---|
+| `graph-settings-button` | `button` | "Graph settings", the gear right after the `h1`; `aria-expanded`; `data-badge=error` while the server rejects name, description or tags |
+| `graph-settings-menu` | `div[role=menu]` | `hidden` while closed |
+| `graph-settings-details` | `button[role=menuitem]` | "Edit details" |
+| `graph-settings-source` | `button[role=menuitem]` | "Change data source" |
+| `details-dialog` | `div[role=dialog]` | "Graph details" (modal, with the X `dialog-close`) |
+| `details-done` | `button` | "Done"; refuses an empty name |
+| `change-source-dialog` | `div[role=dialog]` | one radio per kind: `change-source-kind-<text\|paste\|upload\|manual\|mongo>` (dynamic) |
+| `change-source-apply` | `button` | "Change source", or "Edit source settings" for the current kind |
+| `change-source-keep` | `input[type=checkbox]` | "Keep my graph-only edits"; shown only when the graph holds some |
+| `new-wizard` | `section` | `data-step` `details` or `source`; present only on `/graphs/new` until finished |
+| `wizard-step-details` | `div` | step 1: name, description, tags |
+| `wizard-step-source` | `div` | step 2: the source tabs |
+| `wizard-next` | `button` | "Next" |
+| `wizard-back` | `button` | "Back"; keeps the values |
+| `wizard-create` | `button` | "Start editing"; disabled until the source has input |
+| `wizard-later` | `button` | "Do it later"; Paste and Manual while empty |
+| `wizard-cancel` | `a` | "Cancel", a link to `/` or `/?folder=<id>` |
+
+Chart settings popover and chart tools:
+
+| data-testid | element | notes |
+|---|---|---|
+| `chart-settings-button` | `button` | "Chart settings", the gear in the chart header; `aria-expanded`; `data-badge=error` while a style value is rejected |
+| `chart-settings-panel` | `div[role=dialog]` | non-modal; `hidden` while closed |
+| `chart-settings-close` | `button` | X; closes and returns the focus to the gear |
+| `chart-settings-tab-style` | `button[role=tab]` | holds `section-style` |
+| `chart-settings-tab-export` | `button[role=tab]` | holds the `export-*` controls |
+| `chart-order-open` | `button` | "Order nodes"; disabled for `fixed` arrangement |
+| `chart-reset-order` | `button` | "Reset order"; visible while `style.node_order` is not empty |
+| `order-dialog` | `div[role=dialog]` | the nodes per drawn column |
+| `order-up` | `button` (repeated) | "Move <name> up" |
+| `order-down` | `button` (repeated) | "Move <name> down" |
 
 Data source:
 
@@ -664,6 +957,7 @@ Data source:
 | `source-tab-manual` | `button[role=tab]` | Manual |
 | `source-tab-mongo` | `button[role=tab]` | MongoDB |
 | `source-content` | `textarea` | Paste tab |
+| `source-clear` | `button` | Clear icon inside the Paste box (top right); exists only while the box holds text; the toast "Cleared" offers Undo |
 | `source-file-select` | `select` | Text file tab; options `<name> (<size>)` |
 | `source-upload-input` | `input[type=file]` | Upload tab; visually hidden but focusable; disabled when read-only |
 | `source-format` | `select` | `auto`, `csv`, `tsv`, `sankeymatic`, `json`; text tabs only |
@@ -684,6 +978,12 @@ Data source:
 | `mongo-sample` | `div[role=region]` | sample documents; hidden until loaded |
 | `mongo-suggest` | `button` | "Use the suggested fields"; hidden until a sample suggests fields |
 | `mongo-no-connections` | `div` | empty state with "Open Settings" and "Check again" |
+| `source-write-back` | `div` | status line "Edits to the data: ask me each time \| written to the source \| kept in this graph" with the button "Ask me again"; only with a chosen file or collection; never grants consent |
+| `write-back-dialog` | `div[role=dialog]` | "Change your data too?" |
+| `write-back-accept` | `button` | "Update the source" |
+| `write-back-decline` | `button` | "Keep in this graph"; initial focus |
+| `write-back-never` | `button` | "Keep in this graph, don't ask again" |
+| `write-back-cancel` | `button` | "Cancel" |
 
 Transform and Style:
 
@@ -697,7 +997,7 @@ Transform and Style:
 | `transform-rules` | `table` | category rules; a bulk rule appears here |
 | `transform-on-cycle` | `select` | `error` or `break` |
 | `transform-strict` | `input[type=checkbox]` | strict reading |
-| `section-style` | `summary` | closed by default |
+| `section-style` | `summary` | inside the chart settings popover (tab Style); open and not remembered |
 | `style-title` | `input[type=text]` | chart title; also names exported files |
 | `style-color-mode` | `select` | `node`, `layer`, `mono`, `category` (`category` is offered only when categories exist or it is already chosen) |
 | `style-orientation` | `select` | `h` or `v` |
@@ -742,8 +1042,24 @@ Entries:
 | `categorise-category` | `input[type=text]` | bulk category; absent while the search box is empty |
 | `categorise-all-matching` | `button` | adds one glob rule; absent while the search box is empty |
 | `entries-basis-hint` | `div` | notice about categorised entries the donut basis leaves out; absent otherwise |
+| `entries-add` | `button` | "Add entry"; disabled with a title while a Text file or MongoDB source names nothing |
+| `entries-overlays` | `button` | chip "Graph-only edits (N)"; hidden at 0 |
+| `entries-unmatched` | `div[role=status]` | notice that category edits no longer match an entry; absent otherwise |
+| `overlays-dialog` | `div[role=dialog]` | "Graph-only edits" |
+| `overlay-remove` | `button` (repeated) | one per listed item |
+| `add-entry-dialog` | `div[role=dialog]` | "Add a flow" (from the button or a click on a node) |
+| `add-entry-source` | `input[type=text]` | with suggestions |
+| `add-entry-target` | `input[type=text]` | with suggestions |
+| `add-entry-value` | `input[type=text]` | a number above 0 |
+| `add-entry-category` | `input[type=text]` | optional |
+| `add-entry-error` | `p[role=alert]` | the one problem line; `hidden` when empty |
+| `add-entry-submit` | `button` | "Add" |
+| `add-entry-cancel` | `button` | "Cancel" |
+| `add-entry-direction` | `fieldset` | only when opened from a node: the two radios below |
+| `add-entry-from-node` | `input[type=radio]` | "The new flow starts at <node>" |
+| `add-entry-to-node` | `input[type=radio]` | "The new flow ends at <node>" |
 
-Export:
+Export (all inside the chart settings popover, tab Export; open it first):
 
 | data-testid | element | notes |
 |---|---|---|
@@ -773,7 +1089,7 @@ Save bar and conflict:
 | `conflict-reload` | `button` | "Reload (discard my changes)"; hidden when the graph was deleted |
 | `conflict-save-copy` | `button` | "Save my version as a copy" |
 
-The editor also uses the shell ids `toast`, `confirm-dialog`, `confirm-dialog-confirm`,
+The editor also uses the shell ids `dialog-close`, `toast`, `confirm-dialog`, `confirm-dialog-confirm`,
 `confirm-dialog-cancel`, `state-empty`, `state-error`, `state-retry` and `state-loading`.
 
 ### Viewer
@@ -846,7 +1162,7 @@ The compare page also uses `state-loading`, `state-empty`, `state-error`, `state
 | `settings-migrate` | `input[type=checkbox]` | "Copy my N existing graphs to the new location" |
 | `settings-test-storage` | `button` | "Test storage" |
 | `settings-storage-status` | `p` | result line of the storage test |
-| `settings-copy-report` | `div[role=status]` | after a copy; `data-copied`, `data-skipped`, `data-unreadable` |
+| `settings-copy-report` | `div[role=status]` | after a copy; `data-copied`, `data-skipped`, `data-unreadable`, `data-folders`, `data-folders-skipped` |
 | `settings-copy-unreadable` | `ul` | unreadable graph ids, at most 50 |
 | `connection-add` | `button` | "Add connection" |
 | `settings-connection` | `div[role=group]` (repeated) | one card per connection |
@@ -889,7 +1205,12 @@ preview). Wait for these signals instead.
 | `body[data-shell=ready]` | every page | `core/shell.js` finished wiring the theme switch and loading state; the only ready signal of the error pages |
 | `main#main[data-page=<name>]` | every page | which page rendered |
 | `main#main[data-loading=true\|false]` | every page, always present | `true` while a non-quiet API request is in flight or the editor's preview is scheduled or running; updated at once (the bar `loading` shows only after 150 ms) |
-| `#page-root[data-ready=true]` | editor only | the graph and settings are loaded and every panel is mounted |
+| `#page-root[data-ready=true]` | editor only | the graph and settings are loaded and every panel is mounted. On `/graphs/new` it appears only after the wizard finished |
+| `new-wizard[data-step=details\|source]`, `#page-root[data-wizard]` | `/graphs/new` | which wizard step shows; `new-wizard` is removed from the DOM (count 0) when "Start editing" or "Do it later" mounted the editor |
+| `chart-settings-panel[hidden]`, `chart-settings-button[aria-expanded]` | editor | the chart settings popover is closed or open |
+| `graph-settings-menu[hidden]`, `graph-settings-button[aria-expanded]` | editor | the title menu is closed or open |
+| `sankey-chart[data-node-order]` | editor | the node names in figure order joined by `\|`, set after every successful Sankey draw and removed when nothing is drawn; it changes after a drag or an `order-up`/`order-down` press (the chart then animates for about half a second: poll the bar positions, never a clock) |
+| `details-dialog`, `change-source-dialog`, `add-entry-dialog`, `overlays-dialog`, `order-dialog`, `write-back-dialog`, `folder-dialog`, `move-dialog` | editor and library | attached while open, detached when closed |
 | `[data-testid=sankey-chart][data-ready]`, `donut-chart` | wherever a chart is drawn | `false` from the moment drawing starts, `true` after `Plotly.react` resolved, `error` when plotly.js could not load or drawing threw; set on the same div that carries the id |
 | `[data-chart-theme=light\|dark]` | the same chart divs | the theme the figure was drawn in |
 | `compare-card[data-chart]`, `compare-grid[data-count]` | compare | which chart a card shows (`sankey`, `donut`, `none`) and how many ids are on screen |
@@ -902,16 +1223,21 @@ preview). Wait for these signals instead.
 
 Recipes (these are the waits the e2e helpers in `tests/e2e/support/uiwait.py` implement):
 
-* **Library.** `graph-card` (or `library-empty`, `library-no-results`) is visible and `library-count` has
-  its text. After a filter, search, sort or pager click wait for `library-count` to change or for
+* **Library.** `graph-card` (or `library-empty`, `library-no-results`, `library-folder-empty`,
+  `library-folder-missing` or, at a level that has only collections, `folder-card`) is visible and
+  `library-count` has its text. After a filter, search, sort or pager click wait for `library-count` to change or for
   `main[data-loading=false]`.
 * **Editor load.** `#page-root[data-ready=true]`, then, when the graph has data,
-  `sankey-chart[data-ready=true]`.
+  `sankey-chart[data-ready=true]`. On `/graphs/new` wait for `new-wizard` OR `#page-root[data-ready=true]`
+  first (the page decides which it shows), finish the wizard, then wait as above. The e2e helper
+  `finish_wizard` does this with a unique name and "Do it later".
 * **Editor after a change.** The preview is debounced by 300 ms. `main[data-loading]` turns `true` on
   the change and `false` when the bundle is in, and the chart then redraws (`data-ready` goes `false`
   and `true` in the same task). The old chart keeps `data-ready=true` while the request runs, so never
   wait for `data-ready` alone: wait for `data-loading=false`, `data-ready=true` and the expected
   content (`stats`, `entries-total`).
+* **Style and Export controls.** Open the popover first (`chart-settings-button`, then the tab), and open it
+  again right before using a control after touching the page: it closes on any press or focus outside it.
 * **Viewer.** `sankey-chart[data-ready=true]`. For the donut click `chart-tab-donut`, then wait for
   `donut-chart[data-ready=true]` (the Sankey div is hidden then).
 * **Compare.** The number of `compare-card` elements equals the ids, then every
@@ -947,7 +1273,7 @@ Recipes (these are the waits the e2e helpers in `tests/e2e/support/uiwait.py` im
   change (`sankey-chart[data-chart-theme]` shows which). The editor preview can be pinned with
   "Preview colours" (Match page, Light, Dark); exported files use their own `export-theme` choice
   (default Light), independent of both.
-* Breakpoints: 480, 640 (header goes to one row), 900 (two-pane editor) and 1280 px (settings rail);
+* Breakpoints: 480, 640 (header goes to one row), 900 (Source and Transform side by side) and 1280 px (settings rail);
   the viewer puts the export panel beside the chart from 1100 px. `prefers-reduced-motion: reduce`
   cuts animations and transitions to 0.01 ms; the `html` toast clearance padding never transitions.
   `forced-colors: active` is handled for buttons and inputs.
@@ -957,6 +1283,13 @@ Recipes (these are the waits the e2e helpers in `tests/e2e/support/uiwait.py` im
 * Landmarks and skip: skip link first, `header`, `nav` "Main", `main#main` (focusable programmatically),
   a `region` for each save bar and the toast region. Tab order of every page starts with the skip
   link, the brand, `nav-library`, `nav-new`, `nav-settings` and the three theme buttons.
+* Keyboard in the editor: the first Tab stop in the main area is `graph-settings-button`, then the chart
+  tabs and the chart tools ("Order nodes", "Reset order", the chart settings gear). Enter, Space or
+  ArrowDown on a gear opens its menu or popover and Escape returns to it. The wizard starts on the name
+  and Enter in it is Next. The bars of the Sankey are mouse-only; `entries-add` (add a flow) and
+  `chart-order-open` (reorder, with `order-up` and `order-down`) are the keyboard and single-pointer ways
+  to the same edits (WCAG 2.1.1 and 2.5.7). Every dialog traps the focus, returns it to the opener and
+  closes on Esc, the newest first.
 * Live regions: `#a11y-polite` and `#a11y-assertive` announce results without a focus change (graph
   counts, chart tab switches, save results, import and upload outcomes); toasts live in a polite
   region and errors are `role=alert`.
@@ -971,8 +1304,9 @@ Recipes (these are the waits the e2e helpers in `tests/e2e/support/uiwait.py` im
 * Focus rings are a 2 px outline with a 2 px offset in the theme's focus colour on buttons, links,
   tabs, cards and switches; inputs also change their border. Contrast of text is at least 4.5:1 (3:1 for
   large text) in both themes, and borders of inputs use `--border-strong`.
-* No horizontal page scroll at 360, 390, 768 and 1440 px; the editor stacks below 900 px; the
-  library grid is `auto-fill` with cards at least 19 rem wide.
+* No horizontal page scroll at 360, 390, 768 and 1440 px; the editor's form row stacks below 900 px; the
+  chart settings popover, the menus and every dialog stay inside the window at 390 px and the wizard has no
+  horizontal scroll on either step; the library grid is `auto-fill` with cards at least 19 rem wide.
 * Visible names and accessible names can differ: card buttons are `Edit "<name>"`, `Duplicate "<name>"`
   and `Delete "<name>"`; connection buttons are `Test connection <name>` and `Delete connection
   <name>`; the export buttons in the editor are `Download the sankey chart as SVG` and so on. Prefer
@@ -1038,7 +1372,8 @@ ss -ltn | grep ":$PORT "     # empty output means the port is free again
 * **Read-only remote variant:** `serve --host 0.0.0.0 --allow-remote --port "$PORT" --data-dir ...
   --sources-dir ...` and open it as `http://127.0.0.1:$PORT`. It shows both banners and
   `writes_allowed` is false. Add `--allow-remote-writes` for remote mode with writes (only
-  `remote-banner`).
+  `remote-banner`); add `--allow-source-writes` as well to let edits be written back to a MongoDB
+  source (without it a MongoDB edit stays in the graph with a read-only notice).
 * **Seeding goes through the HTTP API, not the UI.** Every `POST`, `PUT`, `PATCH` and `DELETE` needs
   `Content-Type: application/json` for a body and, from a script, an `Origin` header equal to the
   server's own origin (for example `Origin: http://127.0.0.1:$PORT`). A bodiless `DELETE` or
@@ -1085,6 +1420,11 @@ responded with a status of N"). Allow the following per test, never globally:
 |---|---|---|
 | Editor with an invalid source | `POST /api/v1/preview`, `POST /api/v1/entries` | 422 |
 | Editor conflict | `PUT /api/v1/graphs/<id>` | 409 |
+| Editor, an entry that closes a loop (Add entry, a click on a node), or a draft the server cannot build | `POST /api/v1/edits/plan`, `POST /api/v1/edits/write`, `POST /api/v1/entries` | 422 `graph_build_error` |
+| Editor, a name or style value the server rejects | `POST /api/v1/preview`, `POST /api/v1/graphs` | 422 |
+| Library, a collection name that is taken, or a rule that is broken | `POST /api/v1/folders`, `PUT /api/v1/folders/<id>`, `POST /api/v1/graphs/move` | 409 `folder_name_taken`, 422 `folder_rule` |
+| Library, a collection deleted or changed elsewhere | `PUT`, `DELETE /api/v1/folders/<id>`, `POST /api/v1/graphs/move` | 404, 409 |
+| Editor, saving into a collection that vanished | `POST /api/v1/graphs?folder=<id>` | 404 (the page retries at the top level) |
 | Export fallback | `POST /api/v1/export` or `GET /api/v1/graphs/<id>/export` | 501 (or the status the test forces) |
 | MongoDB with nothing listening | `GET /api/v1/mongo/<name>/databases`; `POST /api/v1/settings/mongo/<name>/test` | 422; 503 |
 | Compare with a graph deleted after load | `GET /api/v1/compare/render`, `GET /api/v1/graphs/<id>/render` | 404 (ids in `boot.missing` make no request at all) |
@@ -1146,3 +1486,19 @@ responded with a status of N"). Allow the following per test, never globally:
     accepts and never answers; the probe then waits `mongo_timeout_ms`.
 18. **Settings and Save never wait behind dead probes:** editing or deleting a connection row aborts its
     test, so twelve hung probes followed by Save still save at once.
+19. **The chart settings popover closes on any press or focus outside it.** After touching another part of
+    the page, open it again (`chart-settings-button`, then the tab) right before using a `style-*` or
+    `export-*` control. Its panel is `hidden`, not removed, while closed.
+20. **`/graphs/new` shows the wizard first.** `#page-root[data-ready=true]` appears only after "Start editing"
+    or "Do it later", and the editor then starts dirty ("Not saved yet", a leave prompt). A test that needs
+    an unnamed graph empties the name through the details dialog.
+21. **Plotly emits no `plotly_click` for a plain click while the bars are draggable, and a plain click fires
+    the same `plotly_restyle` as a drag.** The app reads a click from pointer events plus the last hovered
+    node and a drag from the restyle behind a pointer gate; tests use `ChartDom.click_bar`, `drag_bar` and
+    `expect_stack`, never a clock, because the chart animates for about half a second after a reorder.
+22. **A graph on a text file or a MongoDB `find` source asks "Change your data too?" on its first data
+    edit.** The answer lives in `source.write_back` and counts only for that exact file or collection; the
+    "Keep in this graph" answer is remembered for the page session only. Edits that go into a file or a
+    collection are immediate and not part of Save.
+23. **Manual row edits do not move the bars while a node order is stored.** Press "Reset order" to hand the
+    order back to the data.

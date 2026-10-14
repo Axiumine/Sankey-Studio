@@ -11,12 +11,14 @@ from sankey_studio.render.options import EntriesOptions, ImageOptions
 from sankey_studio.web.schemas import (
     CollectionsQuery,
     CompareQuery,
+    CreateQuery,
     EntriesQuery,
     ExportQuery,
     IdsQuery,
     ListQuery,
     RenderQuery,
     SampleQuery,
+    ScopeQuery,
     ThemeQuery,
 )
 from tests.web.test_schemas_support import Case, check_case, digest, gid
@@ -27,6 +29,7 @@ HIGH = "less_than_equal"
 LONG = "string_too_long"
 SHORT = "string_too_short"
 CHOICE = "literal_error"
+PATTERN = "string_pattern_mismatch"
 
 
 def at_most(char: str, count: int) -> str:
@@ -37,8 +40,16 @@ def at_most(char: str, count: int) -> str:
 
 
 def test_the_defaults() -> None:
+    assert CreateQuery().model_dump() == {"folder": None}
+    assert ScopeQuery().model_dump() == {"folder": ""}
     assert ThemeQuery().theme == "light"
-    assert ListQuery().model_dump() == {"q": None, "tag": None, "limit": 200, "offset": 0}
+    assert ListQuery().model_dump() == {
+        "q": None,
+        "tag": None,
+        "folder": None,
+        "limit": 200,
+        "offset": 0,
+    }
     assert EntriesQuery().model_dump() == {
         "offset": 0,
         "limit": 100,
@@ -78,6 +89,23 @@ LIST = [
     Case("q", at_most("q", 201), LONG),
     Case("tag", at_most("t", 40)),
     Case("tag", at_most("t", 41), LONG),
+    Case("folder", "root"),
+    Case("folder", gid(1)),
+    Case("folder", "f" * 32),
+    Case("folder", "f" * 31, PATTERN),
+    Case("folder", "f" * 33, PATTERN),
+    Case("folder", "F" * 32, PATTERN),
+    Case("folder", "g" * 32, PATTERN),
+    Case("folder", "ROOT", PATTERN),
+    Case("folder", "roots", PATTERN),
+    Case("folder", "", PATTERN),
+]
+CREATE = [
+    Case("folder", None),
+    Case("folder", gid(1)),
+    Case("folder", "f" * 31, PATTERN),
+    Case("folder", "root", PATTERN),
+    Case("folder", "F" * 32, PATTERN),
 ]
 ENTRIES = [
     Case("offset", 0),
@@ -162,6 +190,11 @@ def test_list_query_bounds(case: Case) -> None:
     check_case(ListQuery, case)
 
 
+@pytest.mark.parametrize("case", CREATE, ids=repr)
+def test_create_query_bounds(case: Case) -> None:
+    check_case(CreateQuery, case)
+
+
 @pytest.mark.parametrize("case", ENTRIES, ids=repr)
 def test_entries_query_bounds(case: Case) -> None:
     check_case(EntriesQuery, case)
@@ -196,6 +229,7 @@ REQUIRED: dict[type[BaseModel], dict[str, Any]] = {
     CompareQuery: {"ids": gid(1)},
     IdsQuery: {"ids": gid(1)},
     ListQuery: {},
+    CreateQuery: {},
     EntriesQuery: {},
     ExportQuery: {},
     CollectionsQuery: {"database": "d"},
@@ -268,3 +302,48 @@ def test_export_query_becomes_image_options() -> None:
     query = ExportQuery(width=640, height=480, scale=1.5, transparent=True, format="png")
     assert query.image_options() == ImageOptions(width=640, height=480, scale=1.5, transparent=True)
     assert ExportQuery().image_options() == ImageOptions()
+
+
+# --------------------------------------------------------------------------- folder scope
+
+
+@pytest.mark.parametrize("scope", ["root", "f" * 32])
+@pytest.mark.parametrize("search", [{"q": "x"}, {"tag": "t"}, {"q": "x", "tag": "t"}])
+def test_a_folder_scope_cannot_be_combined_with_a_search(
+    scope: str, search: dict[str, str]
+) -> None:
+    with pytest.raises(ValidationError) as caught:
+        ListQuery.model_validate({"folder": scope, **search})
+    assert digest(caught) == [((), "value_error")]
+    assert "folder cannot be combined with q or tag" in str(caught.value)
+
+
+@pytest.mark.parametrize("blank", ["", "   ", "\n"])
+def test_a_blank_search_does_not_count_as_a_search(blank: str) -> None:
+    query = ListQuery.model_validate({"folder": "root", "q": blank, "tag": blank})
+    assert (query.folder, query.q, query.tag) == ("root", None, None)
+
+
+def test_a_search_without_a_folder_is_unchanged() -> None:
+    query = ListQuery.model_validate({"q": "food", "tag": "t", "limit": 5, "offset": 2})
+    assert (query.q, query.tag, query.folder, query.limit, query.offset) == (
+        "food",
+        "t",
+        None,
+        5,
+        2,
+    )
+
+
+def test_the_folder_of_a_listing_is_trimmed_like_every_other_query_text() -> None:
+    assert ListQuery.model_validate({"folder": " root "}).folder == "root"
+
+
+@pytest.mark.parametrize("value", ["", "nonsense", "../x", gid(1), "x" * 10_000])
+def test_the_page_scope_accepts_any_text_and_leaves_the_judging_to_the_route(value: str) -> None:
+    assert ScopeQuery.model_validate({"folder": value}).folder == value
+
+
+def test_the_page_scope_trims_and_ignores_other_parameters() -> None:
+    query = ScopeQuery.model_validate({"folder": "  abc  ", "bogus": "1"})
+    assert query.model_dump() == {"folder": "abc"}

@@ -93,7 +93,6 @@
   display: flex;
   gap: var(--space-3);
   align-items: stretch;
-  justify-content: space-between;
   padding: 0 var(--space-3);
   border-bottom: 1px solid var(--border);
 }
@@ -101,6 +100,14 @@
 .out-chart-head .tabs {
   flex: 0 1 auto;
   border-bottom: 0;
+}
+
+/* the tools at the right of the chart header: the "Updating" label, the settings gear, other buttons */
+.out-chart-tools {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  margin-inline-start: auto;
 }
 
 .out-tab {
@@ -240,6 +247,47 @@
   color: var(--ink-secondary);
   font-size: var(--text-sm);
 }
+
+/* the Entries card header: title and count at the left; the graph-only chip and "Add entry" at the right */
+.out-entries-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  align-items: baseline;
+  min-width: 0;
+}
+
+.out-entries-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin-inline-start: auto;
+}
+
+/* the "Add a flow" dialog: an empty status line takes no room but stays a live region; the graph-only list is rows */
+.out-add-hint:empty { position: absolute; }
+
+.out-overlay-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.out-overlay-row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.out-overlay-text { min-width: 0; overflow-wrap: anywhere; }
 
 .out-toolbar {
   display: flex;
@@ -477,16 +525,8 @@
 }
 
 /* The bar is sticky and covers the bottom of the window: focus scrolling keeps a focused control
-   clear of it, in the page and in the sticky preview pane (which is its own scroll area, so the
-   page's scroll-padding does not reach it). savebar/metrics.js publishes the bar's real height. */
+   clear of it. savebar/metrics.js publishes the bar's real height. */
 html:has(.out-savebar) { scroll-padding-bottom: calc(var(--out-savebar-h, 4rem) + var(--space-3)); }
-
-@media (min-width: 900px) {
-  html:has(.out-savebar) .editor-pane-preview {
-    max-height: calc(100vh - var(--header-h) - var(--space-4) - var(--out-savebar-h, 4rem) - var(--space-3));
-    scroll-padding-bottom: var(--space-3);
-  }
-}
 
 /* toasts sit bottom right: lift them above the save bar (its real height, taller with a conflict banner) instead of covering it */
 @media (min-width: 641px) {
@@ -498,9 +538,14 @@ html:has(.out-savebar) { scroll-padding-bottom: calc(var(--out-savebar-h, 4rem) 
   .out-savebar .savebar-actions .btn { flex: 1 1 0; }
   .out-group-label { flex-basis: 100%; }
   .out-size-grid { gap: var(--space-2); }
+  /* the tools (Updating, Order nodes, Reset order, gear) wrap under the tabs when both do not fit one row */
+  .out-chart-head { flex-wrap: wrap; row-gap: 0; }
+  .out-chart-head .tabs { flex: 1 1 auto; }
+  .out-chart-tools { flex-wrap: wrap; justify-content: flex-end; min-width: 0; padding-block: var(--space-1); }
 }
 
 @media print {
   .out-savebar,
+  .out-entries-tools,
   .out-export { display: none !important; }
 }

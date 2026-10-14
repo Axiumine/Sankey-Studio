@@ -75,11 +75,12 @@ def expect_donut_is_only_a_hint(editor: EditorPage) -> None:
     expect(hint).to_contain_text("No donut yet")
     expect(hint).to_contain_text("Categories are optional")
     expect(editor.tid("legend-item")).to_have_count(0)
-    expect(editor.tid("export-donut-svg")).to_be_disabled()
-    expect(editor.tid("export-donut-png")).to_be_disabled()
     expect(editor.tid("source-column-category")).to_contain_text("Auto (none found)")
     hint.get_by_role("button", name="Go to entries").click()
     expect(editor.tid("entries-search")).to_be_focused()
+    editor.open_export()  # last: the open popover would cover the hint
+    expect(editor.tid("export-donut-svg")).to_be_disabled()
+    expect(editor.tid("export-donut-png")).to_be_disabled()
 
 
 def expect_a_cycle_to_be_refused_until_broken(editor: EditorPage) -> None:
@@ -105,23 +106,30 @@ def expect_a_name_is_required_and_a_dirty_editor_asks(
 ) -> None:
     before = json_of(api.get("/api/v1/graphs"))["total"]
     address = editor.page.url
+    emptied = editor.open_details()  # the wizard gave the graph a name: take it away again
+    emptied.fill(name="")
+    emptied.dismiss()
+    expect(editor.heading).to_have_text("New graph")
 
     editor.save_button.click()
 
-    expect(
-        editor.page.get_by_text("Give the graph a name so you can find it later.")
-    ).to_be_visible()
+    details = editor.tid("details-dialog")
+    expect(details).to_be_visible()
+    expect(details.get_by_text("Give the graph a name so you can find it later.")).to_be_visible()
     assert editor.page.url == address
     expect(editor.save_status).to_have_text("Give the graph a name before saving.")
     assert json_of(api.get("/api/v1/graphs"))["total"] == before
 
     editor.name_field.fill("A name that is not saved")
+    editor.tid("details-done").click()
+    expect(details).to_be_hidden()
+    expect(editor.heading).to_have_text("New graph: A name that is not saved")
     editor.nav("library").click()
     dialog = editor.tid("confirm-dialog")
     expect(dialog).to_contain_text("Leave without saving?")
     dialog.get_by_role("button", name="Stay and keep editing").click()
     expect(dialog).to_be_hidden()
-    expect(editor.name_field).to_have_value("A name that is not saved")
+    editor.expect_name("A name that is not saved")
     assert editor.page.url == address
 
 
@@ -132,9 +140,8 @@ def expect_the_saved_graph_to_persist(
     editor.page.reload()
     reopened = editor.reopened()
     reopened.expect_ready()
-    expect(reopened.description_field).to_have_value("pasted from a spreadsheet")
+    reopened.expect_details(description="pasted from a spreadsheet", tags=("qa-draw",))
     expect(reopened.content).to_have_value(BUDGET.csv)
-    expect(editor.page.get_by_text("qa-draw", exact=True)).to_be_visible()
     expect(reopened.save_status).to_contain_text("All changes saved")
     reopened.expect_stats(nodes=10, links=9, total_in=3800, total_out=3800, columns=4)
     stored = json_of(api.get(f"/api/v1/graphs/{graph_id}"))
@@ -155,7 +162,7 @@ def test_pasting_csv_draws_a_live_preview_whose_counts_match_and_edits_redraw_it
     editor: EditorPage, api: httpx.Client
 ) -> None:
     before = json_of(api.get("/api/v1/graphs"))["total"]
-    expect(editor.heading).to_have_text("New graph")
+    expect(editor.heading).to_have_text(f"New graph: {editor.wizard_name}")
     expect(editor.save_status).to_have_text("Not saved yet")
     expect(editor.tid("source-tab-paste")).to_have_attribute("aria-selected", "true")
     expect(editor.tid("state-empty").first).to_contain_text("Nothing to draw yet")
@@ -191,12 +198,11 @@ def test_pasting_csv_draws_a_live_preview_whose_counts_match_and_edits_redraw_it
 def test_a_saved_graph_needs_a_name_persists_and_opens_in_the_viewer_and_the_library(
     editor: EditorPage, live_server: LiveServer, api: httpx.Client
 ) -> None:
-    editor.add_tag("qa-draw")
-    editor.description_field.fill("pasted from a spreadsheet")
+    editor.set_details(description="pasted from a spreadsheet", tags=("qa-draw",))
     editor.paste(BUDGET.csv)
     expect_a_name_is_required_and_a_dirty_editor_asks(editor, api)
     name = unique_name("Persisted")
-    editor.name_field.fill(name)
+    editor.set_name(name)
 
     graph_id = editor.save()
 
@@ -208,7 +214,7 @@ def test_a_saved_graph_needs_a_name_persists_and_opens_in_the_viewer_and_the_lib
     assert [item["id"] for item in graphs_named(api, name)] == [graph_id]
 
     reopened = expect_the_saved_graph_to_persist(editor, graph_id, api)
-    expect(reopened.name_field).to_have_value(name)
+    reopened.expect_name(name)
     reopened.tid("view-graph").click()
     viewer = ViewerPage(editor.page, live_server)
     viewer.expect_ready()

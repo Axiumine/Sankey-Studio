@@ -159,7 +159,12 @@ def test_a_put_as_the_first_write_creates_the_indexes(
     mongo_repo: MongoGraphRepository, mongo_collection: Collection[Any], overwrite: bool
 ) -> None:
     mongo_repo.put(definition(ID_A, "first"), overwrite=overwrite)
-    assert set(mongo_collection.index_information()) == {"_id_", "updated_at_1", "tags_1"}
+    assert set(mongo_collection.index_information()) == {
+        "_id_",
+        "updated_at_1",
+        "tags_1",
+        "folder_id_1",
+    }
 
 
 def test_the_repository_ping_asks_the_server_about_the_storage_connection(

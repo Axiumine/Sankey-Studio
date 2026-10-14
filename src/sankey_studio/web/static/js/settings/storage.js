@@ -81,7 +81,7 @@ function mongoFields(store) {
     database: boundField(store, "storage.database", {
       label: "Database",
       control: database,
-      hint: "The graphs go into the collection sankey_studio_graphs of this database.",
+      hint: "The graphs go into the MongoDB collection sankey_studio_graphs of this database, and the library's own collections (groups of graphs) into sankey_studio_collections.",
     }),
   };
 }

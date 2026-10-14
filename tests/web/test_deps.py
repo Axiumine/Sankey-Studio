@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, NamedTuple
 import pytest
 from fastapi import APIRouter, Depends
 
-from sankey_studio.pipeline import ResultCache
+from sankey_studio.pipeline import ClearableCache, ResultCache
 from sankey_studio.web.deps import (
     ConfigDep,
     ResultCacheDep,
@@ -16,6 +16,7 @@ from sankey_studio.web.deps import (
     WritesAllowed,
     require_writes,
 )
+from tests.graph_support import make_graph
 
 if TYPE_CHECKING:
     from tests.web.conftest import AppFactory, Mode
@@ -72,6 +73,16 @@ def test_the_accessors_return_what_create_app_stored(make_app: AppFactory) -> No
 def test_the_real_result_cache_fits_the_protocol() -> None:
     cache: ResultCacheLike = ResultCache()
     assert cache.get("missing") is None
+    cache.clear()
+    assert cache.get("missing") is None
+
+
+def test_the_web_cache_type_is_a_clearable_cache_for_the_layers_below() -> None:
+    web_cache: ResultCacheLike = ResultCache()
+    below: ClearableCache = web_cache  # mypy proves the two protocols agree
+    below.put("k", make_graph([("a", "b", 1.0, None)]), 10)
+    below.clear()
+    assert web_cache.get("k") is None
 
 
 class Mount(NamedTuple):

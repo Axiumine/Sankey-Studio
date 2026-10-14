@@ -47,7 +47,7 @@ This project is indexed by GitNexus as **Sankey-Studio** (47671 symbols, 100990 
 # Sankey Studio — working agreement
 
 Sankey Studio: a local FastAPI + vanilla-JS web app that draws and manages Sankey graphs (plus an optional donut chart).
-Sources: text (csv/tsv/sankeymatic/json), MongoDB (read-only), manual table. Saved graphs live on disk or in MongoDB.
+Sources: text (csv/tsv/sankeymatic/json), MongoDB (read-only unless the graph owner opts into write-back), manual table. Saved graphs live on disk or in MongoDB.
 No login: loopback by default, defends itself. Python 3.14, managed by uv. Docs: `README.md` and `docs/*.md`.
 
 ## Commands
@@ -55,20 +55,20 @@ No login: loopback by default, defends itself. Python 3.14, managed by uv. Docs:
 * Always `uv run ...` (or `make`). Never `python3` directly (system python3 is 3.13 and cannot parse PEP 758 `except A, B:` sources).
 * `make caps` runs `uv run --no-project --python 3.14 python scripts/check_code_caps.py` for that reason.
 * `make sync | lint | format | typecheck | caps | test | e2e | e2e-mongo | cov | memray | profile | mutate | mutate-gate | semgrep | semgrep-test | trivy | qodana | security | gitnexus | hooks | check | ci | full | serve | mongo-up | mongo-down`. Read the `Makefile`; aggregates: `check` = lint typecheck caps cov memray; `ci` = check + security; `full` = ci + mutate + mutate-gate + qodana.
-* Run the server: `uv run sankey-studio serve [--host] [--port] [--data-dir] [--sources-dir] [--allow-remote] [--allow-remote-writes]`. Env: `SANKEY_HOST`, `SANKEY_PORT`, `SANKEY_DATA_DIR`, `SANKEY_SOURCES_DIR`, `SANKEY_MONGO_URI`, `SANKEY_ALLOWED_HOSTS` (JSON array), `SANKEY_LOG_LEVEL`, `SANKEY_REMOTE_MODE`, `SANKEY_REMOTE_WRITES`.
+* Run the server: `uv run sankey-studio serve [--host] [--port] [--data-dir] [--sources-dir] [--allow-remote] [--allow-remote-writes] [--allow-source-writes]`. Env: `SANKEY_HOST`, `SANKEY_PORT`, `SANKEY_DATA_DIR`, `SANKEY_SOURCES_DIR`, `SANKEY_MONGO_URI`, `SANKEY_ALLOWED_HOSTS` (JSON array), `SANKEY_LOG_LEVEL`, `SANKEY_REMOTE_MODE`, `SANKEY_REMOTE_WRITES`, `SANKEY_SOURCE_WRITES`.
 * One uvicorn worker only (file locks and the export slot are per process).
 
 ## Layout and layering
 
 Package `src/sankey_studio/`. Dependencies point downwards only; never import upward.
 
-`errors, util, config, models, mongo_safety, mongo` -> `sources, graph, render, storage` -> `services, bundle` -> `pipeline` -> `web` -> frontend (`web/static`, `web/templates`). `cli.py` and `__main__.py` sit on top.
+`errors, util, config, models, mongo_safety, mongo` -> `sources, graph, render, storage` -> `services, bundle` -> `pipeline` -> `edits` -> `web` -> frontend (`web/static`, `web/templates`). `cli.py` and `__main__.py` sit on top.
 
 * `models/`: all pydantic specs and the frozen columnar `SankeyGraph`. New shared model = new focused module in the package.
 * `errors.py`: domain errors with unique stable `code` and `status_code`; `web/errors.py` maps them to the JSON envelope `{"error": {"code", "message", "details"}}`.
 * `sources/`: `text.py` + `formats/` (parsers), `files/` (managed sources dir: safe paths, uploads), `mongo_*.py`, `manual.py`, `base.py` (`CategoryCleaner`, `SourceContext`).
 * `graph/`: `build_graph` in six ordered steps (intern, categories, pairs, cycles, layers, assemble). `render/`: plain-dict Plotly figures, colours, legend, tables; only `render/export/` imports plotly/kaleido.
-* `storage/`: file and Mongo graph repositories, `settings.json` store, bundles. `services.py`: the only place that wires things; the web layer talks to `Services`.
+* `storage/`: file and Mongo graph and folder repositories, `settings.json` store, bundles. `services.py`: the only place that wires things; the web layer talks to `Services`.
 * `pipeline.py`: draft -> graph -> `RenderBundle`. `web/`: `app.py` only assembles; `middleware.py`, `security.py`, `routers/`, `schemas/`.
 * `render/`, `sources/`, `storage/` never import `web/`.
 
@@ -106,13 +106,13 @@ File 500 lines, function 50, class 300, parameters 4 (`self`/`cls` free), nestin
 
 ## Security invariants (never weaken)
 
-* Loopback bind by default; a non-loopback host needs `--allow-remote` (enforced in `BootstrapConfig` and `create_app`); remote mode is read-only unless `--allow-remote-writes`.
+* Loopback bind by default; a non-loopback host needs `--allow-remote` (enforced in `BootstrapConfig` and `create_app`); remote mode is read-only unless `--allow-remote-writes`; writing edits back to a MongoDB source additionally needs `--allow-source-writes`.
 * Host allow-list (`allowed_hosts`), CSRF rule (`Sec-Fetch-Site` same-origin/none, or exact `Origin`; headerless clients JSON only; `Origin: null` refused), content-type enforcement, no CORS, streaming body caps (JSON 8 MiB, import 16 MiB, upload `max_upload_mb` + 1 MiB).
 * CSP `default-src 'self'; script-src 'self'; ...; frame-ancestors 'none'`, `nosniff`, `Referrer-Policy: same-origin`, `Cache-Control: no-store`; downloads are attachments with `CSP: sandbox`. OpenAPI/Swagger/ReDoc stay disabled.
-* MongoDB is read-only everywhere except the graph store (`storage/mongo_store.py`, collection `sankey_studio_graphs`); filters, pipelines, names and URIs go through `mongo_safety`; `admin`, `local`, `config`, `system.*` are never readable; Mongo-bound work runs inside `clients.slot(...)` and `mongo_errors(...)`.
-* Paths: managed sources dir only, fd-based open with `O_NOFOLLOW` + regular-file check, extension allow-list, sanitised names, `O_EXCL` uploads; `sources_dir` is bootstrap-only.
+* MongoDB is read-only everywhere except (a) the library store: graphs in `storage/mongo_store.py` (collection `sankey_studio_graphs`) and graph collections in `storage/mongo_folder_store.py` (collection `sankey_studio_collections`), both in `AppSettings.storage_database` through the storage connection, and (b) the opt-in source write-back in `storage/mongo_source_writes.py`: one `insert_one` or one `update_many` (`_id`-scoped and re-filtered, at most 1000 documents) per user edit, only when the request's `source.write_back` names this target (the key the server builds from the resolved connection, database and collection; the user said yes in a dialog), mode `find` only (`add_entry` needs a plain-equality filter; `set_category` re-applies the source filter, checked like a read, on top of the `_id` list), fields and string values validated by `mongo_safety.check_write_*` (formula-like text refused), never `admin`/`local`/`config`/`system.*` nor any collection whose name starts with `sankey_studio_`; the saved preference is client-supplied, so the real controls are the DB user's privileges and, in remote mode, `--allow-source-writes`; filters, pipelines, names and URIs go through `mongo_safety`; `admin`, `local`, `config`, `system.*` are never readable; Mongo-bound work runs inside `clients.slot(...)` and `mongo_errors(...)`; remote mode without `--allow-remote-writes` AND `--allow-source-writes` refuses (403 `read_only_mode`).
+* Paths: managed sources dir only, fd-based open with `O_NOFOLLOW` + regular-file check, extension allow-list, sanitised names, `O_EXCL` uploads; write-back replaces an EXISTING allowed file atomically with the same fd-based checks as `located`/`open_leaf` (`sources/files/store.py edit_file`: stat stamp, size cap, part file `O_EXCL`); `sources_dir` is bootstrap-only.
 * Secrets: URIs are `SecretStr`, masked by `mask_uri` (fail closed) and never appear in logs, errors, API output or exports; API returns `uri_masked`/`has_secret`, never `uri`; only `settings_store.dump_settings/load_settings` touch real values; `settings.json` is 0600, data dir 0700, atomic writes.
-* Output: every user string in a Plotly label goes through `escape_label`; user text never enters a `hovertemplate`; CSV cells get the formula guard; no endpoint accepts figure JSON; Jinja autoescape stays on.
+* Output: every user string in a Plotly label goes through `escape_label`; user text never enters a `hovertemplate`; CSV cells get the formula guard (exports; write-back refuses formula-like new text); no endpoint accepts figure JSON; Jinja autoescape stays on.
 * Exports: pixel/link/node caps, one at a time, MathJax off, 30 s timeout.
 
 ## Commit policy

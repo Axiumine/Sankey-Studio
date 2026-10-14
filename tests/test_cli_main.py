@@ -62,6 +62,7 @@ def test_remote_mode_prints_a_loud_banner_and_says_writes_are_off(
         "* REMOTE MODE: NO AUTHENTICATION. Anyone who can reach this address can\n"
         "* use the app. Bound to http://192.0.2.7:8765; changes are DISABLED (read-only).\n"
         f"{STARS}\n"
+        "source writes: DISABLED\n"
         "Accepted Host headers: localhost, 127.0.0.1, [::1], 192.0.2.7\n"
         'Any other host in the URL gets "400 Invalid host header". To accept more, set\n'
         "SANKEY_ALLOWED_HOSTS to the JSON list of ALL accepted hosts, for example:\n"

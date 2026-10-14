@@ -75,19 +75,23 @@ class TextDataSource:
         fmt = self._spec.format
         return detect_format(sample) if fmt == "auto" else fmt
 
+    def parse_job(self, cleaner: CategoryCleaner, diag: Diagnostics) -> ParseJob:
+        """The per-load parsing state (format and delimiter sample resolved) for this source."""
+        sample = self._sample()
+        return ParseJob(
+            spec=self._spec,
+            ctx=self._ctx,
+            diag=diag,
+            cleaner=cleaner,
+            label=self._label(),
+            fmt=self._format(sample),
+            sample=sample,
+        )
+
     def iter_links(self, diag: Diagnostics) -> Iterator[RawLink]:
         cleaner = CategoryCleaner(diag)
         try:
-            sample = self._sample()
-            job = ParseJob(
-                spec=self._spec,
-                ctx=self._ctx,
-                diag=diag,
-                cleaner=cleaner,
-                label=self._label(),
-                fmt=self._format(sample),
-                sample=sample,
-            )
+            job = self.parse_job(cleaner, diag)
             with self._open() as stream:
                 yield from PARSERS[job.fmt](job, stream)
         finally:

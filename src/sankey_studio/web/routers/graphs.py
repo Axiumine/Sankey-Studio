@@ -1,16 +1,24 @@
 """The library of saved graphs: CRUD, duplicate, JSON bundle import/export, tags and the render.
 
-Order matters: ``/graphs/export`` and ``/graphs/import`` are declared BEFORE ``/graphs/{graph_id}``
-so the static paths are never read as an id. A malformed id is a 404 (the repository checks it
-with ``check_graph_id``), an unknown valid id too. Every route with an unsafe method persists
-something, and ``GuardedRoute`` answers it 403 ``read_only_mode`` (remote mode without
-``--allow-remote-writes``) before FastAPI decodes the body, so a malformed body is a 403 there
-too; the reads, the bundle export and the render are always available.
+Order matters: ``/graphs/export``, ``/graphs/import`` and ``/graphs/move`` are declared BEFORE
+``/graphs/{graph_id}`` so the static paths are never read as an id. A malformed id is a 404 (the
+repository checks it with ``check_graph_id``), an unknown valid id too. Every route with an unsafe
+method persists something, and ``GuardedRoute`` answers it 403 ``read_only_mode`` (remote mode
+without ``--allow-remote-writes``) before FastAPI decodes the body, so a malformed body is a 403
+there too; the reads, the bundle export and the render are always available.
 
 The bundle export refuses a document the import would refuse: ``IMPORT_BODY_BYTES`` is the one cap
 (422 ``bundle_error``, "export fewer graphs"), so an exported file always imports again. Both
 count UTF-8 bytes, and the export is written one graph at a time, aborting at the first graph that
 would cross the cap, so a request for 200 huge graphs never holds more than the cap plus one graph.
+The bundle ends with the library folders ("collections") the exported graphs sit in and their
+ancestors, counted against the same cap.
+
+Folders: ``GET /graphs?folder=root|<id>`` lists one folder (and cannot be combined with ``q`` or
+``tag``; without ``folder`` the listing is the plain library search), ``POST /graphs?folder=<id>``
+saves a new graph in an existing folder (404 and nothing stored otherwise), a duplicate lands next
+to its original, and ``POST /graphs/move`` moves graphs between folders. ``PUT`` never changes
+the folder of a graph.
 
 ``PUT`` is optimistic: a stale ``revision`` answers 409 with ``details`` ``["revision=N",
 "updated_at=<iso>"]`` (the repository's ``ConflictError``), and the UI then reloads or saves a copy
@@ -20,7 +28,7 @@ with ``POST /graphs/{id}/duplicate``.
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Annotated, Final
+from typing import TYPE_CHECKING, Annotated, Any, Final
 
 from fastapi import APIRouter, Body, Query, Response
 from pydantic import BaseModel, ConfigDict
@@ -29,11 +37,13 @@ from sankey_studio.bundle import RenderBundle
 from sankey_studio.errors import BundleError
 from sankey_studio.models import (
     NAME_MAX,
+    FolderDefinition,
     GraphCreate,
     GraphDefinition,
     GraphDraft,
     GraphSummary,
     GraphUpdate,
+    MoveReport,
 )
 from sankey_studio.pipeline import BundleOptions, render_bundle
 from sankey_studio.storage.bundle import (
@@ -42,12 +52,13 @@ from sankey_studio.storage.bundle import (
     ImportReport,
     import_bundle,
 )
+from sankey_studio.storage.bundle_folders import select_folders
 from sankey_studio.web.deps import GuardedRoute, ResultCacheDep, ServicesDep
-from sankey_studio.web.schemas import IdsQuery, ListQuery, RenderQuery
+from sankey_studio.web.schemas import CreateQuery, IdsQuery, ListQuery, MoveGraphsIn, RenderQuery
 from sankey_studio.web.security import IMPORT_BODY_BYTES, Download, download_response
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable, Iterable, Mapping, Sequence
 
 COPY_SUFFIX = " (copy)"
 BUNDLE_FILE_NAME = "sankey-studio-graphs"
@@ -57,12 +68,15 @@ MSG_EXPORT_TOO_LARGE = "The export is larger than a bundle import accepts; expor
 BUNDLE_HEAD: Final = (
     f'{{\n  "format": "{BUNDLE_FORMAT}",\n  "version": {BUNDLE_VERSION},\n  "graphs": ['
 ).encode()
-BUNDLE_TAIL: Final = b"\n  ]\n}"
-_GRAPH_INDENT = "    "
-#: ``json.dumps(graph, indent=2, ensure_ascii=False)`` as an object: non-ASCII text stays as it
+#: What closes the document when no folder follows the graphs.
+BUNDLE_TAIL: Final = b'\n  ],\n  "folders": []\n}'
+_FOLDERS_OPEN: Final = b'\n  ],\n  "folders": ['
+_FOLDERS_CLOSE: Final = b"\n  ]\n}"
+_ITEM_INDENT = "    "
+#: ``json.dumps(item, indent=2, ensure_ascii=False)`` as an object: non-ASCII text stays as it
 #: is (an emoji is 4 bytes, not the 12 of two ``\uXXXX`` escapes), so the size counted is the UTF-8
 #: served.
-_GRAPH_ENCODER: Final = json.JSONEncoder(indent=2, ensure_ascii=False)
+_ITEM_ENCODER: Final = json.JSONEncoder(indent=2, ensure_ascii=False)
 
 
 router = APIRouter(prefix="/api/v1", route_class=GuardedRoute)
@@ -98,36 +112,74 @@ def copy_of(definition: GraphDefinition) -> GraphCreate:
     )
 
 
-def _graph_chunk(graph: GraphDefinition, *, first: bool) -> bytes:
-    """One graph of the bundle as UTF-8, indented and separated to sit in the ``graphs`` list."""
-    text = _GRAPH_ENCODER.encode(graph.model_dump(mode="json"))
-    nested = text.replace("\n", "\n" + _GRAPH_INDENT)  # a newline inside a string is escaped
-    return f"{'' if first else ','}\n{_GRAPH_INDENT}{nested}".encode()
+def _chunk(item: Mapping[str, Any], *, first: bool) -> bytes:
+    """One graph or folder of the bundle as UTF-8, indented and separated to sit in its list."""
+    text = _ITEM_ENCODER.encode(item)
+    nested = text.replace("\n", "\n" + _ITEM_INDENT)  # a newline inside a string is escaped
+    return f"{'' if first else ','}\n{_ITEM_INDENT}{nested}".encode()
 
 
-def encode_bundle(load: Callable[[str], GraphDefinition], ids: Iterable[str], limit: int) -> bytes:
+def _no_folders() -> Sequence[FolderDefinition]:
+    return ()
+
+
+def _tail(folders: Sequence[FolderDefinition]) -> bytes:
+    """What follows the last graph: the end of ``graphs`` and the ``folders`` list."""
+    if not folders:
+        return BUNDLE_TAIL
+    dumps = (folder.model_dump(mode="json") for folder in folders)
+    chunks = [_chunk(dump, first=index == 0) for index, dump in enumerate(dumps)]
+    return b"".join([_FOLDERS_OPEN, *chunks, _FOLDERS_CLOSE])
+
+
+def encode_bundle(
+    load: Callable[[str], GraphDefinition],
+    ids: Iterable[str],
+    limit: int,
+    folders: Callable[[], Sequence[FolderDefinition]] = _no_folders,
+) -> bytes:
     """The bundle of the graphs ``ids`` (given order, repeats dropped) as UTF-8 JSON bytes.
 
     The bytes are those of ``json.dumps(bundle, indent=2)`` (non-ASCII text stays as it is). Graphs
     are loaded and encoded one by one while the running size is counted, so the document is
     refused (422 ``bundle_error``) at the first graph that takes it above ``limit`` bytes and the
-    rest of the request is never loaded.
+    rest of the request is never loaded. ``folders`` returns every folder of the library; it is
+    only called when a graph sits in one, and the bundle then ends with those folders and their
+    ancestors, parents first (counted against ``limit`` too).
     """
     chunks = [BUNDLE_HEAD]
     size = len(BUNDLE_HEAD) + len(BUNDLE_TAIL)
+    used: set[str | None] = set()
     for graph_id in dict.fromkeys(ids):
-        chunk = _graph_chunk(load(graph_id), first=len(chunks) == 1)
+        graph = load(graph_id)
+        used.add(graph.folder_id)
+        chunk = _chunk(graph.model_dump(mode="json"), first=len(chunks) == 1)
         size += len(chunk)
         if size > limit:
             raise BundleError(MSG_EXPORT_TOO_LARGE, details=[f"limit_bytes={limit}"])
         chunks.append(chunk)
-    chunks.append(BUNDLE_TAIL)
+    tail = _tail(select_folders(folders() if used - {None} else (), used))
+    if size - len(BUNDLE_TAIL) + len(tail) > limit:
+        raise BundleError(MSG_EXPORT_TOO_LARGE, details=[f"limit_bytes={limit}"])
+    chunks.append(tail)
     return b"".join(chunks)
 
 
 @router.get("/graphs")
 def list_graphs(query: Annotated[ListQuery, Query()], services: ServicesDep) -> GraphPage:
-    """Search the library (``q`` over name, description and tags; exact ``tag``), newest first."""
+    """Search the library (``q`` over name, description and tags; exact ``tag``), newest first.
+
+    With ``folder`` (``root`` or an id) it lists the graphs directly in that folder instead; an
+    unknown id is an empty page.
+    """
+    if query.folder is not None:
+        folders = services.folders()
+        return GraphPage(
+            items=folders.list_in(query.folder, limit=query.limit, offset=query.offset),
+            total=folders.count_in(query.folder),
+            limit=query.limit,
+            offset=query.offset,
+        )
     repo = services.graphs()
     return GraphPage(
         items=repo.list_graphs(
@@ -146,7 +198,8 @@ def export_graphs(query: Annotated[IdsQuery, Query()], services: ServicesDep) ->
     422 ``bundle_error`` when the document is larger than ``IMPORT_BODY_BYTES``: the import
     would answer 413 to it, so a file the UI hands out must never be one it cannot take back.
     """
-    body = encode_bundle(services.graphs().get, query.ids, IMPORT_BODY_BYTES)
+    load_folders = services.folders().list_definitions
+    body = encode_bundle(services.graphs().get, query.ids, IMPORT_BODY_BYTES, load_folders)
     return download_response(Download(body, BUNDLE_MEDIA_TYPE, BUNDLE_FILE_NAME, "json"))
 
 
@@ -175,15 +228,34 @@ def render_graph(
 
 
 @router.post("/graphs", status_code=201)
-def create_graph(data: GraphCreate, services: ServicesDep) -> GraphDefinition:
-    """Save a new graph (revision 1)."""
-    return services.graphs().create(data)
+def create_graph(
+    data: GraphCreate, query: Annotated[CreateQuery, Query()], services: ServicesDep
+) -> GraphDefinition:
+    """Save a new graph (revision 1), in the folder ``?folder=`` names (404 if it is gone)."""
+    if query.folder is None:
+        return services.graphs().create(data)
+    services.folders().get_folder(query.folder)  # a missing folder stores nothing
+    return services.graphs().create(data, folder_id=query.folder)
 
 
 @router.post("/graphs/import")
 def import_graphs(bundle: Annotated[object, Body()], services: ServicesDep) -> ImportReport:
-    """Store every valid graph of a bundle under a fresh id; the report lists the failures."""
-    return import_bundle(services.graphs(), bundle)
+    """Store every valid graph of a bundle under a fresh id; the report lists the failures.
+
+    The bundle's folders are stored first (a same-named folder in the same place is reused) and
+    the graphs land in them. A saved write-back consent in the bundle is dropped.
+    """
+    return import_bundle(services.graphs(), bundle, folders=services.folders())
+
+
+@router.post("/graphs/move")
+def move_graphs(body: MoveGraphsIn, services: ServicesDep) -> MoveReport:
+    """Put 1..200 graphs in a folder (``folder_id`` null = the top level).
+
+    404 for an unknown folder; graph ids that no longer exist are listed in ``missing``. A move
+    changes neither the revision nor ``updated_at`` of a graph.
+    """
+    return services.folders().move_graphs(body.ids, body.folder_id)
 
 
 @router.put("/graphs/{graph_id}")
@@ -199,6 +271,7 @@ def delete_graph(graph_id: str, services: ServicesDep) -> None:
 
 @router.post("/graphs/{graph_id}/duplicate", status_code=201)
 def duplicate_graph(graph_id: str, services: ServicesDep) -> GraphDefinition:
-    """Save the stored graph again as ``<name> (copy)`` (new id, revision 1)."""
+    """Save the stored graph again as ``<name> (copy)`` (new id, revision 1), in the same folder."""
     repo = services.graphs()
-    return repo.create(copy_of(repo.get(graph_id)))
+    original = repo.get(graph_id)
+    return repo.create(copy_of(original), folder_id=original.folder_id)

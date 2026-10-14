@@ -21,6 +21,8 @@ const LABELS = { source: "Source", target: "Target", value: "Value", category: "
 const CANDIDATES = [",", ";", "\t", "|"];
 const showDelimiter = (char) => (char === "\t" ? "Tab" : `"${char}"`);
 const ENCODINGS = ["utf-8", "utf-8-sig", "utf-16", "cp1252", "latin-1", "iso-8859-15"];
+const CATEGORY_HINT = "Optional. Automatic uses a column called category when there is one.";
+const CATEGORY_HINT_HEADERLESS = "Optional. Automatic uses the fourth column when there is one.";
 
 function autoLabel(spec, role, cells) {
   if (cells.length === 0) {
@@ -123,11 +125,14 @@ class Mapping {
 
   buildPicker(role) {
     const select = selectInput({ options: [{ value: "", label: "Automatic" }], "data-testid": `source-column-${role}` });
-    const hint = role === "category" ? "Optional. Automatic uses a column called category when there is one." : null;
-    const f = field({ label: `${LABELS[role]} column`, control: select, hint });
+    const f = field({ label: `${LABELS[role]} column`, control: select, hint: role === "category" ? CATEGORY_HINT : null });
     this.selects[role] = select;
     this.fields[`${role}_column`] = f;
     select.addEventListener("change", () => this.choose(role, select.value));
+    if (role === "category") {
+      // the server reads the fourth column when there is no header row: the hint follows the checkbox
+      this.offs.push(this.store.subscribe((value) => f.setHint(value === false ? CATEGORY_HINT_HEADERLESS : CATEGORY_HINT), { select: (state) => state.draft.source.has_header, immediate: true }));
+    }
     this.offs.push(this.store.subscribe(() => this.showChoice(role), { select: (state) => state.draft.source[`${role}_column`], immediate: true }));
     return f;
   }

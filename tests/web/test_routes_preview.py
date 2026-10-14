@@ -36,6 +36,7 @@ BUNDLE_KEYS = {
     "stats",
     "entries",
     "entries_total",
+    "nodes",
     "warnings",
 }
 

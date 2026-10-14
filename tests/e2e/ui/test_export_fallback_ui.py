@@ -104,7 +104,8 @@ def test_the_editor_falls_back_too_and_a_transparent_png_keeps_its_clear_backgro
     editor.goto()
     editor.paste(BUDGET_CATEGORISED.csv)
     name = unique_name("Editor fallback")
-    editor.name_field.fill(name)
+    editor.set_name(name)
+    editor.open_export()
 
     svg = download(page, editor.tid("export-sankey-svg"))
 

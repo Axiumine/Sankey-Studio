@@ -3,11 +3,12 @@
  * backdrop to close, the rest of the app made inert, body scroll locked, focus restored to the
  * element that opened it.
  *
- * - `openDialog({title, body, actions, wide, testid, initialFocus})` -> `{el, close(value), result}`.
+ * - `openDialog({title, body, actions, wide, testid, initialFocus, closeButton})` -> `{el, close(value), result}`.
  *   `body` is a Node or text; `actions` is `[{label, value, kind: "primary"|"danger"|"default",
  *   testid, onClick(close)}]`. `result` resolves to the clicked action's `value`, or `undefined`
  *   when closed with Esc/backdrop/`close()`. An `onClick` that does not call `close` keeps the
- *   dialog open (e.g. a form that failed validation).
+ *   dialog open (e.g. a form that failed validation). `closeButton: true` adds an X in the header
+ *   (`data-testid="dialog-close"`) that closes like Esc.
  * - `confirmDialog({title, message, confirmLabel, cancelLabel, danger, testid, confirmTestid})`
  *   -> `Promise<boolean>`. A dangerous confirmation focuses Cancel first. Default test ids:
  *   `confirm-dialog`, `confirm-dialog-confirm`, `confirm-dialog-cancel` (pass `confirmTestid`
@@ -15,6 +16,7 @@
  */
 
 import { h, trapFocus, uid, focusable } from "./dom.js";
+import { icon } from "./icons.js";
 
 let open = 0;
 
@@ -37,6 +39,14 @@ function actionButton(action, close) {
   );
 }
 
+function closeControl(onClick) {
+  return h(
+    "button",
+    { type: "button", class: "btn btn-ghost btn-icon btn-sm dialog-close", "aria-label": "Close", title: "Close", "data-testid": "dialog-close", on: { click: onClick } },
+    icon("x", { size: 16 }),
+  );
+}
+
 function pickFocus(dialog, options, buttons) {
   const preferred = options.initialFocus?.(dialog);
   const first = buttons.find((b) => b.dataset.initial === "true");
@@ -45,7 +55,7 @@ function pickFocus(dialog, options, buttons) {
 
 /**
  * Opens a modal dialog.
- * @param {{title: string, body?: Node|string, actions?: object[], wide?: boolean, testid?: string, initialFocus?: (dialog: HTMLElement) => HTMLElement | null}} options
+ * @param {{title: string, body?: Node|string, actions?: object[], wide?: boolean, testid?: string, closeButton?: boolean, initialFocus?: (dialog: HTMLElement) => HTMLElement | null}} options
  * @returns {{el: HTMLElement, close: (value?: unknown) => void, result: Promise<unknown>}}
  */
 export function openDialog(options) {
@@ -79,7 +89,7 @@ export function openDialog(options) {
   const dialog = h(
     "div",
     { class: ["dialog", options.wide ? "dialog-wide" : null], role: "dialog", "aria-modal": "true", "aria-labelledby": titleId, "aria-describedby": options.body ? bodyId : null, tabindex: "-1", "data-testid": options.testid ?? null },
-    h("div", { class: "dialog-header" }, h("h2", { class: "dialog-title", id: titleId }, options.title)),
+    h("div", { class: "dialog-header" }, h("h2", { class: "dialog-title", id: titleId }, options.title), options.closeButton ? closeControl(() => close(undefined)) : null),
     options.body ? h("div", { class: "dialog-body", id: bodyId }, options.body) : null,
     buttons.length ? h("div", { class: "dialog-actions" }, buttons) : null,
   );

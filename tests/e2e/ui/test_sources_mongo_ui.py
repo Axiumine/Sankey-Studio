@@ -112,7 +112,7 @@ def step_counting_documents_replaces_the_value_field(editor: EditorPage, mongo: 
 def step_the_graph_is_saved_with_its_fields_and_comes_back(
     editor: EditorPage, mongo: MongoTab, api: httpx.Client
 ) -> None:
-    editor.name_field.fill(unique_name("From Mongo"))
+    editor.set_name(unique_name("From Mongo"))
     graph_id = editor.save()
 
     stored = json_of(api.get(f"/api/v1/graphs/{graph_id}"))["source"]

@@ -2,7 +2,8 @@
 
 The editor exports the draft: ``graph`` until the Name field has text, then the name (``-donut``
 for the donut chart that ``export-data-chart`` picks for HTML, JSON and CSV), the images drawn by
-the server (Chrome) included.
+the server (Chrome) included. A page with a new-graph wizard asks for a name first, so the first
+download carries ``EditorPage.wizard_name`` there.
 """
 
 from __future__ import annotations
@@ -43,8 +44,10 @@ def test_the_editor_exports_the_draft_named_graph_until_it_has_a_name_images_inc
     editor.paste(BUDGET_CATEGORISED.csv)
     name = unique_name("Draft export")
 
+    editor.open_export()
     unnamed = download(page, editor.tid("export-csv"))
-    editor.name_field.fill(name)
+    editor.set_name(name)
+    editor.open_export()
     named = download(page, editor.tid("export-csv"))
     editor.tid("export-data-chart").select_option("donut")
     donut = download(page, editor.tid("export-csv"))
@@ -52,7 +55,7 @@ def test_the_editor_exports_the_draft_named_graph_until_it_has_a_name_images_inc
     svg = download(page, editor.tid("export-sankey-svg"))
     donut_svg = download(page, editor.tid("export-donut-svg"))
 
-    assert unnamed.name == "graph.csv"
+    assert unnamed.name == f"{editor.wizard_name or 'graph'}.csv"  # a wizard asks for a name first
     assert unnamed.text.splitlines()[0] == SANKEY_CSV_HEADER
     assert named.name == f"{name}.csv"
     assert donut.name == f"{name}-donut.csv"
@@ -73,6 +76,7 @@ def test_the_editor_images_follow_the_size_inputs_of_the_export_card(
     editor.goto()
     editor.paste(BUDGET_CATEGORISED.csv)
 
+    editor.open_export()
     editor.tid("export-width").fill("600")
     editor.tid("export-height").fill("700")
     editor.tid("export-scale").fill("1")

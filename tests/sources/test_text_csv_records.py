@@ -119,5 +119,5 @@ def test_a_file_of_one_endless_record_costs_a_bounded_amount_of_memory(
 
 def test_the_first_record_of_the_file_may_use_the_whole_budget(source_ctx: SourceContext) -> None:
     text = record(RECORD_MAX_CHARS) + "ok,fine,1\n"
-    out = inline(source_ctx, text, format="csv", has_header=False)
+    out = inline(source_ctx, text, format="csv", has_header=False, detect_category=False)
     assert out.rows == [FIRST_ROW, OK_ROW]

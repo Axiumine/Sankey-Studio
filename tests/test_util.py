@@ -14,6 +14,7 @@ from sankey_studio.util import (
     looks_masked,
     mask_uri,
     normalize_category,
+    starts_like_formula,
 )
 
 # (input, substrings that must NEVER survive masking, expected output)
@@ -235,3 +236,43 @@ def test_reserved_category_names(name: str) -> None:
 @pytest.mark.parametrize("name", ["Others", "Un categorized", "Misc", "Other stuff", ""])
 def test_non_reserved_category_names(name: str) -> None:
     assert not is_reserved_category(name)
+
+
+# (text, expected): the spreadsheet formula predicate shared by exports and write-back
+FORMULA_CASES = [
+    ("=1+1", True),
+    ("+1", True),
+    ("-1", True),
+    ("@SUM(A1)", True),
+    ("=", True),
+    ("-", True),
+    (" =1", True),
+    ("  +1", True),
+    ("\n=1", True),
+    ("\r=1", True),
+    ("\t=1", True),
+    (" \t\r\n@x", True),
+    ("\t5", True),  # a TAB first is risky whatever follows
+    ("\rabc", True),  # so is a carriage return
+    ("\t", True),
+    ("a=1", False),
+    ("a+b", False),
+    ("5-3", False),
+    ("x@y", False),
+    ("well-known", False),  # a hyphenated word is not a formula
+    ("'=1", False),
+    ("Food", False),
+    ("", False),
+    ("   ", False),
+    (" \n ", False),  # blanks only
+    ("\x0b=1", False),  # only space, TAB, CR and LF are skipped
+    ("\u00a0=1", False),
+    ("\uff1d1", False),  # fullwidth "="
+    ("\u00e9=", False),
+    ("\u4e2d\u6587", False),
+]
+
+
+@pytest.mark.parametrize(("text", "expected"), FORMULA_CASES)
+def test_starts_like_formula(text: str, *, expected: bool) -> None:
+    assert starts_like_formula(text) is expected

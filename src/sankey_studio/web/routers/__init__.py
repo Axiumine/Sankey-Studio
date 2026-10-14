@@ -19,7 +19,9 @@ from fastapi import APIRouter
 
 from sankey_studio.web.routers import (
     compare,
+    edits,
     exports,
+    folders,
     graphs,
     mongo,
     pages,
@@ -34,7 +36,10 @@ ALL_ROUTERS: tuple[APIRouter, ...] = (
     sources.router,
     mongo.router,
     preview.router,
+    edits.router,
+    edits.writes_router,
     graphs.router,
+    folders.router,
     compare.router,
     exports.router,
     pages.router,

@@ -7,7 +7,9 @@
  * like a bundle (`{"format": "sankey-studio/graphs", "graphs": [...]}`), asks once ("Import N
  * graphs?"), posts it to `POST /graphs/import` and shows the ImportReport (how many arrived, how
  * many failed and why). The server always gives imported graphs NEW ids, so nothing already in
- * the library is replaced; the dialog says so. File names and error lines are text nodes.
+ * the library is replaced; the dialog says so. A bundle can carry collections (`folders`): the
+ * dialog and the report count them, and the dialog says that a collection that already sits in the
+ * same place is reused. File names and error lines are text nodes.
  *
  * Test ids: import-dialog, import-confirm, import-report.
  */
@@ -58,14 +60,22 @@ export async function readBundle(file) {
   return data;
 }
 
-function confirmBody(file, count) {
+/** "3 graphs" or "3 graphs and 2 collections". */
+function countsText(graphs, folders) {
+  const text = formatCount(graphs, "graph");
+  return folders > 0 ? `${text} and ${formatCount(folders, "collection")}` : text;
+}
+
+function confirmBody(file, bundle) {
+  const folders = Array.isArray(bundle.folders) ? bundle.folders.length : 0;
   const error = h("p", { class: "field-error", role: "alert", hidden: true });
   const body = h(
     "div",
     { class: "stack stack-sm" },
     h("p", null, h("span", { class: "text-strong" }, file.name), ` (${formatBytes(file.size)})`),
-    h("p", null, `This bundle holds ${formatCount(count, "graph")}.`),
+    h("p", null, `This bundle holds ${countsText(bundle.graphs.length, folders)}.`),
     h("p", { class: "text-muted" }, "Imported graphs always get new ids, so nothing in your library is replaced or overwritten. Graphs that cannot be read are skipped and listed afterwards."),
+    folders > 0 ? h("p", { class: "text-muted" }, "Its collections are added next to yours; a collection that already exists in the same place is reused.") : null,
     error,
   );
   return { body, error, pending: null };
@@ -76,7 +86,7 @@ function reportBody(report) {
   return h(
     "div",
     { class: "stack stack-sm" },
-    h("p", null, `Imported ${formatCount(report.imported, "graph")}.`),
+    h("p", null, `Imported ${countsText(report.imported, report.folders ?? 0)}.`),
     report.failed > 0 ? h("p", { class: "text-strong" }, `${formatCount(report.failed, "graph")} could not be imported.`) : null,
     errors.length > 0
       ? h("ul", { class: "import-errors", role: "list", "aria-label": "Import problems" }, errors.map((line) => h("li", null, line)))
@@ -133,7 +143,7 @@ async function runImport(file, onDone) {
     toast.error(error instanceof BundleProblem ? error.message : "That file could not be read.");
     return;
   }
-  const parts = confirmBody(file, bundle.graphs.length);
+  const parts = confirmBody(file, bundle);
   const dialog = openDialog({
     title: "Import graphs",
     body: parts.body,

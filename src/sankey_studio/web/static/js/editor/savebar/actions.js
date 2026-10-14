@@ -10,10 +10,35 @@
  * - `reloadGraph({store, api})` fetches the saved version and replaces the draft with it (local
  *   edits are discarded).
  * - `copyName(name)`: "<name> (copy)", cut so it never passes the 200 character limit.
+ *
+ * A graph that sits in a collection (`meta.folder_id`, also the one a new graph was started in)
+ * is created inside it (`POST /graphs?folder=<id>`). When that collection is gone (404) the graph
+ * is created at the top level instead and the person is told.
  */
 
-const NAME_MAX = 200;
+import { ApiError } from "../../core/api.js";
+import { toast } from "../../core/toast.js";
+import { NAME_MAX } from "../meta/limits.js";
+
 const SUFFIX = " (copy)";
+const FOLDER_GONE = "That collection no longer exists, so the graph was saved at the top level of the library.";
+
+async function createGraph({ store, api }, body) {
+  const folder = store.get().meta.folder_id;
+  if (!folder) {
+    return api.post("/graphs", body);
+  }
+  try {
+    return await api.post("/graphs", body, { query: { folder } });
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.status !== 404) {
+      throw error;
+    }
+    store.patch(["meta", "folder_id"], null, { clean: true });
+    toast.warning(FOLDER_GONE);
+    return api.post("/graphs", body);
+  }
+}
 
 /**
  * @param {string} name
@@ -32,7 +57,7 @@ export function copyName(name) {
 export async function saveGraph({ store, api }) {
   const id = store.get().meta.id;
   const body = store.toPayload();
-  const definition = id ? await api.put(`/graphs/${id}`, body) : await api.post("/graphs", body);
+  const definition = id ? await api.put(`/graphs/${id}`, body) : await createGraph({ store, api }, body);
   store.markSaved(definition);
   return { definition, created: !id };
 }
@@ -44,7 +69,7 @@ export async function saveGraph({ store, api }) {
  */
 export async function saveCopy({ store, api }) {
   const { revision: _revision, ...body } = store.toPayload();
-  const definition = await api.post("/graphs", { ...body, name: copyName(body.name) });
+  const definition = await createGraph({ store, api }, { ...body, name: copyName(body.name) });
   store.markSaved(definition);
   return definition;
 }

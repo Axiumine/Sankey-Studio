@@ -9,9 +9,10 @@ Servers (``support.server``; option reference in its docstring)
 ``make_server(**options) -> LiveServer``
     Function scope. Starts a server per call (fresh ``data_dir`` / ``sources_dir`` under
     ``tmp_path``); all of them are stopped at teardown (port closed asserted). Options:
-    ``remote_mode``, ``allow_remote_writes``, ``settings``, ``export_unavailable``,
-    ``seed_mongo``, ``mongo_factory``. ``LiveServer.mongo`` is the ``E2EMongoClient`` behind every
-    Mongo connection (mongomock plus the inspect calls; ``.unreachable = True`` = outage).
+    ``remote_mode``, ``allow_remote_writes``, ``allow_source_writes``, ``settings``,
+    ``export_unavailable``, ``seed_mongo``, ``mongo_factory``.
+    ``LiveServer.mongo`` is the ``E2EMongoClient`` behind every Mongo connection (mongomock plus
+    the inspect calls; ``.unreachable = True`` = outage).
 ``live_server``
     Function scope. ``make_server()``: the default local server, fresh for every test.
 ``module_make_server(**options) -> LiveServer`` / ``module_server``

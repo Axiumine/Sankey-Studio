@@ -14,6 +14,7 @@ from playwright.sync_api import expect
 from tests.e2e.support.builders import BUDGET_CATEGORISED, graph_draft, unique_name
 from tests.e2e.support.clients import json_of, make_client, seed_graph
 from tests.e2e.support.ui_b_common import DESKTOP, download_text
+from tests.e2e.support.ui_b_folders import FolderLibrary, seed_filed_graph, seed_folder
 from tests.e2e.support.ui_b_library import LibraryPage
 
 if TYPE_CHECKING:
@@ -43,9 +44,14 @@ def choose_bundle(library: LibraryPage, path: Path) -> None:
     chooser.value.set_files(path)
 
 
-def write_bundle(directory: Path, graphs: list[Any], name: str = "bundle.json") -> Path:
+def write_bundle(
+    directory: Path, graphs: list[Any], name: str = "bundle.json", folders: list[Any] | None = None
+) -> Path:
     path = directory / name
-    path.write_text(json.dumps({"format": BUNDLE_FORMAT, "version": 1, "graphs": graphs}))
+    bundle: dict[str, Any] = {"format": BUNDLE_FORMAT, "version": 2, "graphs": graphs}
+    if folders is not None:
+        bundle["folders"] = folders
+    path.write_text(json.dumps(bundle))
     return path
 
 
@@ -76,7 +82,7 @@ def expect_refused_files(library: LibraryPage, directory: Path) -> None:
         "notes.json": ("this is not json", "This file is not valid JSON."),
         "other.json": ('{"hello": 1}', "This is not a Sankey Studio bundle."),
         "empty.json": (
-            json.dumps({"format": BUNDLE_FORMAT, "version": 1, "graphs": []}),
+            json.dumps({"format": BUNDLE_FORMAT, "version": 2, "graphs": []}),
             "This bundle holds no graphs",
         ),
     }
@@ -104,7 +110,7 @@ def test_export_all_selected_and_results_download_exactly_what_the_button_says(
     expect(library.tid("library-export")).to_have_text(f"Export all ({total})")
     bundle = export_bundle(library)
     assert bundle["format"] == BUNDLE_FORMAT
-    assert bundle["version"] == 1
+    assert bundle["version"] == 2
     assert len(bundle["graphs"]) == total
     exported = next(g for g in bundle["graphs"] if g["name"] == f"{prefix} 1")
     assert exported["id"] == graphs[0]["id"]
@@ -184,3 +190,39 @@ def test_cancel_imports_nothing_broken_graphs_are_reported_and_non_bundles_are_r
     close_report(library, 2)
     assert json_of(api.get("/api/v1/graphs"))["total"] == 2
     expect_refused_files(library, tmp_path)  # and files that are no bundles at all
+
+
+# ------------------------------------------------------------------------------ collections
+
+
+def test_a_collection_exports_with_its_path_and_imports_as_the_same_tree(
+    make_server: ServerFactory, open_page: PageOpener, tmp_path: Path
+) -> None:
+    source, target = make_server(), make_server()
+    with make_client(source) as source_api:
+        top = seed_folder(source_api, "Finance")
+        inner = seed_folder(source_api, "Q3 reports", top["id"])
+        seed_filed_graph(source_api, "Inside", inner["id"])
+        seed_graph(source_api, "Outside")
+    exporter = FolderLibrary(open_page(source, color_scheme="light", viewport=DESKTOP), source)
+    exporter.goto(f"?folder={inner['id']}")
+    expect(exporter.tid("library-export")).to_have_text("Export this collection (1)")
+    bundle = export_bundle(exporter)
+    assert [graph["name"] for graph in bundle["graphs"]] == ["Inside"]  # not the one outside
+    assert [folder["name"] for folder in bundle["folders"]] == ["Finance", "Q3 reports"]
+    path = write_bundle(tmp_path, bundle["graphs"], folders=bundle["folders"])
+    importer = FolderLibrary(open_page(target, color_scheme="light", viewport=DESKTOP), target)
+    importer.goto()
+    choose_bundle(importer, path)
+    dialog = importer.tid("import-dialog")
+    expect(dialog).to_contain_text("This bundle holds 1 graph and 2 collections.")
+    expect(dialog).to_contain_text("a collection that already exists in the same place is reused")
+    importer.tid("import-confirm").click()
+    report = importer.tid("import-report")
+    expect(report).to_contain_text("Imported 1 graph and 2 collections.")
+    report.get_by_role("button", name="Done").click()
+    expect(importer.folder_card("Finance")).to_be_visible()  # the list and the tree were reloaded
+    importer.open_folder("Finance")
+    importer.open_folder("Q3 reports")
+    importer.expect_names(["Inside"])
+    expect(importer.crumbs).to_have_text(["Library", "Finance", "Q3 reports"])

@@ -2,11 +2,11 @@
  * Pure rules of the entries table: what a category edit does to a draft, and what is allowed.
  * No DOM and no network, so every rule here can be exercised on plain objects.
  *
- * An entry is a (source, target) pair. Where a category is stored depends on the source:
- * - manual source: `Link.category` of EVERY link of the pair (clearing nulls it), never
- *   `transform.entry_categories`;
- * - any other source: `transform.entry_categories` `{source, target, category | null}`, one item per
- *   pair; `null` forces the pair uncategorised, even over a category that comes with the data.
+ * An entry is a (source, target) pair. A category edit goes through the edit engine (../edits/): the
+ * server writes it into the data (manual links, pasted text, a file, a collection) when it can, and
+ * what it cannot write stays in the graph as `transform.entry_categories` `{source, target,
+ * category | null}`, one item per pair; `null` forces the pair uncategorised, even over a category
+ * that comes with the data. `withCategory` below is that graph-only form.
  * Rules (`transform.category_rules`) are separate: a glob over node names.
  *
  * Every function returns NEW objects and never touches its input. The server stays the authority
@@ -92,17 +92,13 @@ export function upsertEntry(list, entry, category) {
 }
 
 /**
- * The draft after giving the pair `category` (null = none).
+ * The draft after giving the pair `category` (null = none) as a graph-only edit.
  * @param {object} draft  `{source, transform, style}`
  * @param {{source: string, target: string}} entry
  * @param {string | null} category
  * @returns {object}
  */
 export function withCategory(draft, entry, category) {
-  if (isManual(draft)) {
-    const links = (draft.source.links ?? []).map((link) => (sameEntry(link, entry.source, entry.target) ? { ...link, category } : link));
-    return { ...draft, source: { ...draft.source, links } };
-  }
   const list = draft.transform?.entry_categories ?? [];
   return { ...draft, transform: { ...draft.transform, entry_categories: upsertEntry(list, entry, category) } };
 }

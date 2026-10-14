@@ -15,7 +15,7 @@ dependencies = [
   "pydantic>=2.9",
   "pydantic-settings>=2.6",
   "pymongo>=4.10",
-  "plotly>=5.24",
+  "plotly>=7.1",
   "python-multipart>=0.0.12",
   # Static SVG/PNG export. Needs a Chrome/Chromium install at runtime (see README).
   "kaleido>=1.0",
@@ -105,6 +105,7 @@ runtime-evaluated-base-classes = [
   "sankey_studio.models.graphs.GraphUpdate",
   "sankey_studio.models.graphs.GraphDefinition",
   "sankey_studio.models.graphs.GraphSummary",
+  "sankey_studio.models.folders.FolderCreate",
   "sankey_studio.models.settings.AppSettings",
   "sankey_studio.models.settings.MongoConnection",
   # the same classes as re-exported by the package (what other modules import)
@@ -114,6 +115,7 @@ runtime-evaluated-base-classes = [
   "sankey_studio.models.GraphUpdate",
   "sankey_studio.models.GraphDefinition",
   "sankey_studio.models.GraphSummary",
+  "sankey_studio.models.FolderCreate",
   "sankey_studio.models.AppSettings",
   "sankey_studio.models.MongoConnection",
 ]

@@ -158,8 +158,21 @@ CATEGORIES = [
     Cat("source,target,value,kind,category\na,b,1,K,C", {"category_column": "kind"}, ["K"]),
     Cat("source,target,value,kind,category\na,b,1,K,C", {"category_column": 4}, ["C"]),
     Cat("a,b,1,K\nc,d,2,L", {"has_header": False, "category_column": 3}, ["K", "L"]),
-    # without a header there is no auto-detection
-    Cat("a,b,1,K", {"has_header": False}, [None]),
+    # without a header the fourth column is the category
+    Cat("a,b,1,K", {"has_header": False}, ["K"]),
+    Cat("a,b,1,K\nc,d,2,L", {"has_header": False}, ["K", "L"]),
+    Cat("a,b,1,K,L", {"has_header": False}, ["K"]),  # exactly the fourth
+    Cat("a,b,1\nc,d,2", {"has_header": False}, [None, None]),  # three columns: none
+    Cat("a,b,1,K", {"has_header": False, "detect_category": False}, [None]),
+    Cat("a,b,1,K", {"has_header": False, "category_column": 2}, ["1"]),  # explicit wins
+    # an explicit pick that already reads column 4 keeps it: no category
+    Cat(
+        "5,b,x,A",
+        {"has_header": False, "source_column": 3, "target_column": 1, "value_column": 0},
+        [None],
+    ),
+    Cat("a,5,x,B", {"has_header": False, "target_column": 3, "value_column": 1}, [None]),
+    Cat("a,b,1,7", {"has_header": False, "value_column": 3}, [None]),
     # an index beyond every row is just uncategorised
     Cat("source,target,value\na,b,1", {"category_column": 9}, [None]),
 ]
@@ -216,3 +229,13 @@ def test_the_category_of_a_skipped_row_is_not_counted(source_ctx: SourceContext)
     out = inline(source_ctx, "source,target,value,category\na,b,oops,Other\nc,d,1,Food\n")
     assert out.rows == [("c", "d", 1.0, "Food")]
     assert out.warnings == ["inline:2: value must be a positive number"]
+
+
+def test_a_headerless_fourth_cell_that_is_not_a_category_is_ignored_with_one_warning(
+    source_ctx: SourceContext,
+) -> None:
+    out = inline(source_ctx, "a,b,1," + "x" * 101, format="csv", has_header=False)
+    assert out.rows == [("a", "b", 1.0, None)]
+    assert out.warnings == [
+        "Categories ignored (entries kept uncategorised): 1 longer than 100 characters"
+    ]

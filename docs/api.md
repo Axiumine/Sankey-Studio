@@ -28,6 +28,8 @@ Related documents: [UI reference](ui.md) (page behaviour and the `data-testid` r
    - [5.6 Sources](#56-sources)
    - [5.7 MongoDB inspection](#57-mongodb-inspection)
    - [5.8 Health and static files](#58-health-and-static-files)
+   - [5.9 Collections](#59-collections)
+   - [5.10 Source edits](#510-source-edits)
 6. [Request models](#6-request-models)
 7. [RenderBundle](#7-renderbundle)
 8. [Pages and boot data](#8-pages-and-boot-data)
@@ -46,11 +48,12 @@ Related documents: [UI reference](ui.md) (page behaviour and the `data-testid` r
 | API documentation UI | None. `/docs`, `/redoc` and `/openapi.json` are 404. |
 | Encoding | All JSON is UTF-8. Non-ASCII text is never escaped as `\uXXXX` in bundle exports. |
 | HTML under `/api/v1` | Never. Every handler under `/api/v1` answers JSON or a file download. |
-| Graph id | 32 lowercase hexadecimal characters (`^[0-9a-f]{32}$`). A malformed id in a path is a 404 `not_found`; inside an `ids` query parameter it is a 422 `validation_error`. |
+| Graph id, folder id | 32 lowercase hexadecimal characters (`^[0-9a-f]{32}$`). A malformed id in a path is a 404 `not_found`; inside an `ids` query parameter or a body it is a 422 `validation_error`. |
+| Collection or folder | The library groups graphs in "collections". The word in the UI and in messages is "collection"; every identifier (path, JSON key, query parameter, error code) says `folder`, because `collection` already names a MongoDB collection. |
 | Timestamps | ISO-8601 in UTC with a trailing `Z` (`2026-10-10T19:47:54.692000Z`). The only exception is the `updated_at=` detail of a 409, which uses `+00:00`. |
 | Strings | Trimmed on input. The exceptions are inline text `content` and `delimiter`, which are kept verbatim. |
 | Unknown body fields | Rejected with 422 in every request model (`extra="forbid"`). |
-| Unknown query parameters | Rejected with 422 (`query.<name>: Extra inputs are not permitted`) on every route that declares a query model: `GET /graphs`, `GET /graphs/export`, `GET /graphs/{id}/render`, `GET /compare/render`, `POST /preview`, `POST /entries`, both export routes, `GET /mongo/{name}/collections`, `GET /mongo/{name}/sample` and `GET /compare`. Routes without a query model ignore extra parameters. Do not append cache-busting parameters. |
+| Unknown query parameters | Rejected with 422 (`query.<name>: Extra inputs are not permitted`) on every route that declares a query model: `GET /graphs`, `POST /graphs`, `GET /graphs/export`, `GET /graphs/{id}/render`, `GET /compare/render`, `POST /preview`, `POST /entries`, both export routes, `GET /mongo/{name}/collections`, `GET /mongo/{name}/sample` and `GET /compare`. Routes without a query model ignore extra parameters. Do not append cache-busting parameters. |
 | Input echo | A 422 never contains the submitted value, only the location and the reason. The location can hold a field name or a key the caller sent (`body.<key>: Extra inputs are not permitted`), and a few reasons name the offending MongoDB operator or pipeline stage, or the node or category names whose colour is not `#rrggbb`, never an argument or a value. An unknown `source.type` lists the allowed types, not the one sent ([section 3.1](#31-envelope)). |
 | Caching | `Cache-Control: no-store` on every `/api/*` response and on every HTML page. Other `/static/*` files are `no-store` too (no `ETag`, no `Last-Modified`, never a 304), and every page links them under a version prefix, `/static/v-<12 hex of the SHA-256 of the whole static directory>/<file>` (`web/assets.py`, computed once per server start). Scripts import each other by relative path and load their style sheets with `new URL(..., import.meta.url)`, so nested modules share the prefix: after a change every file is a new URL, and a copy a browser stored before (even one it would reuse without asking) is never used. The mount drops the prefix (any digest), so `/static/<file>` still works. `/static/vendor/plotly.min.js` is `no-store` as well: the browser keeps nothing, so a server restart always serves the current files. |
 | Order of results | Library lists are newest first (`updated_at` descending). |
@@ -203,10 +206,11 @@ paths and every client that does not ask for HTML keep the envelope exactly as d
 | 400 | `unsafe_source` | Path escape, symbolic link, forbidden Mongo database, collection or stage, upload filename with a path separator or a disallowed extension |
 | 403 | `forbidden` | The CSRF guard refused the request ([section 2.2](#22-csrf-verdict)) |
 | 403 | `read_only_mode` | A persisting route in remote read-only mode ([section 4](#4-remote-read-only-mode)) |
-| 404 | `not_found` | Unknown or malformed graph id, or unknown URL. JSON for every client except a browser navigation to a page URL, which gets the HTML not-found page ([section 8.3](#83-error-pages)) |
+| 404 | `not_found` | Unknown or malformed graph or folder id (`Folder not found`), or unknown URL. JSON for every client except a browser navigation to a page URL, which gets the HTML not-found page ([section 8.3](#83-error-pages)) |
 | 404 | `source_not_found` | Unknown source file or unknown Mongo connection name |
 | 405 | `method_not_allowed` | The path exists but not for this verb |
-| 409 | `conflict` | Stale `revision` on `PUT /graphs/{id}`, or an upload name that is already taken |
+| 409 | `conflict` | Stale `revision` on `PUT /graphs/{id}` or `PUT /folders/{id}`, an upload name that is already taken, or a file that changed while an edit was written to it (`The file changed while it was being edited`) |
+| 409 | `folder_name_taken` | A collection with this name already exists in the same place (create, rename, move, delete that would move a child onto a taken name). A separate code on purpose: `conflict` means "stale, reload" |
 | 413 | `payload_too_large` | Request body over its cap ([section 2.5](#25-body-size-caps)), or an upload over `max_upload_mb` |
 | 413 | `graph_too_large` | More raw links than `max_links`, or category rules that would need more than 20 million name and rule matches |
 | 415 | `unsupported_media_type` | Wrong `Content-Type` ([section 2.1](#21-content-types)) |
@@ -214,12 +218,15 @@ paths and every client that does not ask for HTML keep the envelope exactly as d
 | 422 | `source_error` | The data could not be read or parsed (bad rows, bad column mapping), or an upload filename is empty, too long (over 255 bytes) or holds control or formatting characters |
 | 422 | `graph_build_error` | The links cannot form a drawable graph: a cycle with `on_cycle: "error"`, flow sums beyond the float range |
 | 422 | `no_categories` | A donut was asked for and no entry has a category |
+| 422 | `folder_rule` | A collection rule is broken: a cycle (`A collection cannot be moved into itself or into one of its own collections`), more than 8 levels (`Collections can be nested at most 8 levels deep`) or more than 1,000 collections (`At most 1000 collections are allowed`) |
+| 422 | `source_edit_refused` | An edit that cannot be written back: `no_consent` on `POST /edits/write` (the saved choice does not allow it), or `too_many` (the 5,000-link cap of a manual source or the 2,000-entry cap of graph-only entries). Every other refusal is a 200 answer with `where: "graph"` ([section 5.10](#510-source-edits)) |
 | 422 | `settings_error` | The settings are invalid or cannot be read or saved; `details` list `location: reason` |
 | 422 | `bundle_error` | Unusable import bundle, or an export larger than an import accepts |
 | 422 | `export_too_large` | Image over the pixel cap (36,000,000 pixels after scale), or a graph with more than 5000 links or 2000 nodes asked as SVG or PNG |
 | 500 | `internal_error` | Unexpected failure, no detail |
 | 501 | `export_unavailable` | No Chrome or Chromium for SVG and PNG export; fall back to `Plotly.downloadImage` in the browser |
 | 502 | `export_failed` | The renderer crashed; fall back to the browser |
+| 502 | `source_write_failed` | A write to a MongoDB source failed in a way that leaves the result unknown (driver error); the message names the connection and the exception class only. Never turned into a graph-only edit |
 | 503 | `export_busy` | Another image export is running (one at a time) |
 | 503 | `busy` | A bounded resource is in use (a storage probe slot or a MongoDB connection slot) |
 | 503 | `storage_error` | Disk or MongoDB unreachable, or the sources directory is not usable. A browser navigation to a page URL gets the HTML "Graph database unavailable" page instead ([section 8.3](#83-error-pages)) |
@@ -235,16 +242,21 @@ On `export_too_large` (422) and on 501, 502, 503 `export_busy` and 504 a browser
 By default the server binds to a loopback address. A non-loopback bind needs `--allow-remote`; because there is no
 authentication, the server then refuses everything that persists unless `--allow-remote-writes` is given too.
 
-| Flags | `remote_mode` | `writes_allowed` |
-|---|---|---|
-| none (loopback) | false | true |
-| `--allow-remote` | true | false |
-| `--allow-remote --allow-remote-writes` | true | true |
+| Flags | `remote_mode` | `writes_allowed` | MongoDB source write-back |
+|---|---|---|---|
+| none (loopback) | false | true | allowed |
+| `--allow-remote` | true | false | refused |
+| `--allow-remote --allow-remote-writes` | true | true | refused |
+| `--allow-remote --allow-remote-writes --allow-source-writes` | true | true | allowed |
 
-`--allow-remote-writes` without `--allow-remote` is refused at start-up. Both values appear in the boot data of every
-page and in `GET /settings` (`bootstrap.remote_mode`, `bootstrap.writes_allowed`).
+`--allow-remote-writes` without `--allow-remote` is refused at start-up, and so is `--allow-source-writes` without
+`--allow-remote-writes` (`SANKEY_SOURCE_WRITES` is the variable; the startup banner of a remote server prints
+`source writes: ENABLED` or `DISABLED`). `--allow-remote-writes` alone does not unlock writing an edit back to a MongoDB
+source: that needs the second flag ([section 5.10](#510-source-edits)). Writing an edit back to a managed text file
+follows `writes_allowed`. `remote_mode` and `writes_allowed` appear in the boot data of every page and in
+`GET /settings` (`bootstrap.remote_mode`, `bootstrap.writes_allowed`); the source-write flag is not exposed to pages.
 
-When `writes_allowed` is false, these ten routes answer 403 `read_only_mode`:
+When `writes_allowed` is false, these fifteen routes answer 403 `read_only_mode`:
 
 | Route |
 |---|
@@ -258,17 +270,29 @@ When `writes_allowed` is false, these ten routes answer 403 `read_only_mode`:
 | `POST /api/v1/settings/mongo/{name}/test` |
 | `POST /api/v1/sources/files` |
 | `DELETE /api/v1/sources/files/{name}` |
+| `POST /api/v1/edits/write` |
+| `POST /api/v1/folders` |
+| `PUT /api/v1/folders/{id}` |
+| `DELETE /api/v1/folders/{id}` |
+| `POST /api/v1/graphs/move` |
 
 The settings probes count as persisting because they connect to URIs a caller supplies.
 
-- For the routes of the graph library and the settings, the refusal comes after the CSRF check (a cross-site request
+- For the routes of the graph library, the collections, the edits and the settings, the refusal comes after the CSRF check (a cross-site request
   is still 403 `forbidden`, a wrong content type still 415) but before the body is decoded and before validation.
   An invalid or undecodable body on these routes is therefore 403, never 422. `DELETE /sources/files/{name}` has no
   body and is refused the same way. The upload route is refused even earlier, in the body-size stage, before any
   byte of the multipart body is read and before the CSRF check. A refused request writes nothing.
 - The message is `This action is disabled in read-only remote mode (start with --allow-remote-writes)`.
-- Still available: every `GET`, `POST /preview`, `POST /entries`, `POST /sources/detect`, `POST /export`,
-  `GET /compare/render` and all exports. These are pure computations or reads.
+- A server with `--allow-remote-writes` but without `--allow-source-writes` answers `POST /edits/write` for a MongoDB
+  source (one whose saved choice is valid for its target; without one the 422 `no_consent` comes first) with 403
+  `read_only_mode` and the message `Writing edits to the source is disabled in read-only remote mode
+  (--allow-remote-writes, and --allow-source-writes for MongoDB)`; that answer comes from the handler, so the body has
+  been validated first.
+- Still available: every `GET`, `POST /preview`, `POST /entries`, `POST /edits/plan`, `POST /sources/detect`,
+  `POST /export`, `GET /compare/render`, all exports and the collection reads (`GET /folders`, `GET /graphs?folder=`).
+  These are pure computations or reads; `plan` writes nothing and answers `where: "graph"` with the reason
+  `read_only_mode` for a file or MongoDB source it may not write.
 - `GET /settings` hides the Mongo connections: `uri_masked` is the bare placeholder `mongodb://***` instead of the
   masked host and user name.
 - UI clients should disable write controls when `writes_allowed` is false; see the [UI reference](ui.md).
@@ -277,11 +301,11 @@ The settings probes count as persisting because they connect to URIs a caller su
 
 ## 5. Routes
 
-All API routes live under `/api/v1`. In the tables, `{id}` is a graph id.
+All API routes live under `/api/v1`. In the tables, `{id}` is a graph id (a folder id in [5.9](#59-collections)).
 
 ### 5.1 Route index
 
-The application serves 35 routes: 28 API routes, the vendored Plotly script and 6 HTML pages. Static files under
+The application serves 43 routes: 36 API routes, the vendored Plotly script and 6 HTML pages. Static files under
 `/static/` are served by a mount that comes after every route.
 
 | Route | Section | Persists |
@@ -290,6 +314,7 @@ The application serves 35 routes: 28 API routes, the vendored Plotly script and 
 | `POST /api/v1/graphs` | [5.2](#52-library) | yes |
 | `GET /api/v1/graphs/export` | [5.2](#52-library) | no |
 | `POST /api/v1/graphs/import` | [5.2](#52-library) | yes |
+| `POST /api/v1/graphs/move` | [5.9](#59-collections) | yes |
 | `GET /api/v1/graphs/{id}` | [5.2](#52-library) | no |
 | `PUT /api/v1/graphs/{id}` | [5.2](#52-library) | yes |
 | `DELETE /api/v1/graphs/{id}` | [5.2](#52-library) | yes |
@@ -299,6 +324,8 @@ The application serves 35 routes: 28 API routes, the vendored Plotly script and 
 | `GET /api/v1/graphs/{id}/render` | [5.3](#53-render-preview-entries-compare) | no |
 | `GET /api/v1/compare/render` | [5.3](#53-render-preview-entries-compare) | no |
 | `POST /api/v1/entries` | [5.3](#53-render-preview-entries-compare) | no |
+| `POST /api/v1/edits/plan` | [5.10](#510-source-edits) | no (pure) |
+| `POST /api/v1/edits/write` | [5.10](#510-source-edits) | yes |
 | `GET /api/v1/graphs/{id}/export` | [5.4](#54-exports) | no |
 | `POST /api/v1/export` | [5.4](#54-exports) | no |
 | `GET /api/v1/settings` | [5.5](#55-settings) | no |
@@ -313,6 +340,11 @@ The application serves 35 routes: 28 API routes, the vendored Plotly script and 
 | `GET /api/v1/mongo/{name}/databases` | [5.7](#57-mongodb-inspection) | no |
 | `GET /api/v1/mongo/{name}/collections` | [5.7](#57-mongodb-inspection) | no |
 | `GET /api/v1/mongo/{name}/sample` | [5.7](#57-mongodb-inspection) | no |
+| `GET /api/v1/folders` | [5.9](#59-collections) | no |
+| `POST /api/v1/folders` | [5.9](#59-collections) | yes |
+| `GET /api/v1/folders/{id}` | [5.9](#59-collections) | no |
+| `PUT /api/v1/folders/{id}` | [5.9](#59-collections) | yes |
+| `DELETE /api/v1/folders/{id}` | [5.9](#59-collections) | yes |
 | `GET /api/v1/health` | [5.8](#58-health-and-static-files) | no |
 | `GET /static/vendor/plotly.min.js` | [5.8](#58-health-and-static-files) | no |
 | `GET /`, `/graphs/new`, `/graphs/{id}`, `/graphs/{id}/edit`, `/compare`, `/settings` | [8](#8-pages-and-boot-data) | no |
@@ -324,29 +356,38 @@ read-only mode ([section 4](#4-remote-read-only-mode)).
 
 | Route | Query | Body | Success | Errors |
 |---|---|---|---|---|
-| `GET /graphs` | `q` (at most 200 characters, blank means none), `tag` (at most 40, exact match, blank means none), `limit` 1 to 200 (default 200), `offset` 0 or more (default 0) | none | 200 `GraphPage` | 422 |
+| `GET /graphs` | `q` (at most 200 characters, blank means none), `tag` (at most 40, exact match, blank means none), `folder` (`root` or a folder id, see below), `limit` 1 to 200 (default 200), `offset` 0 or more (default 0) | none | 200 `GraphPage` | 422 |
 | `GET /tags` | none | none | 200 sorted list of strings, for example `["demo","smoke"]` | none |
-| `POST /graphs` | none | `GraphCreate` | 201 `GraphDefinition` with `revision` 1 | 422 |
+| `POST /graphs` | `folder`: the id of an existing folder to save the graph in (none means the top level) | `GraphCreate` | 201 `GraphDefinition` with `revision` 1 and `folder_id` | 404 (the folder is gone; nothing is stored), 422 |
 | `GET /graphs/{id}` | none | none | 200 `GraphDefinition` | 404 |
 | `PUT /graphs/{id}` | none | `GraphUpdate` (`GraphCreate` plus `revision`) | 200 `GraphDefinition`, `revision` plus 1 | 404, 409, 422 |
 | `DELETE /graphs/{id}` | none | none | 204, no body | 404 |
-| `POST /graphs/{id}/duplicate` | none | none | 201 `GraphDefinition`: name `"<name> (copy)"` (the name is shortened so the result stays within 200 characters), new id, `revision` 1 | 404 |
+| `POST /graphs/{id}/duplicate` | none | none | 201 `GraphDefinition`: name `"<name> (copy)"` (the name is shortened so the result stays within 200 characters), new id, `revision` 1, in the folder of the original | 404 |
 | `GET /graphs/export` | `ids`: 1 to 200 distinct graph ids, comma separated or repeated | none | 200 JSON bundle download | 404, 422 |
 | `POST /graphs/import` | none | the bundle exactly as exported (a JSON object) | 200 `ImportReport` | 413, 422 `bundle_error` |
+| `POST /graphs/move` | none | `{ids, folder_id}`, see [5.9](#59-collections) | 200 `MoveReport` | 404, 422 |
 
 **Search.** `q` is a case-insensitive substring match over the name, the description and the tags. `tag` must equal
 one of the graph's tags exactly. `total` in the answer counts every match, not only the returned page.
+
+**Scope.** `folder=root` lists the graphs that sit in no collection, `folder=<id>` the graphs directly in that collection
+(not those of its sub-collections), newest first and paged like a search. A `folder` that names no collection is an empty
+page, not an error; a value that is neither `root` nor 32 lowercase hex characters (an empty value included) is 422.
+`folder` cannot be combined with a non-blank `q` or `tag` (422 `validation_error`, the detail ends with `folder cannot
+be combined with q or tag`): a search always looks at every collection. Without `folder` the listing is the plain
+library search.
 
 `GraphPage`:
 
 ```json
 {"items": [{"id": "cdfaad9764a8456aac96bb56cf398a92", "name": "Energy", "description": "", "tags": ["demo"],
-            "source_type": "text", "revision": 1, "updated_at": "2026-10-10T19:47:54.692000Z"}],
+            "source_type": "text", "revision": 1, "updated_at": "2026-10-10T19:47:54.692000Z", "folder_id": null}],
  "total": 2, "limit": 5, "offset": 0}
 ```
 
 Each item is a `GraphSummary`: `id`, `name`, `description`, `tags`, `source_type` (one of `manual`, `text`, `mongo`),
-`revision`, `updated_at`. It carries no source content and no style.
+`revision`, `updated_at`, `folder_id` (the collection the graph sits in, `null` at the top level). It carries no source
+content and no style.
 
 **`GraphCreate`** is the body the editor saves. Only `name` and `source` are required:
 
@@ -364,17 +405,20 @@ in:
 {"source": {"type": "text", "origin": "inline", "content": "source,target,value,category\nSalary,Budget,3000,Income\n...",
             "path": null, "format": "csv", "delimiter": null, "has_header": true, "source_column": null,
             "target_column": null, "value_column": null, "category_column": null, "detect_category": true,
-            "encoding": "utf-8"},
+            "encoding": "utf-8", "write_back": null},
  "transform": {"min_link_value": 0.0, "top_links": null, "hide_nodes": [], "merge_nodes": {}, "on_cycle": "error",
-               "strict": false, "entry_categories": [], "category_rules": [], "rules_override": false},
+               "strict": false, "entry_categories": [], "category_rules": [], "extra_links": [],
+               "rules_override": false},
  "style": {"title": "Household budget", "orientation": "h", "color_mode": "node", "node_colors": {},
            "category_colors": {}, "node_pad": 16, "node_thickness": 18, "link_opacity": 0.4, "arrangement": "snap",
            "value_format": ",.2~f", "value_suffix": "", "show_values_in_labels": false, "font_size": 13,
            "height": 560, "donut": {"basis": "all", "max_slices": 6, "hole": 0.58, "show_percent": true,
-                                    "show_value": false, "show_total": true, "sort": "value"}},
+                                    "show_value": false, "show_total": true, "sort": "value"},
+           "node_order": []},
  "name": "Household budget", "description": "Smoke graph", "tags": ["smoke", "demo"],
  "id": "74828c79fb6f4e03913f605ea8b9a79c", "schema_version": 1, "revision": 1,
- "created_at": "2026-10-10T19:47:34.778000Z", "updated_at": "2026-10-10T19:47:34.778000Z"}
+ "created_at": "2026-10-10T19:47:34.778000Z", "updated_at": "2026-10-10T19:47:34.778000Z",
+ "folder_id": null}
 ```
 
 **Optimistic concurrency.** `PUT` must send the `revision` the client last saw. If the stored revision has moved on,
@@ -388,32 +432,48 @@ the answer is 409:
 A client then offers "reload" (`GET` the graph) or "save as copy" (`POST /graphs` with the editor's content, or
 `POST /graphs/{id}/duplicate` of the stored graph).
 
+**Folder.** `folder_id` is read-only metadata: `GraphCreate` and `GraphUpdate` do not carry it (a body that names it is
+422), `PUT /graphs/{id}` never changes it, and a graph is placed at creation (`POST /graphs?folder=`) or by
+`POST /graphs/move`.
+
 **Bundles.** The bundle file is
-`{"format": "sankey-studio/graphs", "version": 1, "graphs": [<GraphDefinition>, ...]}`.
+`{"format": "sankey-studio/graphs", "version": 2, "graphs": [<GraphDefinition>, ...], "folders": [<FolderDefinition>, ...]}`.
+Version 1 files are refused (422 `bundle_error`, `Unsupported bundle version`).
 
 - Export is a download: `Content-Type: application/json` (no charset), attachment name `sankey-studio-graphs.json`.
-  The graphs come in the order of `ids`; repeated ids are dropped.
+  The graphs come in the order of `ids`; repeated ids are dropped. `folders` holds the collections the exported graphs
+  sit in plus their ancestors, parents first (empty when no graph sits in a collection); they count against the same
+  16 MiB.
 - The document is built one graph at a time and counted in UTF-8 bytes. At the first graph that takes it over 16 MiB
   the answer is 422 `bundle_error` and the rest is never loaded, so an unknown id listed after that graph answers
   422, not 404. Non-ASCII text is written as UTF-8, so every graph `POST /graphs` accepts can be exported and
   imported back.
 - Import always assigns fresh ids, creation times and `revision` 1; there is no way to keep ids over HTTP. One bad
-  graph never blocks the others. A bundle holds at most 1000 graphs; a wrong format, a wrong version or a missing
-  `graphs` list is 422 `bundle_error` and nothing is stored.
+  graph never blocks the others. A bundle holds at most 1000 graphs and at most 1000 collections; a wrong format, a
+  wrong version, a missing `graphs` list or a `folders` value that is not a list is 422 `bundle_error` and nothing is
+  stored. A bundle without a `folders` key has no collections.
+- The collections are stored first, with fresh ids; a collection that has the same name (NFC, ignoring case) as a
+  collection already in the same place is reused, so importing the same bundle twice does not double the tree. The
+  graphs land in their collection. A collection that cannot be stored (a broken record, a rule such as depth or count,
+  a taken name, a parent chain that never reaches the top) is a line `collection <position>: <reason>` in `errors`, is
+  not counted in `failed`, and its graphs land in the nearest stored ancestor (else at the top level).
+- A saved write-back choice is not imported: `source.write_back` is dropped from every imported graph (a text or MongoDB
+  source), because it names a file or a connection of the exporting machine ([5.10](#510-source-edits)).
 
 `ImportReport`:
 
 ```json
-{"imported": 2, "failed": 0, "ids": ["0a95...", "2396..."], "errors": []}
+{"imported": 2, "failed": 0, "ids": ["0a95...", "2396..."], "errors": [], "folders": 1}
 ```
 
-`errors` holds at most 50 entries of the form `graph <position>: <reason>` (position counts from 1).
+`folders` is the number of collections created. `errors` holds at most 50 entries of the form
+`graph <position>: <reason>` or `collection <position>: <reason>` (position counts from 1).
 
 ### 5.3 Render, preview, entries, compare
 
 | Route | Query | Body | Success |
 |---|---|---|---|
-| `POST /preview` | `theme`: `light` (default) or `dark` | `GraphDraft` | 200 `RenderBundle` |
+| `POST /preview` | `theme`: `light` (default) or `dark` | `GraphDraft` | 200 `RenderBundle` (the only route that fills `nodes`, see [section 7](#7-renderbundle)) |
 | `GET /graphs/{id}/render` | `theme`; `node_values`, `donut_percent`, `donut_value` (booleans, see below) | none | 200 `RenderBundle` of the saved graph |
 | `GET /compare/render` | `ids`: 1 to 12 distinct graph ids, comma separated or repeated; `theme` | none | 200 list of `RenderBundle`, in the order of `ids` |
 | `POST /entries` | `offset` 0 or more (default 0), `limit` 1 to 500 (default 100), `q` (at most 200 characters), `only_uncategorized` (boolean, default false), `sort`: `value` (default), `source`, `target` or `category` | `GraphDraft` | 200 `EntriesPage` |
@@ -561,7 +621,8 @@ through the API.
   when the user typed something. It never stores or displays a URI.
 
 Ranges and values: `theme` is `system`, `light` or `dark`; `storage_backend` is `file` or `mongo` (`mongo` needs
-`storage_connection` to name a configured connection); `storage_database` at most 64 characters; `max_links`
+`storage_connection` to name a configured connection and a database user that may write the collections
+`sankey_studio_graphs` and `sankey_studio_collections` of `storage_database`; `POST /settings/storage/test` probes both); `storage_database` at most 64 characters; `max_links`
 100 to 5,000,000 (default 200,000); `max_drawn_links` 50 to 20,000 (default 3,000); `max_upload_mb` 1 to 100
 (default 25, applies to the next upload at once); `mongo_timeout_ms` 500 to 300,000 (default 15,000); at most 20
 connections with unique names matching `^[A-Za-z0-9_.-]{1,64}$`.
@@ -574,8 +635,10 @@ connections with unique names matching `^[A-Za-z0-9_.-]{1,64}$`.
 ```
 
 `copy_report` is non-null only when `migrate=true` and the storage target changed. Existing graphs are then copied
-with the same ids: `{"copied": 3, "skipped": 0, "unreadable": 0, "unreadable_ids": []}`, where `unreadable_ids` names
-at most the first 50.
+with the same ids, after the collections (parents first, with the same ids): `{"copied": 3, "skipped": 0,
+"unreadable": 0, "unreadable_ids": [], "folders": 2, "folders_skipped": 0}`, where `unreadable_ids` names at most the
+first 50 and `folders_skipped` counts collections that were already there or whose name was taken (a skipped
+collection leaves its graphs reading as top level in the destination).
 
 **Errors.** 422 `validation_error` for body shape and ranges (`body.max_links: Input should be greater than or equal
 to 100`, `body.bogus: Extra inputs are not permitted`); 422 `settings_error` for semantic problems
@@ -632,6 +695,8 @@ is 404 `source_not_found`. The preview returns at most 50 lines, each at most 50
 as UTF-8 with replacement characters.
 
 A graph reads such a file through a `text` source with `origin: "file"` and `path` set to the `name` of the listing.
+With the graph owner's consent an edit made in the editor can also be written back into such a file: the existing file is
+replaced atomically ([5.10](#510-source-edits)); no route here creates or deletes a file for it.
 
 ### 5.7 MongoDB inspection
 
@@ -664,6 +729,190 @@ more wait and then answer 503 `busy`.
 
 The vendored script is an ordinary route registered before the static mount, so the mount never shadows it.
 
+### 5.9 Collections
+
+The library can group graphs in a tree of collections (identifier word: `folder`, see [section 1](#1-conventions)). The
+rules are the same on both storage backends: names are 1 to 100 characters, unique among the collections of one place
+after NFC and case folding, at most 8 levels deep, at most 1,000 collections, no cycles. A graph sits in at most one
+collection (`GraphDefinition.folder_id`). The writes below persist, so they answer 403 `read_only_mode` in remote
+read-only mode before the body is decoded; the reads are always available.
+
+| Route | Body | Success | Errors |
+|---|---|---|---|
+| `GET /folders` | none | 200 `{"items": [FolderSummary, ...]}`: every collection (at most 1,000) in `(name, id)` order, with the number of graphs and sub-collections directly inside | 503 |
+| `POST /folders` | `FolderCreate` `{name, parent_id}` (`parent_id` null = top level) | 201 `FolderDefinition` with `revision` 1 | 404 (the parent), 409 `folder_name_taken`, 422 `validation_error` or `folder_rule`, 403 |
+| `GET /folders/{id}` | none | 200 `FolderDefinition` | 404 |
+| `PUT /folders/{id}` | `FolderUpdate`: `FolderCreate` plus the `revision` the client last saw; renames and/or moves | 200 `FolderDefinition`, `revision` plus 1 | 404, 409 `conflict` (stale; `details` `["revision=N", "updated_at=<iso>"]`), 409 `folder_name_taken`, 422, 403 |
+| `DELETE /folders/{id}` | none | 204. The graphs and sub-collections of the collection move up to its parent; no graph is deleted | 404, 409 `folder_name_taken` (a child would clash with a name at the parent), 403 |
+| `POST /graphs/move` | `MoveGraphsIn` `{ids, folder_id}`: 1 to 200 distinct graph ids and the target (`null` = top level; the key is required) | 200 `MoveReport` `{"moved": 2, "missing": []}` | 404 (the target), 422 (a repeated id included), 403 |
+
+```json
+{"id": "5c2d...", "name": "Finance", "parent_id": null, "revision": 1, "updated_at": "2026-10-12T08:01:02.250000Z",
+ "graph_count": 3, "child_count": 1}
+```
+
+That is a `FolderSummary`. A `FolderDefinition` is `{name, parent_id, id, schema_version, revision, created_at,
+updated_at}`. Moving a graph changes neither its `revision` nor its `updated_at` (it is not an edit of the graph).
+`ids` that no longer exist are listed in `missing`; nothing is moved when the target is unknown.
+
+The four messages of `folder_rule` and `folder_name_taken` are `A collection cannot be moved into itself or into one of
+its own collections`, `Collections can be nested at most 8 levels deep`, `At most 1000 collections are allowed` and `A
+collection with this name already exists in the same place`. A reference to a collection that no longer exists is
+tolerated, not prevented (there are no transactions on MongoDB): a graph whose `folder_id` names a missing collection,
+and a collection whose parent is missing, read as top level in every list.
+
+### 5.10 Source edits
+
+An edit of the entries (a category, a new entry, a node order) can stay in the graph or go into the data. These two routes
+decide and do it. Both take the same body, `EditRequest`: the current draft and one edit.
+
+| Route | Persists | Answer |
+|---|---|---|
+| `POST /edits/plan` | no (pure; open in read-only mode) | 200 `EditOutcome`: where the edit would go and what the person must agree to first. Nothing is written |
+| `POST /edits/write` | yes (`GuardedRoute`) | 200 `EditOutcome`; for a file or MongoDB source it needs the saved choice of the graph |
+
+```json
+{"draft": {"source": {"type": "text", "origin": "file", "path": "budget/2025.csv"}, "transform": {}, "style": {}},
+ "edit": {"op": "set_category", "source": "Budget", "target": "Rent", "category": "Housing"}}
+```
+
+The `edit` is one of (a discriminated union on `op`):
+
+| `op` | Fields |
+|---|---|
+| `add_entry` | `source`, `target` (different names), `value` (finite, above 0), `category` (optional) |
+| `set_category` | `source`, `target`, `category` (required; `null` clears it) |
+| `reorder` | `order`: node names (at most 5,000, no repeats) |
+
+Names are resolved like the chart resolves them: `merge_nodes` aliases are honoured, so a category set on a merged pair
+reaches every raw row of it.
+
+**Where an edit goes.**
+
+| Source of the draft | `where` | Consent |
+|---|---|---|
+| `manual` links | `draft`: the answer carries the whole new `source` | never |
+| `text` with `origin: "inline"` | `draft`: `source.content` rewritten | never |
+| `text` with `origin: "file"` | `file`: the managed file is replaced atomically | per graph and target |
+| `mongo` in `find` mode (`add_entry` needs a plain equality filter, `field: value` or `{"$eq": value}`, so the new document matches; `set_category` accepts any filter the read checks allow) | `mongo`: documents of the collection | per graph and target |
+| anything else, or an edit that is refused | `graph`: the browser keeps it in `transform.entry_categories`, `transform.extra_links` or `style.node_order` | never |
+
+`EditOutcome` has these keys, all always present:
+
+```json
+{"where": "file", "written": false, "consent": "ask", "reason": null, "notice": null, "target": "budget/2025.csv",
+ "target_key": "file:budget/2025.csv", "changed": 1, "source": null, "override": null, "pins": null}
+```
+
+| Key | Meaning |
+|---|---|
+| `where` | `draft`, `file`, `mongo` or `graph` |
+| `written` | True only after `write` changed a file or a collection |
+| `consent` | `none` (draft and graph), `ask` (the graph has no saved choice for this target) or `granted` (it has: `plan`, and after a `write`) |
+| `reason`, `notice` | Why the edit stayed in the graph ([reasons](#reasons)); `notice` is one fixed English sentence and is `null` for the two silent reasons. The first edit of pasted JSON answers `where: "draft"`, `reason: null` and the notice `Your JSON text was re-formatted.` |
+| `target` | Text for a dialog: `budget/2025.csv` or `main / shop.flows` (strip control and bidirectional characters before showing it) |
+| `target_key` | The opaque consent key, set when `where` is `file` or `mongo`. The client stores it verbatim in `source.write_back.target` when the person agrees |
+| `changed` | Rows or documents changed or added |
+| `source` | `draft`: the whole new source. A file written with extra pins (for example a `category_column` the edit created): the spec with them. Otherwise `null` |
+| `override` | What to do with `transform.entry_categories` after a data write of `set_category`: `drop` the pair or `set` it (a rule or a graph-only entry would otherwise still win) |
+| `pins` | A `reorder` whose new row order would move the colour slots: `{node_colors, category_colors}` (`#rrggbb`, light-theme hues of the colours before the reorder), `null` when no colour moves. The client merges them into `style.node_colors` (colour mode `node`) or `style.category_colors` (`category`) together with the new `source`, in one history step. A colour the person already pinned is not listed |
+
+**Consent.** `source.write_back` is `{"mode": "source" | "graph", "target": "<target_key>"}` (`text` and `mongo` sources;
+ignored for pasted text; at most 400 characters of target). The server builds the key from resolved values: `file:<path>`
+or `mongo:<connection>/<resolved database>/<collection>#<12 hex digits of a fingerprint of the masked URI and the default
+database>`; the URI never enters it. A saved choice counts only while its `target` equals the key of the current source, so
+another file, collection, database or connection (or a connection whose URI was edited in Settings) asks again. The
+client always calls `plan` first for a file or MongoDB source and acts on `consent`; `write` needs the effective choice
+`source`, else 422 `source_edit_refused`. The choice is client-supplied state: it is consent, not authorisation
+([decisions.md ADR-34](decisions.md#adr-34-edits-are-written-back-to-the-data-when-the-person-agrees)).
+
+**What `plan` does for a file or MongoDB source**, first match wins:
+
+1. a `reorder` of MongoDB data, or of a file the person has not allowed to write: `graph`, reason `order_in_graph`;
+2. the saved choice is `graph`: `graph`, reason `preference`;
+3. the operator gates ([below](#operator-gates));
+4. a dry run: the file is read and rewritten in memory (nothing written), or the documents are counted (the count stops
+   at 1,001); then `file` or `mongo` with `consent` `ask` or `granted`, `target`, `target_key` and `changed`.
+
+A `reorder` that would change the colour of a node or category the chart colours by still rewrites the rows and answers the
+`pins` that keep every colour; only when the pins would not fit in the style (at most 1,000 colour overrides) does it
+keep the rows and answer `graph` with reason `would_recolour`. The stored `style.node_order` is unaffected. An `add_entry` is first built into the graph
+it would produce: a cycle is 422 `graph_build_error`, nothing is written and no question is asked. An edit that changes
+nothing in the data (the order is already that, the category is already set) answers `graph` with the silent reason
+`order_in_graph`.
+
+**What `write` does.** For pasted text and manual links there is nothing to write: it answers exactly like `plan`. For a file or
+MongoDB source it first needs the effective choice `source` for this target (else 422 `source_edit_refused`, reason
+`no_consent`, even on a server that would refuse the write anyway), then re-runs the gates, re-reads the data and writes. A definite refusal is a 200 answer with
+`where: "graph"` and the reason; a failure that leaves the result unknown is an error and never becomes a graph-only edit
+(so a retry cannot duplicate an added entry): 502 `source_write_failed` (MongoDB), 503 `storage_error` (the file could not
+be written), 409 `conflict` (the file changed between the dry run and the write; the rewrite is repeated under the
+directory lock and must equal the dry-run text).
+
+* A file: the existing allowed file is replaced atomically with the fd-based checks of the managed sources directory
+  (never created, never through a symbolic link, size cap `max_upload_mb`). Untouched lines stay byte for byte; a
+  touched csv record may change its quoting; JSON arrays are re-formatted; the result is accepted only when the real
+  parser reads it as the old data plus the change (else reason `cannot_verify`).
+* MongoDB: `set_category` is one `$set` (or `$unset`, for `null`) of the category field on at most 1,000 documents chosen
+  by `_id` and filtered again (`{"$and": [{"_id": {"$in": ids}}, filter]}`), so a document edited in between is not
+  touched; `add_entry` is one `insert_one` of a document built from the mapped fields and the equality filter. After a
+  successful write the server's graph cache is cleared.
+
+#### Operator gates
+
+Evaluated in `plan` and again in `write` (after its consent check), before the source is touched; the first match wins.
+
+| # | Gate | `plan` | `write` |
+|---|---|---|---|
+| 1 | A file or MongoDB edit on a server that may not write (remote mode without `--allow-remote-writes`) | `graph`, `read_only_mode` | 403 `read_only_mode` |
+| 2 | A MongoDB edit in remote mode without `--allow-source-writes` | `graph`, `read_only_mode` | 403 `read_only_mode` |
+| 3 | The MongoDB namespace: `admin`, `local`, `config`, `system.*` and any collection whose name starts with `sankey_studio_` (any case, any database); a connection or database that cannot be resolved is `source_incomplete` | `graph`, `reserved_collection` | `graph`, `reserved_collection` |
+| 4 | New text that a spreadsheet could read as a formula (`source`, `target`, `category` of an `add_entry`; for a `set_category` only the `category`, because its `source` and `target` only select the pair and are never stored) (starts with `=`, `+`, `-`, `@`, a tab or a carriage return, after leading blanks); numbers are exempt, pasted and manual text is not gated | `graph`, `unsafe_value` | `graph`, `unsafe_value` |
+
+#### Reasons
+
+`reason` is one of 25 stable values. Two are silent (`notice` is `null`): the person chose them or they are the normal
+case. `no_consent` and `too_many` reach HTTP only as 422 `source_edit_refused`; every other reason is a 200 answer with
+`where: "graph"`.
+
+| `reason` | Meaning | `notice` |
+|---|---|---|
+| `preference` | The saved choice for this target is "keep in this graph" | (silent) |
+| `order_in_graph` | A node order is never written to MongoDB, nor to a file without consent; or the edit changes nothing in the data | (silent) |
+| `read_only_mode` | Gate 1 or 2 | This server is read-only here: your change stays in this graph and is not written to the source. |
+| `no_consent` | `write` without a saved choice `source` for this target (HTTP 422) | Writing to the source needs your permission first. |
+| `no_match` | No row or document has that pair | No row or document matches that entry, so your change stays in this graph. |
+| `unsupported_format` | A rewritten line would pass 4096 characters, or the text cannot be edited in place | This text cannot be edited in place, so your change stays in this graph. |
+| `file_too_large` | The text or file is over the rewrite cap (8 MiB of text, or `max_upload_mb` for a file) | The data is too large to rewrite, so your change stays in this graph. |
+| `cannot_verify` | The real parser did not read the rewritten text as the intended change | The edited data could not be checked, so nothing was written and your change stays in this graph. |
+| `unreadable` | The data could not be decoded or parsed for editing | The data could not be read for editing, so your change stays in this graph. |
+| `unrepresentable` | The encoding of the file cannot hold the new text (nothing is created on disk) | The file's encoding cannot hold that text, so your change stays in this graph. |
+| `too_many` | The 5,000-link cap of a manual source, or the 2,000 graph-only entries (HTTP 422; an entry written to a file or collection does not count against the 2,000)  | There are too many entries to add another one. |
+| `aggregate_mode` | The MongoDB source is read with an aggregation pipeline | This collection is read through an aggregation, so your change stays in this graph. |
+| `source_incomplete` | No connection, database or collection to write to | The source names no connection, database or collection to write to, so your change stays in this graph. |
+| `no_category_field` | The source maps no `category_field` | Choose the category field in the Source panel to save categories in MongoDB. |
+| `no_value_field` | The source maps no `value_field` | Choose the value field in the Source panel to add entries to MongoDB. |
+| `filter_not_equality` | `add_entry` only: the filter is not a plain equality, so a new document would not match it | The source filter is not a plain equality, so a new document would not match it and your change stays in this graph. |
+| `field_conflict` | Two mapped (or filtered) paths are equal or nested (a category field that equals or nests with the source, target or value field included), or one touches `_id` | Two mapped fields overlap, so your change stays in this graph. |
+| `too_many_aliases` | More than 200 raw names are merged into the names of the pair | Too many nodes are merged into these names, so your change stays in this graph. |
+| `reserved_collection` | Gate 3 | That collection belongs to this application or to the database system, so your change stays in this graph. |
+| `unsafe_value` | Gate 4 (also: a path segment the writer refuses) | That text could be read as a spreadsheet formula, so it was kept in this graph only. |
+| `limit_reached` | The source already reads its `limit` of documents, so a new one would not show up | The source already reads its limit of documents, so a new one would not show up and your change stays in this graph. |
+| `too_many_documents` | More than 1,000 documents would change | The change would touch more than 1000 documents, so your change stays in this graph. |
+| `permission_denied` | The database user may not write (or read) there | The database user may not write there, so your change stays in this graph. |
+| `write_rejected` | The database refused the new document (a duplicate key, for example) | The database refused the new document, so your change stays in this graph. |
+| `would_recolour` | A row reorder would change colours and the pins that keep them do not fit in the style | Rows were not reordered because that would change the colours. The order is kept in this graph. |
+
+**Errors.** 403 `read_only_mode` (gates 1 and 2 on `write`), 404 `source_not_found` (the file is gone), 400 `unsafe_source` (a path the managed directory refuses), 409 `conflict` (the file changed during the edit),
+422 `validation_error`, 422 `graph_build_error` (an added entry closes a cycle; a cyclic merge map), 422
+`source_edit_refused` (`no_consent`, `too_many`), 502 `source_write_failed`, 503 `storage_error` or `busy`. Messages
+never carry cell text, file content, URIs or driver text.
+
+**Accepted limits.** `add_entry` on MongoDB counts and then inserts, which is not atomic; in the worst case the new
+document falls outside the window the source reads and the next `plan` answers `limit_reached`. The write is immediate and
+not part of saving the graph. In remote mode `--allow-remote-writes` lets a caller write edits into files; the MongoDB
+branch also needs `--allow-source-writes` ([section 4](#4-remote-read-only-mode)).
+
 ---
 
 ## 6. Request models
@@ -694,8 +943,9 @@ characters, and `Uncategorized` and `Other` are reserved names (422).
 | `delimiter` | One character; not a quote, CR, LF or NUL; `null` sniffs |
 | `has_header` | Default true |
 | `source_column`, `target_column`, `value_column`, `category_column` | A header name (1 to 200 characters) or a 0-based integer up to 10000 |
-| `detect_category` | Default true: a column headed `category` is used when no `category_column` is given |
+| `detect_category` | Default true: a column headed `category` is used when no `category_column` is given; without a header (`has_header: false`) the fourth column is the category, unless an explicit source, target or value pick already reads it. A row with fewer than four cells stays uncategorised. `false` turns the detection off |
 | `encoding` | Default `utf-8`; any Python text codec, stored in canonical form; byte-to-byte codecs are refused |
+| `write_back` | `null` (ask) or `{mode: "source" \| "graph", target}` with the `target_key` the server returned ([5.10](#510-source-edits)); ignored for `origin: "inline"` |
 
 **`mongo`**:
 
@@ -712,6 +962,7 @@ characters, and `Uncategorized` and `Other` are reserved names (422).
 | `category_field` | Optional dotted path |
 | `limit` | 1 to 1,000,000 (default 10,000): the most documents read (skipped ones count). The server is asked for one more; only that extra document, which is never used, adds the warning `Result truncated at limit N`, so a collection of exactly `limit` documents is complete and silent. A last `$limit` stage of an `aggregate` pipeline up to `limit + 1` is kept as written (a `$limit` of `limit` or less is the pipeline's own cut and never warns) |
 | `max_time_ms` | Optional, 100 to 300,000 |
+| `write_back` | `null` (ask) or `{mode: "source" \| "graph", target}`, as for `text`. Edits are written to a `find` source only; an added entry needs a plain equality filter ([5.10](#510-source-edits)) |
 
 Unsafe filters and pipelines are rejected when the draft is validated (422 `validation_error`).
 
@@ -727,6 +978,7 @@ Unsafe filters and pipelines are rejected when the draft is validated (422 `vali
 | `strict` | Boolean. A bad row fails the load when true; it is skipped with a warning when false |
 | `entry_categories` | At most 20,000 items `{source, target, category}`; `category: null` forces uncategorised; a pair may not repeat. Meant for `text` and `mongo` sources; a `manual` source keeps its categories on the links themselves |
 | `category_rules` | At most 200 items `{match, pattern, category}`; `match` is `source`, `target` or `either`; `pattern` is a case-insensitive glob over the node name |
+| `extra_links` | At most 2,000 items `{source, target, value, category}` (as the links of a manual source): flows that live in this graph only, appended after the rows of any source with the raw names, so `merge_nodes` and `hide_nodes` apply, they count toward `max_links`, and a cycle is 422 `graph_build_error` |
 | `rules_override` | Boolean. By default the precedence is `entry_categories`, then the data category, then `category_rules`; with `true` the rules rank above the data category |
 
 Categories are normalised (control characters are refused) and limited to 100 characters after normalisation. A
@@ -757,6 +1009,7 @@ graph keeps at most 200 distinct categories; later ones become uncategorised and
 | `donut.show_percent`, `donut.show_total` | Booleans, default true |
 | `donut.show_value` | Boolean (default false); the slice value (per `value_format` and `value_suffix`) on every slice, next to the percentage |
 | `donut.sort` | `value` (default) or `name` |
+| `node_order` | At most 5,000 node names (after merging), no repeats; empty (default) draws the order of the data. Layer 0 top to bottom, then layer 1, and so on; names not listed come after the listed ones, names that vanished are ignored. The server draws it with Plotly `sort: "input"` (never with node coordinates) in every figure and export; it does not change the graph cache key |
 
 With no categorised link, `color_mode: "category"` behaves like `node`.
 
@@ -779,6 +1032,7 @@ With no categorised link, `color_mode: "category"` behaves like `node`.
 | `stats` | object | `nodes`, `links`, `drawn_links`, `total_in`, `total_out`, `layers`, `category_count` |
 | `entries` | list of entry rows | A preview of the entries table, at most 2000 rows. Page it with `POST /entries` |
 | `entries_total` | integer | All pairs |
+| `nodes` | list of `{name, layer, node_in, node_out}` | The drawn nodes in figure order, so `nodes[i]` is `figure.data[0].node.label[i]` (the Plotly `pointNumber`) and honours `style.node_order` and `max_drawn_links`. Names are raw (not escaped). Only `POST /preview` fills it; every other route answers `[]` |
 | `warnings` | list of strings | Human-readable notes: skipped rows with line numbers, `Showing N of M links`, `Removed N link(s) that closed a cycle`, the category cap, a truncated Mongo result, and so on |
 
 `stats.links` and `stats.nodes` describe the built graph; `drawn_links` is `links` capped by `max_drawn_links`.
@@ -786,8 +1040,8 @@ With no categorised link, `color_mode: "category"` behaves like `node`.
 `drawn_links` below `links` means the figure was cut to the largest links; the figure carries its own note and
 `warnings` repeats it.
 
-A small example (manual graph, `theme=light`; node and link arrays are real, repeated `font` objects are shortened to
-`{...}`):
+A small example (manual graph, answer of `POST /preview`, `theme=light`; node and link arrays are real, repeated `font`
+objects are shortened to `{...}`):
 
 ```json
 {
@@ -826,6 +1080,9 @@ A small example (manual graph, `theme=light`; node and link arrays are real, rep
              {"source": "Salary", "target": "Food", "value": 400.0, "category": null, "mixed": false,
               "overridden": false}],
  "entries_total": 2,
+ "nodes": [{"name": "Salary", "layer": 0, "node_in": 0.0, "node_out": 1600.0},
+           {"name": "Rent", "layer": 1, "node_in": 1200.0, "node_out": 0.0},
+           {"name": "Food", "layer": 1, "node_in": 400.0, "node_out": 0.0}],
  "warnings": []
 }
 ```
@@ -903,8 +1160,8 @@ Every page gets `{"page": "<name>", "remote_mode": bool, "writes_allowed": bool,
 
 | Route | `page` | Heading | Extra boot keys |
 |---|---|---|---|
-| `GET /` | `library` | `Graphs` | `graphs`: up to 200 newest `GraphSummary`; `total`: number of graphs. The page then calls `GET /api/v1/graphs` for search, tags and paging |
-| `GET /graphs/new` | `new` | `New graph` | `graph: null` |
+| `GET /` | `library` | `Graphs` | `graphs`: up to 200 newest `GraphSummary` directly in the open collection (the top level lists the graphs that sit in no collection); `total`: their number; `folders`: every `FolderSummary`, in name order; `folder`: the id of the open collection, or `null` for the top level. The page then calls `GET /api/v1/graphs` for search, tags and paging |
+| `GET /graphs/new` | `new` | `New graph` | `graph: null`; `folder_id`: the existing collection `?folder=` names, else `null` |
 | `GET /graphs/{id}` | `viewer` | the graph name | `graph`: a `GraphSummary` |
 | `GET /graphs/{id}/edit` | `edit` | `Edit <name>` | `graph`: a `GraphSummary` |
 | `GET /compare?ids=a,b` | `compare` | `Compare graphs` | `ids`, `graphs`, `missing` (below) |
@@ -912,16 +1169,27 @@ Every page gets `{"page": "<name>", "remote_mode": bool, "writes_allowed": bool,
 | not-found page | `notfound` | `Page not found` or `Graph not found` | `kind`: `page` or `graph` |
 | error page | `error` | `Graph database unavailable`, `Graphs folder unavailable` or `Something went wrong` | `kind`: `database`, `folder` or `server` |
 
-`GraphSummary` is `{id, name, description, tags, source_type, revision, updated_at}`. The editor and the viewer fetch
+`GraphSummary` is `{id, name, description, tags, source_type, revision, updated_at, folder_id}`. The editor and the viewer fetch
 the full `GraphDefinition` with `GET /api/v1/graphs/{id}`, then the bundle with `GET /api/v1/graphs/{id}/render`.
 
 Library boot data:
 
 ```json
-{"graphs": [{"description": "Smoke graph", "id": "0a95...", "name": "Household budget", "revision": 1,
-             "source_type": "text", "tags": ["smoke", "demo"], "updated_at": "2026-10-10T19:48:26.466000Z"}],
+{"folder": null,
+ "folders": [{"child_count": 0, "graph_count": 1, "id": "5c2d...", "name": "Finance", "parent_id": null,
+              "revision": 1, "updated_at": "2026-10-12T08:01:02.250000Z"}],
+ "graphs": [{"description": "Smoke graph", "folder_id": null, "id": "0a95...", "name": "Household budget",
+             "revision": 1, "source_type": "text", "tags": ["smoke", "demo"],
+             "updated_at": "2026-10-10T19:48:26.466000Z"}],
  "page": "library", "remote_mode": false, "theme": "system", "total": 2, "writes_allowed": true}
 ```
+
+**Collections in the page URLs.** `/?folder=<id>` and `/graphs/new?folder=<id>` take the collection as a query parameter.
+The value is lenient on purpose, because a page must open for any address a person typed or bookmarked: a missing,
+malformed or unknown id is the top level (HTTP 200, `folder: null` or `folder_id: null`), a collection whose parent
+no longer exists is listed at the top level, and any other query parameter is ignored. `/graphs/new` asks the store only
+when it is given a `folder`, so it still opens while the store is down. The no-script list of `/` links to the
+collections of the open level as `/?folder=<id>` (`Collection: <name>`).
 
 **Compare.** `?ids=` takes 0 to 12 distinct graph ids, comma separated or repeated; blanks and repeats are dropped.
 
@@ -984,8 +1252,10 @@ rendered before the change; it also makes the page ineligible for the browser's 
 | Entries page (`POST /entries`) | `limit` 1 to 500, default 100 |
 | Entries preview inside a `RenderBundle` | 2000 rows; `entries_total` has the full count |
 | Library boot data | the 200 newest graphs |
-| Bundle export | 1 to 200 ids, 16 MiB in UTF-8 |
-| Bundle import | 16 MiB body, 1000 graphs, 50 reported errors |
+| Bundle export | 1 to 200 ids, 16 MiB in UTF-8 (the collections of the graphs count too) |
+| Bundle import | 16 MiB body, 1000 graphs, 1000 collections, 50 reported errors |
+| Collections | 1000 in all, 8 levels, a name of 1 to 100 characters; `POST /graphs/move` takes 1 to 200 ids |
+| Edits | MongoDB write-back changes at most 1000 documents per edit; rewriting a text needs it to stay under 8 MiB and every line under 4096 characters; 2000 graph-only entries (`extra_links`), 5000 node names in `node_order` |
 | Compare | 1 to 12 ids |
 | Error `details` | 50 entries of at most 300 characters |
 | JSON body | 8 MiB |
@@ -1002,11 +1272,13 @@ rendered before the change; it also makes the page ineligible for the browser's 
 | Concurrent Mongo operations per connection | 4 |
 
 **Graph cache.** Built graphs are kept in a small in-memory cache so that paging or filtering the entries table does
-not parse the same file or query the same collection on every request. The key is a hash of the source, the
-transform, `max_links` and, for files, the file's stamp. At most 16 graphs are kept, for 120 seconds (inline text,
+not parse the same file or query the same collection on every request. The key is a hash of the source (without its
+`write_back`: a consent toggle changes nothing that is read), the transform, `max_links` and, for files, the file's stamp; the
+style, and so `style.node_order`, is not part of it. At most 16 graphs are kept, for 120 seconds (inline text,
 manual links and files) or 30 seconds (MongoDB sources, which can change underneath). A file modified within the
 last two seconds is not cached. Errors are never cached. A Mongo-backed preview can therefore show data up to 30
-seconds old.
+seconds old. A successful MongoDB write-back clears the whole cache, so the next preview reads the collection again; a file
+write changes the file's stamp.
 
 ---
 
@@ -1052,6 +1324,16 @@ not touch keep their secrets because `uri` is absent or masked. Send `previous_n
 **Drawing a chart.** `GET /graphs/{id}/render?theme=dark` (or `POST /preview` for a draft), then
 `Plotly.newPlot(div, bundle.figure.data, bundle.figure.layout, { responsive: true })`. Show the donut tab only when
 `bundle.donut_available` is true. On a theme switch, request the bundle again with the other theme.
+
+**Writing an edit back.** For a file or MongoDB source `POST /edits/plan` first, with the draft and the edit. On
+`consent: "ask"` show the person `target` and what will happen; when they agree, put `{"mode": "source", "target":
+<target_key>}` into `draft.source.write_back`, call `POST /edits/write` with the same body and apply `override` to
+`transform.entry_categories`. When `where` is `graph`, keep the edit in the draft (`entry_categories`, `extra_links`,
+`node_order`) and show `notice` once. Never compute `target_key` yourself.
+
+**Moving graphs.** `POST /graphs/move` with `{"ids": [...], "folder_id": "<id>" | null}`; list the collections with
+`GET /folders` and build the tree from `parent_id`. A search ignores collections: `GET /graphs?q=` covers all of them and
+each `GraphSummary` carries its `folder_id`.
 
 **Downloading an export.** `fetch` the export URL, check `response.ok`, read `blob()`, take the name from
 `Content-Disposition` (`filename*` first), then click a temporary `<a download>`. On 422 `export_too_large` or 501,

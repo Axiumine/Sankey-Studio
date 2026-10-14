@@ -196,7 +196,7 @@ def test_the_line_limit_counts_after_a_bom(source_ctx: SourceContext, case: Long
     assert len(line) == LINE_MAX + case.extra
     tail = "" if case.kept else "EVIL,x,9"  # the tail of an overlong line is never a row
     text = f"{BOM}{line}{tail}\nc,d,2\n"  # no header: the BOM'd first line is data
-    out = inline(source_ctx, text, format="csv", has_header=False)
+    out = inline(source_ctx, text, format="csv", has_header=False, detect_category=False)
     if case.kept:
         assert out.rows == [("a", "b", 1.0, None), ("c", "d", 2.0, None)]
         assert out.warnings == []

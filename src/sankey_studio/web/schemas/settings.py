@@ -167,6 +167,8 @@ class CopyReportOut(_Wire):
     skipped: int
     unreadable: int
     unreadable_ids: list[str]
+    folders: int
+    folders_skipped: int
 
 
 class SettingsSaved(_Wire):
@@ -213,6 +215,8 @@ def _copy_report_out(report: CopyReport | None) -> CopyReportOut | None:
         skipped=report.skipped,
         unreadable=report.unreadable,
         unreadable_ids=list(report.unreadable_ids),
+        folders=report.folders,
+        folders_skipped=report.folders_skipped,
     )
 
 

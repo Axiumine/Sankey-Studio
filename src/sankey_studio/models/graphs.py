@@ -7,7 +7,7 @@ from typing import Literal
 from pydantic import AwareDatetime, ConfigDict, Field, field_validator
 
 from sankey_studio.models.base import NAME_MAX, SCHEMA_VERSION, TAG_MAX, _Model
-from sankey_studio.models.fields import GraphId
+from sankey_studio.models.fields import FolderId, GraphId
 from sankey_studio.models.sources import SourceSpec
 from sankey_studio.models.style import StyleSpec
 from sankey_studio.models.transform import TransformSpec
@@ -54,6 +54,8 @@ class GraphDefinition(GraphCreate):
     revision: int = Field(default=1, ge=1)
     created_at: AwareDatetime
     updated_at: AwareDatetime
+    #: The library folder ("collection") the graph sits in; ``None`` = the top level.
+    folder_id: FolderId | None = None
 
 
 class GraphSummary(_Model):
@@ -64,3 +66,4 @@ class GraphSummary(_Model):
     source_type: Literal["manual", "text", "mongo"]
     revision: int
     updated_at: AwareDatetime
+    folder_id: FolderId | None = None

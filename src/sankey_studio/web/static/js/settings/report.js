@@ -2,7 +2,8 @@
  * The "copy existing graphs" report shown after a storage switch with `migrate=true`
  * (`copy_report` of PUT /settings): how many graphs were copied, skipped (already at the target)
  * and unreadable (could not be read, so not copied), with the ids of the unreadable ones (the
- * server lists at most the first 50).
+ * server lists at most the first 50). When the library has collections, how many of them were
+ * copied and how many were skipped (one of that name already sat in the same place) are listed too.
  */
 
 import { h } from "../core/dom.js";
@@ -18,6 +19,15 @@ function stat(label, value, extra) {
     h("dt", null, label),
     h("dd", { class: "nums" }, formatNumber(value, { maximumFractionDigits: 0 })),
   );
+}
+
+function folderStats(report) {
+  const copied = report.folders ?? 0;
+  const skipped = report.folders_skipped ?? 0;
+  if (copied === 0 && skipped === 0) {
+    return [];
+  }
+  return [stat("Collections copied", copied, "folders"), stat("Collections skipped", skipped, "folders-skipped")];
 }
 
 function unreadableBlock(report) {
@@ -38,7 +48,7 @@ function unreadableBlock(report) {
 
 /**
  * Builds the report notice.
- * @param {{copied: number, skipped: number, unreadable: number, unreadable_ids: string[]}} report
+ * @param {{copied: number, skipped: number, unreadable: number, unreadable_ids: string[], folders?: number, folders_skipped?: number}} report
  * @param {() => void} onDismiss
  * @returns {HTMLElement}
  */
@@ -56,6 +66,8 @@ export function copyReportNotice(report, onDismiss) {
       "data-copied": report.copied,
       "data-skipped": report.skipped,
       "data-unreadable": report.unreadable,
+      "data-folders": report.folders ?? 0,
+      "data-folders-skipped": report.folders_skipped ?? 0,
     },
     icon(clean ? "check-circle" : "alert", { size: 18 }),
     h(
@@ -68,6 +80,7 @@ export function copyReportNotice(report, onDismiss) {
         stat("Copied", report.copied),
         stat("Already there, skipped", report.skipped),
         stat("Could not be read", report.unreadable),
+        folderStats(report),
       ),
       unreadableBlock(report),
     ),

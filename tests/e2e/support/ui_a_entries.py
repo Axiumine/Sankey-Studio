@@ -1,9 +1,12 @@
-"""Page object of the entries table and its category tools (UI-A suites).
+"""Page objects of the entries table, its category tools and its additions (UI-A suites).
 
 ``EntriesPanel(page)`` wraps the part of the editor below the chart: the table with one row per
 source -> target pair, the category input of each row (``category-cell``), its clear button, the
 search box with the bulk "categorise all matching" row, and the one error line
 (``category-error``). Rows are found by their ``data-source`` / ``data-target`` attributes.
+It also reaches the header additions: ``add_button`` / ``add_entry(...)``, the ``AddEntryDialog``
+("Add a flow"), the ``entries-overlays`` chip with its ``OverlaysDialog`` and the ``unmatched``
+notice.
 """
 
 from __future__ import annotations
@@ -77,6 +80,37 @@ class EntriesPanel:
     def error(self) -> Locator:
         return self.tid("category-error")
 
+    # ------------------------------------------------------------------ add, graph-only edits
+
+    @property
+    def add_button(self) -> Locator:
+        """The "Add entry" button of the card header."""
+        return self.tid("entries-add")
+
+    @property
+    def add_dialog(self) -> AddEntryDialog:
+        return AddEntryDialog(self.page)
+
+    @property
+    def overlays_chip(self) -> Locator:
+        """The "Graph-only edits (N)" chip (hidden while there is none)."""
+        return self.tid("entries-overlays")
+
+    @property
+    def overlays(self) -> OverlaysDialog:
+        return OverlaysDialog(self.page)
+
+    @property
+    def unmatched(self) -> Locator:
+        """The notice that category edits no longer match an entry."""
+        return self.tid("entries-unmatched")
+
+    def add_entry(self, source: str, target: str, value: str, category: str = "") -> None:
+        """Open the dialog, fill it and press Add (the dialog may stay open on a refusal)."""
+        self.add_button.click()
+        self.add_dialog.fill(source, target, value, category)
+        self.add_dialog.submit.click()
+
     # ------------------------------------------------------------------ pager
 
     @property
@@ -100,3 +134,67 @@ class EntriesPanel:
         """``source>target`` of every row on the page, in table order."""
         script = "rows => rows.map((row) => row.dataset.source + '>' + row.dataset.target)"
         return [str(pair) for pair in self.tid("entries-row").evaluate_all(script)]
+
+
+class AddEntryDialog:
+    """The "Add a flow" dialog (``entries-add`` opens it) and its fields."""
+
+    def __init__(self, page: Page) -> None:
+        self.page = page
+
+    def tid(self, testid: str) -> Locator:
+        return self.page.get_by_test_id(testid)
+
+    @property
+    def dialog(self) -> Locator:
+        return self.tid("add-entry-dialog")
+
+    @property
+    def submit(self) -> Locator:
+        return self.tid("add-entry-submit")
+
+    @property
+    def cancel(self) -> Locator:
+        return self.tid("add-entry-cancel")
+
+    @property
+    def error(self) -> Locator:
+        return self.tid("add-entry-error")
+
+    def field(self, name: str) -> Locator:
+        return self.tid(f"add-entry-{name}")
+
+    def hint(self, name: str) -> Locator:
+        """The status line under the source or target input ("New node: X will be created.")."""
+        return self.field(name).locator("xpath=..").get_by_role("status")
+
+    def fill(self, source: str, target: str, value: str, category: str = "") -> None:
+        """Type the four fields (an empty ``category`` leaves the optional field empty)."""
+        for name, text in (("source", source), ("target", target), ("value", value)):
+            self.field(name).fill(text)
+        self.field("category").fill(category)
+
+    def expect_open(self) -> None:
+        expect(self.dialog).to_be_visible()
+
+    def expect_gone(self) -> None:
+        expect(self.dialog).to_have_count(0)
+
+
+class OverlaysDialog:
+    """The "Graph-only edits" dialog opened by the ``entries-overlays`` chip."""
+
+    def __init__(self, page: Page) -> None:
+        self.page = page
+
+    @property
+    def dialog(self) -> Locator:
+        return self.page.get_by_test_id("overlays-dialog")
+
+    @property
+    def rows(self) -> Locator:
+        return self.dialog.locator("li")
+
+    def remove(self, text: str) -> None:
+        """Press Remove on the row that says ``text``."""
+        self.rows.filter(has_text=text).get_by_test_id("overlay-remove").click()

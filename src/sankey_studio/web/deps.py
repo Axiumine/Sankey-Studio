@@ -48,12 +48,15 @@ UNSAFE_METHODS: Final = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 class ResultCacheLike(Protocol):  # pragma: no mutate block - interface only, never executed
     """The slice of ``pipeline.ResultCache`` the web layer needs (a TTL'd LRU keyed by hash).
 
-    Declared here so this module (and a router's test fake) does not import ``pipeline``.
+    Declared here so this module (and a router's test fake) does not import ``pipeline``. It is a
+    ``pipeline.ClearableCache``: ``clear`` empties it after a write to a source.
     """
 
     def get(self, key: str, /) -> SankeyGraph | None: ...
 
     def put(self, key: str, value: SankeyGraph, ttl_s: float, /) -> None: ...
+
+    def clear(self) -> None: ...
 
 
 def get_services(request: Request) -> Services:

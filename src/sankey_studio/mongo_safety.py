@@ -1,7 +1,7 @@
 """Read-only guard for user-supplied MongoDB filters, pipelines, names and connection URIs.
 
-Contract (v2): pure functions; imports only ``errors`` from this package (``models`` imports this
-module, so it must stay dependency-free) plus ``pymongo.uri_parser`` for URI structure.
+Contract (v2): pure functions; imports only ``errors`` and ``util`` from this package (``models``
+imports this module, so it must stay dependency-free) plus ``pymongo.uri_parser`` for URI structure.
 
 * Operators that run server-side code or write data are rejected anywhere in the tree.
 * Pipelines are validated RECURSIVELY: the top level, every ``$facet`` branch, and every
@@ -18,6 +18,8 @@ module, so it must stay dependency-free) plus ``pymongo.uri_parser`` for URI str
   names: the inspect endpoints pass raw query parameters straight through.
 * The tree walk follows every ``collections.abc.Mapping`` (the driver encodes any mapping as a
   document), not only ``dict``.
+* ``check_write_document`` / ``check_write_update`` gate the opt-in source write-back (one
+  inserted document, or one ``$set``/``$unset`` of a single field): plain names, scalar values.
 * ``check_mongo_uri`` is applied when a connection is saved: it refuses options that read local
   files or credentials (``tlsCAFile``, OIDC/AWS/GSSAPI mechanisms, proxies, ...).
 
@@ -28,6 +30,7 @@ Edit this file in a scratch copy and move it in only after
 from __future__ import annotations
 
 import json
+import math
 import re
 import unicodedata
 from collections.abc import Mapping
@@ -37,6 +40,7 @@ from urllib.parse import unquote
 from pymongo.uri_parser import parse_uri
 
 from sankey_studio.errors import UnsafeSourceError
+from sankey_studio.util import starts_like_formula
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -294,6 +298,92 @@ def check_pipeline(pipeline: Sequence[object]) -> None:
     state = _State()
     _check_stage_list(list(pipeline), state)
     _check_counts(state)
+
+
+# --------------------------------------------------------------------------- source writes
+
+WRITE_MAX_DEPTH = 4
+WRITE_TEXT_MAX = 1000
+WRITE_DOCUMENT_MAX_BYTES = 16 * 1024
+_WRITE_SEGMENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_-]*")
+#: Control characters (Cc) and lone surrogates: the same set a node name may not hold.
+_WRITE_CONTROL_RE = re.compile(r"[\x00-\x1f\x7f-\x9f\ud800-\udfff]")
+
+
+def _check_write_path(path: str) -> None:
+    segments = path.split(".")
+    if len(segments) > WRITE_MAX_DEPTH or not all(map(_WRITE_SEGMENT_RE.fullmatch, segments)):
+        raise UnsafeSourceError("a written field must be a plain dotted name of at most 4 parts")
+    if segments[0] == "_id":
+        raise UnsafeSourceError("the _id field is never written")
+
+
+def _check_write_text(text: str) -> None:
+    if len(text) > WRITE_TEXT_MAX or _WRITE_CONTROL_RE.search(text):
+        raise UnsafeSourceError("a written text is too long or holds control characters")
+    if starts_like_formula(text):
+        raise UnsafeSourceError("a written text could be read as a spreadsheet formula")
+
+
+def _check_write_scalar(value: object) -> None:
+    if value is None or isinstance(value, bool):
+        return
+    if isinstance(value, str):
+        _check_write_text(value)
+        return
+    fits_int = isinstance(value, int) and INT64_MIN <= value <= INT64_MAX
+    if not (fits_int or (isinstance(value, float) and math.isfinite(value))):
+        raise UnsafeSourceError("a written value must be text, a finite number, a boolean or null")
+
+
+def _check_write_node(node: Mapping[str, object], depth: int) -> None:
+    if depth > WRITE_MAX_DEPTH:
+        raise UnsafeSourceError("a written document is nested too deeply")
+    for key, value in node.items():
+        if _WRITE_SEGMENT_RE.fullmatch(key) is None:
+            raise UnsafeSourceError("a written document may only use plain field names")
+        if isinstance(value, Mapping):
+            _check_write_node(value, depth + 1)
+        else:
+            _check_write_scalar(value)
+
+
+def check_write_document(doc: Mapping[str, object]) -> None:
+    """Raise ``UnsafeSourceError`` unless ``doc`` is a small tree of plain fields and scalars.
+
+    Keys match ``[A-Za-z_][A-Za-z0-9_-]*`` (so no ``$`` operator and no dotted key), nest at most 4
+    deep and never name ``_id``; values are text (<= 1000 characters, no control characters, not
+    formula-like), finite numbers, booleans or null; the whole document is at most 16 KB.
+    """
+    if "_id" in doc:
+        raise UnsafeSourceError("the _id field is never written")
+    _check_write_node(doc, 1)
+    if len(json.dumps(doc)) > WRITE_DOCUMENT_MAX_BYTES:
+        raise UnsafeSourceError("a written document is too large")
+
+
+def check_write_update(update: Mapping[str, object]) -> None:
+    """Raise ``UnsafeSourceError`` unless ``update`` is one ``$set`` (text) or ``$unset`` (``""``).
+
+    Exactly ``{"$set": {path: text}}`` or ``{"$unset": {path: ""}}`` with a plain dotted path.
+    """
+    shape = "a source update must be one $set or $unset of one field"
+    if len(update) != 1:
+        raise UnsafeSourceError(shape)
+    ((operator, fields),) = update.items()
+    if operator not in {"$set", "$unset"} or not isinstance(fields, Mapping) or len(fields) != 1:
+        raise UnsafeSourceError(shape)
+    ((path, value),) = fields.items()
+    if not isinstance(path, str):
+        raise UnsafeSourceError(shape)
+    _check_write_path(path)
+    if operator == "$unset":
+        if value != "":
+            raise UnsafeSourceError("$unset takes an empty string as its value")
+    elif isinstance(value, str):
+        _check_write_text(value)
+    else:
+        raise UnsafeSourceError("a written category must be text")
 
 
 # --------------------------------------------------------------------------- URIs

@@ -35,7 +35,14 @@ if TYPE_CHECKING:
 
 GRAPHS: Final = "/api/v1/graphs"
 SAMPLES: Final = (BUDGET, BUDGET_CATEGORISED, LAYERED)
-NO_REPORT: Final = {"copied": 0, "skipped": 0, "unreadable": 0, "unreadable_ids": []}
+NO_REPORT: Final = {
+    "copied": 0,
+    "skipped": 0,
+    "unreadable": 0,
+    "unreadable_ids": [],
+    "folders": 0,
+    "folders_skipped": 0,
+}
 DAMAGED_ID: Final = "0" * 31 + "b"
 
 
@@ -175,8 +182,8 @@ def check_damaged_graph_is_counted(env: FlowEnv) -> None:
     damaged.write_bytes(b"{broken")
     saved = json_of(switch(env, storage_body(env, "mongo", MAIN), migrate=True))
     assert saved["copy_report"] == {
+        **NO_REPORT,
         "copied": 2,
-        "skipped": 0,
         "unreadable": 1,
         "unreadable_ids": [DAMAGED_ID],
     }

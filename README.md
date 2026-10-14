@@ -29,11 +29,19 @@ itself in depth (see [Security model](#security-model)).
 ## Features
 
 * **Library** of saved graphs: create, edit, duplicate, delete, search, tag, sort, page, and import
-  or export as a JSON bundle.
+  or export as a JSON bundle. Graphs can be grouped in a tree of **collections** (nested up to 8
+  levels), moved between them one by one or as a selection, and a search covers all of them.
 * **Live editor**: every change redraws the preview; unsaved-changes guard and optimistic
-  concurrency (a stale save offers reload or save as copy).
+  concurrency (a stale save offers reload or save as copy). A two-step wizard starts a new graph;
+  a gear next to the title edits name, description, tags and the data source kind; a gear in the
+  chart header holds Style and Export.
 * **Sources**: pasted or uploaded text (CSV, TSV, SankeyMATIC lines, JSON, NDJSON), files in a managed
-  sources folder, read-only MongoDB collections (`find` or `aggregate`), and a manual table.
+  sources folder, MongoDB collections (`find` or `aggregate`; read-only unless you opt into
+  write-back), and a manual table.
+* **Edit the chart, keep the data in step**: add an entry from a dialog or by clicking a node, set a
+  category per entry, drag nodes to reorder them (saved with the graph, drawn in every export). When
+  you agree, the change is also written into the pasted text, the manual table, the text file or the
+  MongoDB collection; otherwise it stays in the graph and is listed under "Graph-only edits".
 * **Transforms**: minimum link value, top-N links, hide and merge nodes, cycle handling, strict or
   lenient parsing.
 * **Optional categories**: per-entry categories from the data, glob rules or explicit choices, a
@@ -45,7 +53,8 @@ itself in depth (see [Security model](#security-model)).
 * **Settings page**: theme, MongoDB connections (passwords are never shown), storage backend with
   optional copy of existing graphs, limits.
 * **Light and dark themes**, keyboard use, no external assets.
-* **Safe by construction**: loopback bind, Host and CSRF checks, strict CSP, read-only MongoDB guard.
+* **Safe by construction**: loopback bind, Host and CSRF checks, strict CSP, a guard for every MongoDB
+  read, and write-back that is opt-in, bounded and refused wherever the app cannot be sure.
 
 ## Quick start
 
@@ -65,7 +74,7 @@ Then open <http://127.0.0.1:8765>. `make serve` does the same as the second comm
 
 ```bash
 uv run sankey-studio serve [--host HOST] [--port PORT] [--data-dir DIR] [--sources-dir DIR] \
-                           [--allow-remote] [--allow-remote-writes]
+                           [--allow-remote] [--allow-remote-writes] [--allow-source-writes]
 ```
 
 | Flag | Environment variable | Default | Meaning |
@@ -75,7 +84,8 @@ uv run sankey-studio serve [--host HOST] [--port PORT] [--data-dir DIR] [--sourc
 | `--data-dir DIR` | `SANKEY_DATA_DIR` | `$XDG_DATA_HOME/sankey-studio` (`~/.local/share/sankey-studio`) | Holds `settings.json`, `graphs/` and the default sources folder |
 | `--sources-dir DIR` | `SANKEY_SOURCES_DIR` | `<data-dir>/sources` | Folder of managed source files; must not equal or contain the data directory, `graphs/` or `settings.json` |
 | `--allow-remote` | `SANKEY_REMOTE_MODE` | off | Accept a non-loopback bind. There is NO authentication; the app is read-only |
-| `--allow-remote-writes` | `SANKEY_REMOTE_WRITES` | off | With `--allow-remote`: also allow changes to settings, files and graphs |
+| `--allow-remote-writes` | `SANKEY_REMOTE_WRITES` | off | With `--allow-remote`: also allow changes to settings, files, graphs and collections, and writing edits back into managed files |
+| `--allow-source-writes` | `SANKEY_SOURCE_WRITES` | off | With `--allow-remote-writes`: also allow writing edits back to MongoDB sources (without it a remote server never does, even with `--allow-remote-writes`). On loopback this is always allowed |
 | (none) | `SANKEY_MONGO_URI` | unset | Seeds a connection named `default` when no `settings.json` exists yet |
 | (none) | `SANKEY_ALLOWED_HOSTS` | `["localhost", "127.0.0.1", "[::1]"]` | JSON array of accepted `Host` headers |
 | (none) | `SANKEY_LOG_LEVEL` | `info` | uvicorn log level: critical, error, warning, info, debug or trace |
@@ -87,7 +97,10 @@ is bound. The server always runs one worker, because file locks and the export s
 **Remote mode.** `--host 0.0.0.0 --allow-remote` (or any other non-loopback address) prints a
 "NO AUTHENTICATION" banner with the bound address and whether writes are enabled. By default every
 endpoint that persists something answers 403 `read_only_mode`; previewing, viewing and exporting
-still work. Add `--allow-remote-writes` to lift that restriction, only on a network you trust.
+still work. Add `--allow-remote-writes` to lift that restriction, only on a network you trust; it lets a
+caller replace managed files, which they can already do through the upload route. Writing an edit back
+to a MongoDB source needs `--allow-source-writes` as well, and the banner prints `source writes:
+ENABLED` or `DISABLED`.
 
 **The Host rule.** Requests are answered only for an accepted `Host` header; anything else gets
 `400 Invalid host header` (this defeats DNS rebinding). The address you bind to is accepted
@@ -111,12 +124,15 @@ Text formats, detected automatically or chosen explicitly:
 
 | Format | Example line | Notes |
 |---|---|---|
-| CSV / TSV | `Salary,Rent,1200,Housing` | Columns source, target, value and an optional category. Header optional; delimiter sniffed or set; a "category" header is picked up automatically |
+| CSV / TSV | `Salary,Rent,1200,Housing` | Columns source, target, value and an optional category. Header optional; delimiter sniffed or set; a "category" header is picked up automatically, and without a header the fourth column is the category |
 | SankeyMATIC | `Salary [1200] Rent \| Housing` | `Source [value] Target`, optional `\| category`; blank lines and `//` comments ignored |
 | JSON / NDJSON | `{"source":"Salary","target":"Rent","value":1200,"category":"Housing"}` | An array of objects, or one object per line |
 
 Managed files must end in `.csv`, `.tsv`, `.txt`, `.json`, `.ndjson` or `.sankey`, and live in the
 sources folder (upload limit 25 MB by default, adjustable in settings).
+
+A new graph starts in a wizard: a name (with an optional description and tags), then where the data
+comes from. Paste and Manual can start empty ("Do it later"); nothing is saved until you press Save.
 
 ### Column mapping
 
@@ -129,8 +145,38 @@ lenient mode and are errors in strict mode. A column you name that does not exis
 Pick a configured connection, a database and a collection, then map dotted field paths to source,
 target, value and (optionally) category. `find` takes a filter; `aggregate` takes a pipeline. The editor
 lists databases and collections, shows sample documents and suggests fields. The row limit is 10,000 by
-default (up to 1,000,000) with a per-query time limit. MongoDB is only ever read from here; see the
-security model.
+default (up to 1,000,000) with a per-query time limit. The editor only reads from a collection unless
+you let it write edits back (next section); see the security model.
+
+### Editing the data
+
+Typing a category on an entry, adding an entry ("Add entry", or a click on a node of the chart) and
+dragging nodes are edits of the chart. What happens to the data depends on the source:
+
+| Source | The edit |
+|---|---|
+| Pasted text, manual table | Written into the text or the table at once |
+| Text file in the sources folder | After a question ("Change your data too?"), the file is replaced with the edit in it |
+| MongoDB `find` with an equality filter | After the same question, one `$set` or one inserted document (at most 1,000 documents per edit) |
+| Anything else (an aggregation, a refused edit) | Kept in the graph and listed under "Graph-only edits (N)" in the Entries card, with a Remove button each |
+
+Your answer is saved with the graph for that exact file or collection; another file, collection,
+database or connection asks again. "Keep in this graph" keeps one edit in the graph. The write is
+immediate, is not part of Save, changes other graphs that read the same file or collection, and
+re-formats JSON text. Text that a spreadsheet could read as a formula and collections whose names
+start with `sankey_studio_` are never written. A drag always saves the node order with the graph; the
+rows of pasted text, of the manual table and of a file you allowed to write follow it only when that
+would not change any colour, so with the default colouring most drags leave the rows alone (MongoDB
+rows never move). "Reset order" returns to the order of the data.
+
+### Collections
+
+The library groups graphs in collections. "New collection" creates one (inside the open one);
+a collection card has Rename, Move and Delete; "Move" on a graph card, or "Move to collection" for a
+selection, opens a tree of places; "New graph here" saves the next graph inside the open collection.
+Deleting a collection moves its graphs and sub-collections up and deletes nothing. A search looks in
+every collection and shows where each result is. A bundle export carries the collections of the
+exported graphs (bundle version 2).
 
 ### Categories and the donut
 
@@ -156,9 +202,10 @@ The settings page manages named MongoDB connections. Passwords are stored in `se
 backends:
 
 * **Files** (default): one `<id>.json` per graph in `<data-dir>/graphs/`, written atomically.
-* **MongoDB**: collection `sankey_studio_graphs` in a database you choose (default `sankey_studio`).
-  The connection needs write permission on that database. Switching backends can copy the existing
-  graphs; the old store is never deleted.
+* **MongoDB**: collection `sankey_studio_graphs` for the graphs and `sankey_studio_collections` for the
+  collections, in a database you choose (default `sankey_studio`). The connection needs write
+  permission on both. Switching backends can copy the existing graphs and collections; the old store
+  is never deleted. With files, the collections are `<data-dir>/graphs/folders.json`.
 
 For a project-local MongoDB on `127.0.0.1:27117` run `make mongo-up` (needs Docker); `make mongo-down`
 stops it.
@@ -168,7 +215,8 @@ stops it.
 There is no login, so the app protects itself:
 
 * **Loopback by default.** It binds to `127.0.0.1`. Any other address needs `--allow-remote`, which is
-  read-only unless `--allow-remote-writes` is also given, and prints a loud warning banner.
+  read-only unless `--allow-remote-writes` is also given, and prints a loud warning banner. Writing
+  edits back to MongoDB additionally needs `--allow-source-writes`.
 * **Host, Origin and CSRF checks.** Only accepted `Host` headers are served. A write (POST, PUT,
   PATCH, DELETE) is accepted only from the app's own origin (`Sec-Fetch-Site: same-origin` or `none`,
   or an `Origin` that matches scheme, host and port). A client that sends neither header may only send
@@ -177,19 +225,27 @@ There is no login, so the app protects itself:
 * **Content-Security-Policy and friends.** Scripts and styles come only from the app itself (no
   inline scripts, no CDN), framing is forbidden, and responses carry `nosniff`, a same-origin
   referrer policy and `no-store`. Downloads are attachments sandboxed by CSP.
-* **Read-only MongoDB.** Filters and pipelines run through an allow-list guard that refuses writes,
-  code execution and cross-database reads; the `admin`, `local`, `config` and `system.*` namespaces are
-  never readable; connection strings with options that read local files or weaken TLS are rejected.
-  The only code that writes to MongoDB is the optional graph store.
+* **MongoDB is read from, and written in two places only.** Filters and pipelines run through an allow-list
+  guard that refuses writes, code execution and cross-database reads; the `admin`, `local`, `config` and
+  `system.*` namespaces are never readable; connection strings with options that read local files or
+  weaken TLS are rejected. The only code that writes to MongoDB is the library store (graphs and
+  collections, `storage/`) and the source write-back (`storage/mongo_source_writes.py`): one field of at
+  most 1,000 documents chosen by `_id`, or one inserted document, only after you agreed for that
+  collection, never in `admin`, `local`, `config`, `system.*` or `sankey_studio_*`, with fields and
+  values validated. There is no login, so your saved answer is consent and not authorisation: the
+  database user's privileges are the real limit.
 * **Path containment.** Source files are confined to the sources folder: no symlinks, no traversal, a
   fixed extension allow-list, regular files only, sanitised upload names and a streamed size cap.
+  Write-back replaces an existing file atomically with the same checks, like an overwriting upload
+  does; it never creates one.
 * **Masked URIs, secrets never returned.** The API returns `uri_masked` and `has_secret`, never a
   connection string. Logs and errors carry only the connection name. A masked placeholder can never
   overwrite a stored secret.
 * **Remote mode is read-only** unless you opt in; while it is read-only, the settings page hides
   connection hosts and user names.
 * **Output encoding.** User text is escaped in every figure label, HTML export and CSV cell (formula
-  injection guard), and the frontend never writes HTML from strings.
+  injection guard; write-back refuses formula-like new text), and the frontend never writes HTML from
+  strings.
 
 Details and the reasoning are in [docs/architecture.md](docs/architecture.md#security-design) and
 [docs/decisions.md](docs/decisions.md).
@@ -251,7 +307,8 @@ for that reason.
 * **ruff** (all rules, formatter), **mypy** in strict mode, **pytest** with warnings as errors.
 * **memray** memory budgets (`make memray`) and a whole-pipeline profile (`make profile`).
 * **mutmut** mutation testing with a score gate.
-* **Semgrep** with custom rules for the project's invariants (MongoDB writes only in the graph store,
+* **Semgrep** with custom rules for the project's invariants (MongoDB writes only in the library store
+  and the source write-back, both under `storage/`,
   no unsafe HTML or JavaScript sinks, no secrets in logs, no outbound HTTP, ...), run in Docker.
 * **Trivy** for dependencies, secrets, misconfigurations and licences, run in Docker.
 * **Qodana Ultimate Plus**: needs a `QODANA_TOKEN` in a local `.env`. Copy `.env.example` to `.env`
@@ -288,17 +345,20 @@ src/sankey_studio/
   config.py             BootstrapConfig: SANKEY_* settings, loopback and remote-mode rules
   errors.py             domain errors with stable codes
   util.py               URI masking, category identity
-  models/               pydantic specs (sources, transform, style, graphs, settings), SankeyGraph
+  models/               pydantic specs (sources, transform, style, graphs, folders, edits, settings),
+                        SankeyGraph
   mongo.py              cached MongoDB client registry with per-connection concurrency slots
-  mongo_safety.py       read-only guard for filters, pipelines, names and URIs
+  mongo_safety.py       guard for filters, pipelines, names and URIs, and for write-back fields
   sources/              text (formats/, files/), MongoDB (source, extract, inspect, sample,
-                        suggest) and manual data sources
+                        suggest, write plan) and manual data sources; rewrite/ edits text in place
   graph/                build_graph: intern, categories, pairs, cycles, layers, assemble
   render/               Sankey and donut figures, legend, colours, palette, tables, exports
-  storage/              file and MongoDB graph stores, settings.json, bundles, migration
+  storage/              file and MongoDB graph and collection stores, settings.json, bundles,
+                        migration, MongoDB source write-back
   services.py           Services: wires settings, clients, storage and source context
   bundle.py             RenderBundle: everything a page needs to draw one graph
   pipeline.py           draft -> graph -> bundle, with a small result cache
+  edits/                where an edit goes (draft, file, collection, graph) and the write-back
   web/                  FastAPI app: middleware, security, routers/, schemas/, templates/, static/
 scripts/                code caps, mutation gate, memory profile, Semgrep/Trivy/Qodana runners
 tests/                  unit tests mirroring src/, contracts/, e2e/

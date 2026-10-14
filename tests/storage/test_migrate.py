@@ -172,14 +172,20 @@ def test_the_report_is_a_frozen_value() -> None:
         "skipped": 1,
         "unreadable": 0,
         "unreadable_ids": (),
+        "folders": 0,
+        "folders_skipped": 0,
     }
     assert report == CopyReport(2, 1)
     assert report != CopyReport(1, 2)
     assert report != CopyReport(2, 1, 1, ("x",))
+    assert report != CopyReport(2, 1, folders=1)
+    assert report != CopyReport(2, 1, folders_skipped=1)
     with pytest.raises(dataclasses.FrozenInstanceError):
         report.copied = 5  # type: ignore[misc]
     with pytest.raises(dataclasses.FrozenInstanceError):
         report.unreadable = 5  # type: ignore[misc]
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        report.folders = 5  # type: ignore[misc]
 
 
 def test_an_unknown_conflict_policy_is_refused_before_anything_is_copied(

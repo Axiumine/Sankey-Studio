@@ -51,6 +51,9 @@ Contents
 | [ADR-31](#adr-31-untitled-graphs) | Untitled graphs |
 | [ADR-32](#adr-32-settings-writes-are-serialised-on-the-client) | Settings writes are serialised on the client |
 | [ADR-33](#adr-33-toast-placement) | Toast placement |
+| [ADR-34](#adr-34-edits-are-written-back-to-the-data-when-the-person-agrees) | Edits are written back to the data when the person agrees |
+| [ADR-35](#adr-35-collections-are-a-tree-stored-beside-the-graphs) | Collections are a tree stored beside the graphs |
+| [ADR-36](#adr-36-editor-chrome) | Editor chrome |
 
 ## ADR-01 Storage protocol and graph ids
 
@@ -81,6 +84,21 @@ header auto-detection. A named `category_column` absent from the header is a `So
 
 **Why.** Categories are optional, so a data quirk in an optional field must never drop a row. A
 column the user named explicitly is different: a typo should fail loudly.
+
+**Addendum (headerless data).** Without a header the category column defaults to the fourth column
+(index 3), as source, target and value default to columns 1 to 3. The default applies only when
+`detect_category` is true, no `category_column` is given, and column 4 is not already read by an
+explicit source, target or value pick. A row with fewer than four cells stays uncategorised and is
+kept. An unusable cell (over 100 characters, reserved name, control characters) is dropped with the
+existing aggregated warning. The rule covers csv and tsv; SankeyMATIC and JSON carry their category
+explicitly (`| category`, a `category` key). The browser mirrors it in `editor/source/columns.js`
+(the select reads "Auto (col 4)"), and a test compares that table with the Python one.
+
+*Why.* `Salary,Budget,3000,Income` is the same data with or without a header row; the old rule tied
+category detection to a header the person did not have, so a pasted headerless table lost every
+category except the one typed afterwards. *Cost.* Headerless data whose fourth column is not a
+category (a note, a date) now yields categories; "This data has no category column"
+(`detect_category=false`) turns that off.
 
 ## ADR-04 Secrets never leave the settings store
 
@@ -176,6 +194,14 @@ it read-only.
 
 **Why.** A web-writable file root would be arbitrary file read and write.
 
+**Addendum (write-back, [ADR-34](#adr-34-edits-are-written-back-to-the-data-when-the-person-agrees)).**
+An existing allowed file can be replaced atomically when the graph owner agreed to write an edit
+back (`sources/files/store.py edit_file`): the same fd-based checks as `located` and `open_leaf`
+(extension allow-list, `O_NOFOLLOW` per component, a regular file that must already exist), a stat
+stamp compared before the replace, the size cap of `max_upload_mb`, and a part file created with
+`O_EXCL`. Uploads are not the only writer of that directory any more; the directory is still
+bootstrap-only and nothing new can be created outside an upload.
+
 ## ADR-14 CSRF rule without tokens
 
 **Decision.** Unsafe methods are allowed iff `Sec-Fetch-Site` is `same-origin` or `none`, or `Origin`
@@ -207,6 +233,15 @@ GSSAPI or X.509 authentication.
 
 **Why.** The app executes user-supplied filters and pipelines against a database it does not own.
 
+**Addendum (two library collections and opt-in source write-back).** The title says how a source is
+read, and that is unchanged: every filter, pipeline, name and URI still goes through `mongo_safety`
+and `admin`, `local`, `config` and `system.*` are never readable. Writes now exist in exactly two
+places, both under `storage/` and both listed in the Semgrep waivers: the library store (graphs in
+`sankey_studio_graphs`, collections in `sankey_studio_collections`, [ADR-35](#adr-35-collections-are-a-tree-stored-beside-the-graphs))
+and the opt-in source write-back of [ADR-34](#adr-34-edits-are-written-back-to-the-data-when-the-person-agrees)
+(`storage/mongo_source_writes.py`), which never touches `admin`, `local`, `config`, `system.*` or a
+collection whose name starts with `sankey_studio_`.
+
 ## ADR-17 Remote mode is read-only by default
 
 **Decision.** `--allow-remote` accepts a non-loopback bind and prints a loud banner; it also makes
@@ -216,6 +251,17 @@ hosts and user names in this mode. Pure computations (preview, entries, export, 
 
 **Why.** Without authentication, the safe default for a reachable server is read-only. The rule
 covers graph writes as well as settings, because a saved graph can persist a Mongo pipeline.
+
+**Addendum (source write-back).** `--allow-source-writes` (`SANKEY_SOURCE_WRITES`, `BootstrapConfig.source_writes`)
+is a second bootstrap-only flag and needs `--allow-remote-writes`. In remote mode a read-only server
+refuses file write-back (it follows `privileged_writes_allowed`, because a remote writer can already
+replace a file through the upload route), and writing an edit back to a MongoDB source needs this
+flag besides `--allow-remote-writes`: `--allow-remote-writes` alone does NOT unlock it. On loopback
+both are always allowed. `POST /edits/plan` stays available in read-only mode (it writes nothing);
+`POST /edits/write` and the collection writes (`POST`, `PUT` and `DELETE /folders*`,
+`POST /graphs/move`) answer 403 `read_only_mode` before the body is decoded
+([ADR-34](#adr-34-edits-are-written-back-to-the-data-when-the-person-agrees),
+[ADR-35](#adr-35-collections-are-a-tree-stored-beside-the-graphs)).
 
 ## ADR-18 Hardening of files, settings and exports
 
@@ -360,3 +406,222 @@ that reserves toast space must not transition: with reduced motion a 0.01 ms tra
 padding by a frame and the scroll falls short. A test pins this.
 
 **Why.** Toasts must never cover the control a user is working on.
+
+## ADR-34 Edits are written back to the data when the person agrees
+
+**Decision.** An edit of the entries (a category, an added entry, a node order) is routed by
+`POST /edits/plan` and written by `POST /edits/write` (package `edits/`, above `pipeline` and below
+`web`). One table decides where it goes:
+
+| Source | Where | Consent |
+|---|---|---|
+| manual links, pasted text (`origin=inline`) | the draft (`source.links`, `source.content`) | never |
+| a managed text file (`origin=file`) | the file, replaced atomically | per graph and target |
+| MongoDB `find` (an added entry needs a plain equality filter) | the documents of the collection | per graph and target |
+| anything else, or an edit that is refused | the graph: `transform.entry_categories`, `transform.extra_links`, `style.node_order` | never |
+
+*Consent and its key.* A file or a collection is written only after the graph owner said yes in the
+dialog "Change your data too?". The answer is saved with the graph as `source.write_back =
+{mode: "source" | "graph", target}`. `target` is an opaque key that the SERVER builds from resolved
+values (`edits/target.py`): `file:<path>`, or `mongo:<connection>/<resolved database>/<collection>#<fp>`
+where `fp` is the first 12 hex digits of the SHA-256 of the masked URI, a separator and the default
+database (non-secret; the URI never enters the key). The browser never computes a key: it calls
+`plan` first, reads `consent` (`ask` or `granted`) and `target_key` from the answer and stores the
+key verbatim when the person accepts. A preference counts only while its `target` equals the key of
+the current source, so a different file, collection, database or connection, or a connection whose
+URI was edited in Settings, asks again with no extra code. `write` re-checks everything: the
+effective preference must be `source` (else 422 `source_edit_refused`, reason `no_consent`).
+"Keep in this graph" keeps that one edit in the graph and is remembered for the page session and
+that key only; "Keep in this graph, don't ask again" saves `mode: "graph"`; Cancel or Esc does
+nothing. A bundle import drops `write_back` from every graph (a consent names a file or connection
+of the exporting machine).
+
+*Operator gates*, evaluated in `plan` and again in `write` before a source is touched, first match
+wins: (1) a file or MongoDB edit on a server that may not write (remote mode without
+`--allow-remote-writes`); (2) a MongoDB edit in remote mode without `--allow-source-writes`;
+(3) the namespace rules (`check_target`: system databases and `system.*`, and any collection whose
+casefolded name starts with `sankey_studio_`, in any database); (4) new text that a spreadsheet could
+read as a formula (`util.starts_like_formula`, the predicate of the CSV export guard; numbers are
+exempt, pasted and manual text is the person's own data and is not gated; a `set_category` stores only
+its category, so only that is checked). `plan` answers `graph`
+with the reason; `write` answers 403 `read_only_mode` for 1 and 2 and `graph` for 3 and 4.
+
+*Writers.* The text rewriter (`sources/rewrite/`) keeps every untouched line byte for byte, may
+normalise the quoting of a touched csv record, and accepts its output only after the real parser
+reads the new text as the old data plus the intended change (a multiset of source, target, value and
+category compared; one retry with the format and delimiter pinned; else `cannot_verify` and the edit
+stays in the graph). It refuses text over 8 MiB or a rewritten line over 4096 characters, and it
+never emits what the encoding of the file cannot hold. JSON arrays are re-formatted (`indent=2`); the consent text says so for
+files and a notice says so for pasted JSON. For a file, `write` repeats the dry run under the
+directory lock and replaces the file only when the rewrite equals the dry-run text, else 409
+`conflict`. For MongoDB, `storage/mongo_source_writes.py` is the only code that calls `update_many`
+or `insert_one` on a source collection: one `$set` or `$unset` of one string field, on at most
+1,000 documents chosen by `_id` and re-filtered (`{"$and": [{"_id": {"$in": ids}}, filter]}`, so a
+document edited meanwhile is not touched), or one `insert_one` of a scalar document; field paths,
+values and filters are validated by `mongo_safety.check_write_document`, `check_write_update` and
+`check_filter`; the graph cache is cleared after every write; an INFO line names the connection,
+database, collection, operation and count, never a value. A driver or OS failure whose result is
+unknown is an error (502 `source_write_failed`, 503, 409) and never becomes a graph-only edit, so an
+added entry cannot be duplicated by a retry.
+
+*Order.* A node order is always stored in `style.node_order` and drawn by the server with Plotly's
+`sort: "input"` (never with node coordinates: Plotly ignores a coordinate of exactly 0 and
+re-snaps). Rows of the data follow best effort and only where a write is allowed anyway: pasted text
+and manual links, and a file whose preference is `source`; MongoDB never. The guard
+`edits/recolour.py` compares the colour slots of the graph before and after: when a reorder would
+repaint a node or category that the chart colours by (slots 0 to 7 are hues; pinned colours are
+ignored; `layer` and `mono` never repaint), the answer carries `pins` (the light-theme hex of the
+colour each moved name had) next to the rewritten rows, and the browser merges them into
+`style.node_colors` or `style.category_colors` in the same history step (Undo takes both back). So a
+drag updates the data in the default colour mode too. The trade-off: a pinned colour is one fixed hex
+in both themes, like any colour the person sets. Only when the pins would not fit in the style (1,000
+overrides) are the rows kept and the answer `graph` with reason `would_recolour`. The stored order is
+unaffected.
+
+*Visible overlays.* Edits that stay in the graph are listed in the Entries card ("Graph-only edits
+(N)", a Remove button on each); a toast alone would hide state that Save persists.
+
+**Why.** Editing a category in the chart while the data says something else leaves the data and the
+chart disagreeing, and the person wants the data to be the source of truth. Writing into someone's
+file or database is the one place where the app changes data it does not own, so it is opt-in per
+target, announced before it happens, bounded (one field, one document or one file, 1,000 documents at
+most), checked by the real parser or the database filter, and refused wherever the app cannot be
+sure. The key is built by the server because the browser cannot know the default database of a
+connection.
+
+**Accepted risk.** There is no login, and the saved preference travels in the request body, so it is
+UX consent and not an authorisation boundary. Any caller who can reach the API can `$set` one string
+field on documents selected by `field in [names]`, and insert one scalar document, in any non-system,
+non-`sankey_studio_` collection that the connection's database user may write (the storage
+connection must be writable, so a source that reuses it is writable by construction), and can have
+an existing managed text file rewritten. The real controls are the database user's privileges (a
+read-only user answers `permission_denied` and the edit stays in the graph), loopback by default, the
+Host and CSRF checks, `--allow-remote-writes` for files and also `--allow-source-writes` for MongoDB
+in remote mode, the namespace refusals, equality filters for inserted documents (a category update accepts any filter the
+read checks allow) and the 1,000-document cap. A
+per-connection flag in `settings.json` was rejected: the same unauthenticated caller can edit
+settings, so it would not be a boundary, and a flag that defaults to false would make MongoDB
+write-back unreachable out of the box.
+
+**Limits (documented, not hidden).**
+
+* `add_entry` on MongoDB counts the documents the source reads and then inserts, which is not atomic:
+  in the worst case the new document falls outside the read window and the next plan answers
+  `limit_reached`.
+* The write is immediate and not part of Save; other graphs that read the same file or collection
+  change too; the consent is saved only when the graph is saved (an unsaved graph asks again next time).
+* A manual change of the rows does not move the bars while a stored order exists; "Reset order"
+  returns to the layout of the data. In the default `node` colour mode a drag pins the colours it
+  would have moved. A node renamed in the data jumps to the end of its layer.
+* A file write replaces the file: ownership and ACLs are not preserved and a hard link to the file is
+  broken. Rewritten files keep short rows short. A rewrite that changes nothing answers `graph` with
+  the silent reason `order_in_graph` and the browser keeps its graph-level patch.
+* A third Style choice "Same as the data rows" for the order was rejected: the saved explicit order is
+  what makes the chart reproducible.
+
+## ADR-35 Collections are a tree stored beside the graphs
+
+**Decision.** Saved graphs can be grouped in a tree of "collections". The identifier noun is `folder`
+everywhere in code, URLs, JSON, query parameters, test ids and CSS (the Mongo word `collection`
+already means a driver object); the word "collection" appears only in user-visible text and in the
+fixed name of the Mongo collection `sankey_studio_collections`.
+
+* *Model.* An adjacency list: one record per collection `{id, name, parent_id, revision, created_at,
+  updated_at}`; a graph points at at most one collection with `GraphDefinition.folder_id` (`null` =
+  the top level). There is no member list in the collection (unbounded arrays, two-document
+  updates). `GraphCreate` and `GraphUpdate` do not carry the field: a graph is placed at creation
+  (`POST /graphs?folder=`) and moved only by `POST /graphs/move`, so a stale editor tab can never move
+  it back. A move changes neither `revision` nor `updated_at`.
+* *Rules*, in one pure module shared by both backends (`storage/folder_tree.py`): sibling names are
+  unique after NFC and casefold, names are 1 to 100 characters, at most 8 levels, at most 1,000
+  collections, no cycles. Every walk carries a visited set. Deleting a collection re-parents: its
+  graphs and sub-collections move up to its parent and nothing is deleted; a name clash at the
+  parent refuses the delete (409 `folder_name_taken`).
+* *Dangling references are tolerated, not prevented* (there are no cross-document transactions on
+  MongoDB and a crash can fall between two files on disk): a graph whose `folder_id` names no
+  collection, or a collection whose parent is gone, reads as top level everywhere.
+* *Second protocol.* `FolderRepository` (CRUD, `put_folder`, `list_in`, `count_in`, `move_graphs`,
+  `ping`) sits beside `GraphRepository`, whose surface only gained `create(data, *, folder_id=None)`.
+  `Services.folders()` is cached under the same key as `graphs()`; a frozen `Stores(graphs, folders)`
+  pair is what the storage switch handles.
+* *File backend.* One `folders.json` per graphs directory (`[0-9a-f]{32}.json` it is not, so the graph
+  index ignores it), written atomically with mode 0600 under the lock the graphs already use and cached
+  by `(mtime_ns, size, inode)`. A damaged file fails soft on reads (no collections, graphs at the top
+  level, one warning in the log) and closed on writes (503 `storage_error`).
+* *MongoDB backend.* The collection `sankey_studio_collections` in the storage database, a unique
+  `(parent_id, name_key)` index for atomic sibling-name uniqueness (the pure rules run first for a
+  friendly error), compare-and-set on `revision` for rename and move, and `$set` of `folder_id` only
+  for moving graphs. Deleting moves the graphs up first, then removes the record, then re-parents the
+  sub-collections (the record goes before its children because a child may carry the deleted
+  collection's name). The storage connection needs write access to both collections.
+  `MongoStoreTarget` refuses equal names for the two. All writes live in
+  `storage/mongo_folder_store.py` with the Semgrep waiver allowed under `storage/`.
+* *Bundles are version 2* (a `folders` list after `graphs`; version 1 is refused on purpose, old saves
+  need not work). `new_ids` import gives every collection a new id and reuses a same-named sibling
+  (case-insensitive) under the same new parent, so importing the same bundle twice does not double the
+  tree; `keep_ids` keeps the ids (a refused collection's graphs and sub-collections move to the nearest stored ancestor too). A collection whose parent is missing counts as top level: renaming it heals the parent, and sibling names are compared by that effective parent. A collection that cannot be stored is a report line
+  `collection N: <reason>` (position, never the content) and its graphs land in the nearest stored
+  ancestor. The storage switch copies the collections first, parents first, then the graphs.
+* *Listing.* `GET /graphs` without `folder` is exactly today's search. `folder=root|<id>` lists one
+  level, newest first, and cannot be combined with `q` or `tag` (422): the library search is global by
+  design and each result names its collection. The pages `/` and `/graphs/new` take `?folder=`
+  leniently (an invalid or unknown value is the top level).
+* *Library UI.* Real links (`/?folder=<id>`), so Back, Forward and reload need no routing code; the
+  server renders the boot data of the scope; a breadcrumb, the cards of the open level above the
+  graphs, dialogs to create, rename, move and delete, "Move" on a graph card and "Move to collection"
+  on the selection (cap 12, shared with compare). Moving uses a dialog with a radio tree whose
+  impossible places stay visible and say why; drag and drop is not built (a follow-up; the dialog is
+  the accessible baseline).
+
+**Why.** Libraries with dozens of graphs need structure, and a tree with membership on the graph is
+the smallest model that both backends can enforce (a unique index on Mongo, one lock on disk) without
+transactions. Keeping the rules in one pure module means the two backends cannot drift.
+
+**Accepted risks.** Two racing moves on MongoDB can end in a cycle (readers cut it); a graph moved
+into a collection while that collection is being deleted ends up at the top level; a bulk
+`put_folder` of a 1,000-collection tree does O(n^2) reads on MongoDB (the cap bounds it).
+
+## ADR-36 Editor chrome
+
+**Decision.** The editor shows a full-width chart row, then Source and Transform side by side from
+900 px (stacked below), then Entries and the save bar. What used to share the page moved out of it:
+
+* *Chart settings* (Style and Export) live in a non-modal popover under a gear in the chart header
+  (`core/popover.js`; only one popover is open; Escape closes it and returns focus to the gear, a
+  press outside or focus leaving closes it without moving focus). A modal would make `#app` inert and
+  dim the chart, which kills the live feedback while styling. The chart row is a full-width,
+  non-sticky card: while editing Source or Transform it scrolls out of view (the accepted cost of
+  the layout request). `ctx.chartTools` is the extension slot of the chart header; "Order nodes" and
+  "Reset order" are added before the gear so the gear's popover stays inside a phone window.
+* *Name, description and tags* live in a modal "Graph details" dialog opened from a gear that is a
+  SIBLING of the page `<h1>` (the heading's text is rewritten by the page). A menu item is a
+  decision, not live styling, so the title menu opens modal dialogs. The fields are bound to the
+  real store (live, dirty) and "Done" only validates the name, so the leave guard and the dirty flag
+  behave as before; there is no Apply or Cancel pair.
+* *Change data source* is a guided path beside the inline tab strip, which stays the quick path and
+  the contract of the test ids. Choosing the kind that is already in use only goes to the inline tab
+  (the source settings are edited inline). Graph-only edits (`entry_categories`, `extra_links`,
+  `node_order`) belong to the data, so changing the kind asks whether to keep them; the question is
+  one module (`source/overlays.js`) shared by the dialog and the tab strip.
+* *The new-graph wizard* is client side: two steps (name, then data source) drawn before the editor
+  exists. It never POSTs (so it works on a read-only server), keeps its own store, seeds the editor
+  after the dirty tracking started (so typed data is protected by the leave prompt), and its finish
+  button reads "Start editing" with "Nothing is saved until you press Save". `source-has-header`
+  appears in step 2 because a headerless paste is the case of the ADR-03 addendum. The source tabs are
+  one implementation (`source/tab-set.js`) shared with the editor.
+* *Paste Clear* is an icon inside the box. It wipes the only copy of the data, so it shows a "Cleared"
+  toast with Undo, retired as soon as the box holds anything else or another tab is chosen.
+* *Chart events.* A drag is read from Plotly's public `plotly_restyle` (the end-of-drag positions of
+  every node; a plain click fires the same event, so a pointer gate is needed). Plotly does not emit
+  `plotly_click` while bars are draggable, so a node click is built from pointer events plus the node
+  of the last `plotly_hover` and de-duplicated with Plotly's own click. The drawn columns, not the
+  server layer, group the order (Plotly's `justify` alignment puts every node without an outgoing link
+  in the last column). "Order nodes" is the keyboard and single-pointer twin of the drag (WCAG 2.1.1
+  and 2.5.7) and calls the same engine function. A click on a bar opens the same "Add a flow" dialog
+  as the Entries card, prefilled; the role of the node comes from the drawn `bundle.nodes`.
+* *Tests.* The e2e page objects for the wizard, the menu, the dialogs and the popover probe the DOM
+  once and also drive the older editor, so one test ran on both while the chrome landed in waves.
+
+**Why.** The chart is the point of the page: the form fields that are touched once per graph
+(details, style) should not compete with it, and the dialogs, popover and wizard are accessible
+patterns the app already had (focus trap, Esc, return of focus).

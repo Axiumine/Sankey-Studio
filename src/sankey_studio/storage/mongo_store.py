@@ -1,14 +1,18 @@
 """``MongoGraphRepository``: saved graphs in the collection ``sankey_studio_graphs``.
 
-This is the ONLY code that writes to MongoDB (every write call below carries the
-``sankey-no-mongo-writes`` waiver). The storage connection therefore needs WRITE permission on
-``AppSettings.storage_database``; graph definitions never leave that collection.
+With ``mongo_folder_store.py`` (the library folders, collection ``sankey_studio_collections``)
+this is the library store: every write call below carries the ``sankey-no-mongo-writes`` waiver.
+The storage connection therefore needs WRITE permission on ``AppSettings.storage_database``;
+graph definitions never leave their collection.
 
 Documents are keyed by ``_id`` = the graph id. Field names that come from user text (merge
 tables, colour overrides) and operator keys of a Mongo source are rewritten by
 ``encode_mongo_doc`` before every write, and ``find_unsafe_key`` fails closed if anything else
 still carries a key MongoDB < 5.0 rejects. Every call runs inside ``clients.slot(connection)``
 and ``mongo_errors(connection, StorageError)``: driver text never reaches a message.
+
+A graph document also holds ``folder_id`` (the library folder, ``None`` = top level): ``create``
+and ``put`` write it, ``update`` never touches it (its ``$set`` lists the editable fields only).
 
 Listings fetch only the summary fields (the possibly large source and style documents stay on
 the server), so they skip a record whose SUMMARY is unreadable; a record whose body is damaged is
@@ -33,6 +37,7 @@ from sankey_studio.models import SCHEMA_VERSION, GraphDefinition, GraphSummary
 from sankey_studio.mongo import mongo_errors
 from sankey_studio.mongo_safety import validate_namespace
 from sankey_studio.storage.base import (
+    MONGO_FOLDERS_COLLECTION,
     MONGO_GRAPHS_COLLECTION,
     check_graph_id,
     decode_mongo_doc,
@@ -73,24 +78,33 @@ _SUMMARY_FIELDS = {
     "source.type": 1,
     "revision": 1,
     "updated_at": 1,
+    "folder_id": 1,
 }
 
 
 @dataclass(frozen=True, slots=True)
 class MongoStoreTarget:
-    """Where the graphs live. Part of the ``Services.graphs()`` cache key (hashable)."""
+    """Where the graphs and the library folders live. Part of the ``Services`` cache key.
+
+    ``collection`` holds the graphs, ``folders_collection`` the library folders ("collections" in
+    the UI); both sit in ``database`` and both names go through ``validate_namespace``.
+    """
 
     connection: str
     database: str
     collection: str = MONGO_GRAPHS_COLLECTION
+    folders_collection: str = MONGO_FOLDERS_COLLECTION
 
     def __post_init__(self) -> None:
         if not self.connection:
             raise StorageError("No storage connection is selected")
         try:
             validate_namespace(self.database, self.collection)
+            validate_namespace(self.database, self.folders_collection)
         except UnsafeSourceError as exc:
             raise StorageError(exc.message) from None
+        if self.folders_collection == self.collection:
+            raise StorageError("The graphs and the folders need two different collections")
 
 
 # --------------------------------------------------------------------------- writes
@@ -122,6 +136,7 @@ def _remove(coll: Collection[Any], graph_id: str) -> int:
 def _ensure_indexes(coll: Collection[Any]) -> None:
     coll.create_index("updated_at")  # nosemgrep: sankey-no-mongo-writes -- graph store
     coll.create_index("tags")  # nosemgrep: sankey-no-mongo-writes -- graph store
+    coll.create_index("folder_id")  # nosemgrep: sankey-no-mongo-writes -- graph store
 
 
 # --------------------------------------------------------------------------- documents
@@ -182,6 +197,7 @@ def _summary(raw: dict[str, Any]) -> GraphSummary | None:
         "source_type": source.get("type") if isinstance(source, dict) else None,
         "revision": raw.get("revision"),
         "updated_at": _aware(raw.get("updated_at")),
+        "folder_id": raw.get("folder_id"),
     }
     try:
         return GraphSummary.model_validate(fields)
@@ -302,8 +318,8 @@ class MongoGraphRepository:
 
     # ------------------------------------------------------------------ writes
 
-    def create(self, data: GraphCreate) -> GraphDefinition:
-        graph = new_definition(data, self._clock())
+    def create(self, data: GraphCreate, *, folder_id: str | None = None) -> GraphDefinition:
+        graph = new_definition(data, self._clock(), folder_id)
         doc = _encode(graph)
         with self._session() as coll:
             self._prepare(coll)

@@ -40,7 +40,7 @@ def web(make_app: AppFactory) -> WebApp:
 
 
 def bundle_of(graphs_: list[Any]) -> dict[str, Any]:
-    return {"format": BUNDLE, "version": 1, "graphs": graphs_}
+    return {"format": BUNDLE, "version": 2, "graphs": graphs_}
 
 
 def stored_json(name: str) -> dict[str, Any]:
@@ -58,7 +58,7 @@ def test_the_export_is_a_json_attachment(web: WebApp) -> None:
     assert response.headers["x-content-type-options"] == "nosniff"
     assert response.headers["content-security-policy"] == "sandbox"
     assert response.headers["cache-control"] == "no-store"
-    assert response.text.startswith('{\n  "format": "sankey-studio/graphs",\n  "version": 1,')
+    assert response.text.startswith('{\n  "format": "sankey-studio/graphs",\n  "version": 2,')
 
 
 def test_the_bundle_holds_the_graphs_in_the_order_of_the_ids(web: WebApp) -> None:
@@ -66,7 +66,7 @@ def test_the_bundle_holds_the_graphs_in_the_order_of_the_ids(web: WebApp) -> Non
     first, second, third = (put_graph(web, n, name) for n, name in enumerate(NAMES, start=1))
     ids = f"{third},{first},{second},{first}"
     bundle = web.client.get(f"{EXPORT}?ids={ids}").json()
-    assert (bundle["format"], bundle["version"]) == (BUNDLE, 1)
+    assert (bundle["format"], bundle["version"]) == (BUNDLE, 2)
     assert [graph["name"] for graph in bundle["graphs"]] == ["Three", "One", "Two"]
     assert [graph["id"] for graph in bundle["graphs"]] == [third, first, second]
 
@@ -166,9 +166,11 @@ class Unusable(NamedTuple):
         Unusable("object", {}),
         Unusable("list", []),
         Unusable("number", 5),
-        Unusable("format", {"format": "other", "version": 1, "graphs": []}),
-        Unusable("version", {"format": BUNDLE, "version": 2, "graphs": []}),
-        Unusable("no list", {"format": BUNDLE, "version": 1, "graphs": {}}),
+        Unusable("format", {"format": "other", "version": 2, "graphs": []}),
+        Unusable("version 1 is refused", {"format": BUNDLE, "version": 1, "graphs": []}),
+        Unusable("version", {"format": BUNDLE, "version": 3, "graphs": []}),
+        Unusable("no list", {"format": BUNDLE, "version": 2, "graphs": {}}),
+        Unusable("folders", {"format": BUNDLE, "version": 2, "graphs": [], "folders": {}}),
     ],
     ids=lambda case: case.label,
 )
@@ -190,4 +192,4 @@ def test_a_body_that_is_not_json_is_a_422(client: TestClient) -> None:
 def test_an_empty_bundle_imports_nothing(client: TestClient) -> None:
     response = client.post(IMPORT, json=bundle_of([]))
     assert response.status_code == 200
-    assert response.json() == {"imported": 0, "failed": 0, "ids": [], "errors": []}
+    assert response.json() == {"imported": 0, "failed": 0, "ids": [], "errors": [], "folders": 0}

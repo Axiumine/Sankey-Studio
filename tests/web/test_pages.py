@@ -26,7 +26,16 @@ if TYPE_CHECKING:
 
 HTML = "text/html; charset=utf-8"
 NAV = [("/", "Library"), ("/graphs/new", "New graph"), ("/settings", "Settings")]
-SUMMARY_KEYS = {"id", "name", "description", "tags", "source_type", "revision", "updated_at"}
+SUMMARY_KEYS = {
+    "id",
+    "name",
+    "description",
+    "tags",
+    "source_type",
+    "revision",
+    "updated_at",
+    "folder_id",
+}
 
 
 class Case(NamedTuple):
@@ -77,7 +86,7 @@ def test_the_new_and_settings_pages_carry_only_the_common_boot_data(web: WebApp)
     common = {"remote_mode": False, "writes_allowed": True, "theme": "system"}
     new = parse(web.client.get("/graphs/new")).data()
     settings = parse(web.client.get("/settings")).data()
-    assert new == {"page": "new", "graph": None, **common}
+    assert new == {"page": "new", "graph": None, "folder_id": None, **common}
     assert settings == {"page": "settings", **common}
 
 
@@ -90,6 +99,8 @@ def test_an_empty_library_has_no_graphs_and_the_navigation(web: WebApp) -> None:
         "theme": "system",
         "graphs": [],
         "total": 0,
+        "folders": [],
+        "folder": None,
     }
     assert links_of(web, "/") == NAV
 
@@ -165,6 +176,7 @@ def test_a_graph_page_shows_the_summary_of_the_stored_graph(web: WebApp, index: 
         "source_type": "manual",
         "revision": 1,
         "updated_at": stored.updated_at.isoformat().replace("+00:00", "Z"),
+        "folder_id": None,
     }
 
 

@@ -7,6 +7,14 @@
 All locators are ``data-testid`` ones (UI.md section 4.3). Waits follow the DOM signals of
 ``support.uiwait``: ``wait_preview`` after an edit, never a sleep. The entries table lives in
 ``ui_a_entries.EntriesPanel``, the source tabs in ``ui_a_sources.SourcePanel``.
+
+Dual mode (see ``ui_a_chrome`` and ``ui_a_wizard``): ``expect_ready`` finishes the new-graph wizard
+when the page has one (``wizard_name`` is the name it used, ``None`` without a wizard); the name /
+description / tags helpers (``set_details``, ``set_name``, ``expect_name``, ``expect_description``,
+``expect_details``) go through the details dialog when the page has one and use the inline
+fields otherwise; ``open_section("style")`` and ``open_export()`` open the chart settings popover
+when the page has one. The plain locators ``name_field`` / ``tags_field`` / ``description_field``
+are only on the page while those fields are (the dialog is open).
 """
 
 from __future__ import annotations
@@ -17,10 +25,23 @@ from typing import TYPE_CHECKING, Final, Literal
 from playwright.sync_api import expect
 
 from tests.e2e.support.pages import AppPage
-from tests.e2e.support.uiwait import DONUT_CHART, wait_chart, wait_editor, wait_idle, wait_preview
+from tests.e2e.support.ui_a_chrome import DetailsDialog, EditorChrome
+from tests.e2e.support.ui_a_wizard import NewGraphWizard, finish_wizard
+from tests.e2e.support.uiwait import (
+    DONUT_CHART,
+    wait_chart,
+    wait_editor,
+    wait_idle,
+    wait_page,
+    wait_preview,
+    wait_shell,
+)
 
 if TYPE_CHECKING:
     from playwright.sync_api import Locator
+
+    from tests.e2e.support.server import LiveServer
+    from tests.e2e.support.watch import WatchedPage
 
 Section = Literal["source", "transform", "style"]
 SAVED_URL: Final = re.compile(r"/graphs/([0-9a-f]{32})/edit$")
@@ -38,9 +59,29 @@ class EditorPage(AppPage):
     path = "/graphs/new"
     name = "new"
 
+    def __init__(self, page: WatchedPage, server: LiveServer) -> None:
+        super().__init__(page, server)
+        self.chrome = EditorChrome(page)
+        self.wizard_name: str | None = None
+
     def expect_ready(self) -> None:
-        super().expect_ready()
+        if self.name == "new":
+            wait_shell(self.page)
+            wait_page(self.page, self.name)
+            self.wizard_name = finish_wizard(self.page)
+            wait_idle(self.page)
+        else:
+            super().expect_ready()
         wait_editor(self.page)
+
+    def goto_wizard(self) -> NewGraphWizard:
+        """Open ``/graphs/new`` and stop at step 1 of the wizard (for the wizard's own tests)."""
+        self.page.goto(self.url_for())
+        wait_shell(self.page)
+        wait_page(self.page, self.name)
+        wizard = NewGraphWizard(self.page)
+        wizard.expect_showing()
+        return wizard
 
     # ------------------------------------------------------------------ fields
 
@@ -72,6 +113,33 @@ class EditorPage(AppPage):
         self.tags_field.fill(tag)
         self.tags_field.press("Enter")
 
+    # ------------------------------------------------------------------ details
+
+    def open_details(self) -> DetailsDialog:
+        return self.chrome.open_details()
+
+    def set_details(
+        self, *, name: str | None = None, description: str | None = None, tags: tuple[str, ...] = ()
+    ) -> None:
+        self.chrome.set_details(name=name, description=description, tags=tags)
+
+    def set_name(self, name: str) -> None:
+        self.chrome.set_details(name=name)
+
+    def expect_name(self, name: str) -> None:
+        self.chrome.expect_details(name=name)
+
+    def expect_description(self, text: str) -> None:
+        self.chrome.expect_details(description=text)
+
+    def expect_details(
+        self, *, name: str | None = None, description: str | None = None, tags: tuple[str, ...] = ()
+    ) -> None:
+        self.chrome.expect_details(name=name, description=description, tags=tags)
+
+    def description_value(self) -> str:
+        return self.chrome.description_value()
+
     # ------------------------------------------------------------------ data and chart
 
     def fill_source(self, text: str) -> None:
@@ -94,8 +162,15 @@ class EditorPage(AppPage):
         self.tid("chart-tab-donut").click()
         wait_chart(self.page, DONUT_CHART)
 
+    def open_export(self) -> None:
+        """Make the export buttons usable (the chart settings popover, when the page has one)."""
+        self.chrome.open_export()
+
     def open_section(self, section: Section) -> None:
         """Expand a collapsible section (``transform`` / ``style``) when it is collapsed."""
+        if section == "style":
+            self.chrome.open_style()
+            return
         head = self.tid(f"section-{section}")
         if not head.evaluate("el => el.parentElement.open"):
             head.click()

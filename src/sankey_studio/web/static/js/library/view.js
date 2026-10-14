@@ -2,14 +2,18 @@
  * The result area of the library: summary line, card grid, and the honest states around it
  * (empty library, no match, error). Created once; `show*` calls swap the content.
  *
- * - `showItems({items, total, truncated}, state)`: the grid, or an empty state when nothing is
- *   there. Nothing at all and no filter = the library is empty (`library-empty`, with the
- *   create-your-first-graph and import calls to action); nothing under a filter = no match.
+ * - `showItems({items, total, truncated}, state, scope)`: the grid, or an empty state when nothing
+ *   is there. `scope` (folders.js `scope()`) says how many collections exist and where the page is.
+ *   Nothing at all, no filter and no collection = the library is empty (`library-empty`, with the
+ *   create-your-first-graph and import calls to action); nothing in an open collection = an empty
+ *   collection (`library-folder-empty`); nothing under a filter = no match. A search or a tag looks
+ *   at every collection, which a note (`library-scope-note`) says whenever collections exist.
  * - `showError(error, retry)`: error state with a retry button.
  * - `setStale(bool)`: dims the current content while a new page loads (no skeleton flash).
  * - the card checkboxes follow the selection (cap: the rest are disabled with an explanation).
  *
- * Test ids: library-empty, library-no-results, library-count, graph-card (see card.js).
+ * Test ids: library-empty, library-folder-empty, library-no-results, library-scope-note,
+ * library-count, graph-card (see card.js).
  */
 
 import { lockWriteControls, canWrite } from "../core/boot.js";
@@ -40,6 +44,37 @@ function emptyLibrary(onImport) {
   });
 }
 
+function emptyFolder(scope, state) {
+  const writable = canWrite();
+  const actions = writable
+    ? [
+      h("a", { class: "btn btn-primary", href: `/graphs/new?folder=${state.folder}` }, "New graph here"),
+      h("button", { type: "button", class: "btn", on: { click: scope.onNewFolder } }, "New collection"),
+    ]
+    : [];
+  return emptyState({
+    title: "This collection has no graphs",
+    message: writable
+      ? "Create a graph here, or move graphs in with the Move button on their cards."
+      : "This server is read-only, so graphs cannot be created or moved here.",
+    icon: "folder",
+    actions,
+    testid: "library-folder-empty",
+  });
+}
+
+/** What the result area shows when a level has no graph and no filter is set. */
+function nothingHere(state, scope, handlers) {
+  if (scope.inFolder && scope.children === 0) {
+    return emptyFolder(scope, state);
+  }
+  if (scope.inFolder || scope.folders > 0) {
+    const where = scope.inFolder ? "directly in this collection" : "outside the collections";
+    return h("p", { class: "hint folder-hint" }, `There are no graphs ${where}.`);
+  }
+  return emptyLibrary(handlers.onImport);
+}
+
 function noMatch(state, onClear) {
   const what = [state.q ? `“${state.q}”` : null, state.tag ? `the tag “${state.tag}”` : null].filter(Boolean).join(" and ");
   return emptyState({
@@ -62,14 +97,15 @@ function summaryText(result, state) {
 }
 
 class ResultsView {
-  /** @param {{selection: object, handlers: object}} options  handlers: onSelect, onTag, onDuplicate, onDelete, onImport, onClear */
+  /** @param {{selection: object, handlers: object}} options  handlers: onSelect, onTag, onDuplicate, onDelete, onMove, onImport, onClear */
   constructor({ selection, handlers }) {
     this.selection = selection;
     this.handlers = handlers;
     this.summary = h("p", { class: "results-summary", tabindex: "-1", "data-testid": "library-count" });
     this.note = h("p", { class: "hint results-note", hidden: true });
+    this.scopeNote = h("p", { class: "hint results-note", hidden: true, "data-testid": "library-scope-note" }, "Searching all collections.");
     this.body = h("div", { class: "results-body" });
-    this.el = h("section", { class: "results", "aria-label": "Graphs", tabindex: "-1" }, this.summary, this.note, this.body);
+    this.el = h("section", { class: "results", "aria-label": "Graphs", tabindex: "-1" }, this.summary, this.note, this.scopeNote, this.body);
     selection.subscribe(() => this.syncBoxes());
   }
 
@@ -108,22 +144,28 @@ class ResultsView {
   showError(error, retry) {
     this.summary.hidden = true;
     this.note.hidden = true;
+    this.scopeNote.hidden = true;
     this.body.replaceChildren(errorState({ title: "The library could not be loaded", message: error.friendly ?? error.message, onRetry: retry }));
   }
 
-  /** Draws a page: the grid, or the empty library / no match state. */
-  showItems(result, state) {
+  /** Draws a page: the grid, or the empty library / empty collection / no match state. */
+  showItems(result, state, scope) {
     const filtered = Boolean(state.q || state.tag);
-    this.summary.hidden = result.items.length === 0;
+    this.scopeNote.hidden = !(filtered && scope.folders > 0);
+    this.summary.hidden = result.items.length === 0 || scope.missing;
     this.note.hidden = !result.truncated;
     this.note.textContent = result.truncated ? "This order covers the 1,000 most recently updated graphs that match." : "";
+    if (scope.missing) {
+      this.body.replaceChildren();
+      return;
+    }
     if (result.items.length === 0) {
-      const { onImport, onClear } = this.handlers;
-      this.body.replaceChildren(result.total === 0 && !filtered ? emptyLibrary(onImport) : noMatch(state, onClear));
+      const empty = result.total === 0 && !filtered ? nothingHere(state, scope, this.handlers) : noMatch(state, this.handlers.onClear);
+      this.body.replaceChildren(empty);
       return;
     }
     this.summary.textContent = stripBidi(summaryText(result, state));
-    const context = { selection: this.selection, ...this.handlers };
+    const context = { selection: this.selection, ...this.handlers, canMove: scope.folders > 0, pathOf: filtered ? scope.pathOf : null };
     const cards = result.items.filter((item) => isGraphId(item.id)).map((item) => h("li", null, graphCard(item, context)));
     this.body.replaceChildren(h("ul", { class: "library-grid", role: "list" }, cards));
     lockWriteControls(this.body);

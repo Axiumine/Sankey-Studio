@@ -25,7 +25,7 @@ from __future__ import annotations
 import json
 import re
 import uuid
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any, Final, Protocol
 
 from sankey_studio.errors import NotFoundError, StorageError
 from sankey_studio.models import GRAPH_ID_PATTERN, SCHEMA_VERSION
@@ -37,6 +37,8 @@ if TYPE_CHECKING:
 
 #: Collection (inside ``AppSettings.storage_database``) used by the Mongo graph store.
 MONGO_GRAPHS_COLLECTION = "sankey_studio_graphs"
+#: Collection (same database) used by the Mongo library-folder store (shown as "collections").
+MONGO_FOLDERS_COLLECTION: Final = "sankey_studio_collections"
 
 _GRAPH_ID_RE = re.compile(GRAPH_ID_PATTERN)
 
@@ -52,19 +54,20 @@ def check_graph_id(graph_id: str) -> str:
     return graph_id
 
 
-def upgrade_doc(doc: dict[str, Any]) -> dict[str, Any]:
+def upgrade_doc(doc: dict[str, Any], noun: str = "graph") -> dict[str, Any]:
     """Prepare a stored document for ``GraphDefinition.model_validate`` (returns a new dict).
 
     Drops the Mongo ``_id``, fills a missing ``schema_version`` with 1 and applies upgrades from
     older versions (none exist yet). A document written by a NEWER version raises
-    ``StorageError`` instead of being silently mangled.
+    ``StorageError`` instead of being silently mangled. ``noun`` names the record in messages
+    (``"graph"``, or ``"folder"`` for a library folder).
     """
     out = {k: v for k, v in doc.items() if k != "_id"}
     version = out.setdefault("schema_version", 1)
     if not isinstance(version, int) or version < 1:
-        raise StorageError("Stored graph has an invalid schema version")
+        raise StorageError(f"Stored {noun} has an invalid schema version")
     if version > SCHEMA_VERSION:
-        raise StorageError("Stored graph was written by a newer version of sankey-studio")
+        raise StorageError(f"Stored {noun} was written by a newer version of sankey-studio")
     return out
 
 
@@ -179,8 +182,12 @@ class GraphRepository(Protocol):  # pragma: no mutate block - interface only, ne
         """Raises ``NotFoundError`` (also for a malformed id) or ``StorageError`` (unreadable)."""
         ...
 
-    def create(self, data: GraphCreate) -> GraphDefinition:
-        """Assigns a new id, ``revision=1`` and both timestamps (UTC, tz-aware)."""
+    def create(self, data: GraphCreate, *, folder_id: str | None = None) -> GraphDefinition:
+        """Assigns a new id, ``revision=1`` and both timestamps (UTC, tz-aware).
+
+        ``folder_id`` places the graph in a library folder (``None`` = the top level); the caller
+        has checked that the folder exists. ``update`` never changes it.
+        """
         ...
 
     def update(self, graph_id: str, data: GraphUpdate) -> GraphDefinition:

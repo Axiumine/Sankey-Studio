@@ -20,7 +20,9 @@ from fastapi.routing import APIRoute
 from sankey_studio.web.routers import (
     ALL_ROUTERS,
     compare,
+    edits,
     exports,
+    folders,
     graphs,
     mongo,
     pages,
@@ -133,10 +135,13 @@ def test_all_routers_is_the_registration_order_support_first_and_pages_last() ->
         sources.router,
         mongo.router,
         preview.router,
+        edits.router,
+        edits.writes_router,
         graphs.router,
+        folders.router,
         compare.router,
         exports.router,
         pages.router,
     )
     assert expected == ALL_ROUTERS
-    assert len(ALL_ROUTERS) == len({id(router) for router in ALL_ROUTERS}) == 9
+    assert len(ALL_ROUTERS) == len({id(router) for router in ALL_ROUTERS}) == 12

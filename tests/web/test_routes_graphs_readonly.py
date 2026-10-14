@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 JSON_HEADERS = {"Content-Type": "application/json"}
 #: Bodies FastAPI cannot decode as JSON (it would answer 422 before any dependency ran).
 UNDECODABLE = ["{", "", "not json", "[1,"]
-BUNDLE = {"format": "sankey-studio/graphs", "version": 1, "graphs": []}
+BUNDLE = {"format": "sankey-studio/graphs", "version": 2, "graphs": []}
 MESSAGE = "This action is disabled in read-only remote mode (start with --allow-remote-writes)"
 
 
