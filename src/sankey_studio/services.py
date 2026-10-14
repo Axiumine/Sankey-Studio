@@ -4,10 +4,11 @@ The web layer talks to this class and nothing else. One instance lives for the w
 
 * ``graphs()`` hands out ONE repository per ``(backend, connection, database, graphs_dir)`` so
   the file locks (and the Mongo slots) are shared by every request; it is rebuilt only when that
-  key changes.
+  key changes. ``folders()`` does the same for the library folders under the SAME key, so the
+  two always sit on the same backend (on files they share one lock and one directory).
 * ``update_settings`` changes the storage target in a fixed order that never loses data: ping the
-  destination, optionally copy the graphs, then persist the settings. The old store is never
-  deleted and any failure leaves the stored settings untouched.
+  destination, optionally copy the folders and the graphs, then persist the settings. The old
+  store is never deleted and any failure leaves the stored settings untouched.
 * ``update_settings`` and ``test_storage`` (it connects to a caller-supplied URI) are privileged:
   both raise ``ReadOnlyModeError`` in remote mode without ``--allow-remote-writes``.
 * ``settings_transaction()`` serialises every writer of ``settings.json`` on ONE lock. A writer
@@ -30,10 +31,13 @@ from sankey_studio.mongo import ClientFactory, MongoClients, default_factory
 from sankey_studio.sources.base import SourceContext
 from sankey_studio.storage import (
     SettingsStore,
-    copy_graphs,
+    Stores,
+    copy_library,
     dump_settings,
     load_settings,
+    make_folder_repository,
     make_graph_repository,
+    make_stores,
 )
 from sankey_studio.storage.atomic import DIR_MODE, os_reason
 
@@ -43,7 +47,7 @@ if TYPE_CHECKING:
 
     from sankey_studio.config import BootstrapConfig
     from sankey_studio.models import AppSettings
-    from sankey_studio.storage import CopyReport, GraphRepository
+    from sankey_studio.storage import CopyReport, FolderRepository, GraphRepository
 
 #: ``(backend, connection, database, resolved graphs_dir)``
 _RepoKey = tuple[str, str | None, str, "Path"]
@@ -84,6 +88,7 @@ class Services:
         self.mongo = MongoClients(self._store.load, self._factory)
         self._graphs_lock = threading.Lock()
         self._graphs: tuple[_RepoKey, GraphRepository] | None = None
+        self._folders: tuple[_RepoKey, FolderRepository] | None = None
         #: Re-entrant: ``settings_transaction`` encloses ``update_settings``, which locks itself.
         self._update_lock = threading.RLock()
 
@@ -101,26 +106,39 @@ class Services:
 
     # ------------------------------------------------------------------ storage
 
-    def graphs(self) -> GraphRepository:
-        """The cached repository for the current settings (one instance per equal key)."""
-        settings = self.settings()
-        key: _RepoKey = (
+    def _repo_key(self, settings: AppSettings) -> _RepoKey:
+        """What identifies the stores of ``settings``: graphs and folders share it."""
+        return (
             settings.storage_backend,
             settings.storage_connection,
             settings.storage_database,
             self.config.graphs_dir.resolve(),
         )
+
+    def graphs(self) -> GraphRepository:
+        """The cached repository for the current settings (one instance per equal key)."""
+        settings = self.settings()
+        key = self._repo_key(settings)
         with self._graphs_lock:
             if self._graphs is None or self._graphs[0] != key:
                 self._graphs = (key, make_graph_repository(settings, self.mongo, self.config))
             return self._graphs[1]
 
+    def folders(self) -> FolderRepository:
+        """The cached folder repository for the current settings, under the key of ``graphs()``."""
+        settings = self.settings()
+        key = self._repo_key(settings)
+        with self._graphs_lock:
+            if self._folders is None or self._folders[0] != key:
+                self._folders = (key, make_folder_repository(settings, self.mongo, self.config))
+            return self._folders[1]
+
     @contextmanager
-    def _candidate(self, settings: AppSettings) -> Iterator[GraphRepository]:
-        """A repository on candidate ``settings`` with clients of its own (nothing is saved)."""
+    def _candidate(self, settings: AppSettings) -> Iterator[Stores]:
+        """Graphs and folders on candidate ``settings``, own clients (nothing is saved)."""
         clients = MongoClients(lambda: settings, self._factory)
         try:
-            yield make_graph_repository(settings, clients, self.config)
+            yield make_stores(settings, clients, self.config)
         finally:
             clients.close()
 
@@ -136,8 +154,8 @@ class Services:
         caller supplies, which only a caller who may change the settings should be able to do.
         """
         self._require_privileged_writes(MSG_READ_ONLY_TEST)
-        with self._candidate(settings) as repo:
-            repo.ping()
+        with self._candidate(settings) as stores:
+            stores.ping()
 
     @contextmanager
     def settings_transaction(self) -> Iterator[None]:
@@ -167,7 +185,7 @@ class Services:
             destination.ping()
             if not migrate:
                 return None
-            return copy_graphs(self.graphs(), destination)
+            return copy_library(Stores(self.graphs(), self.folders()), destination)
 
     def _drop_stale_clients(self, old: AppSettings, new: AppSettings) -> None:
         if old.mongo_timeout_ms != new.mongo_timeout_ms:  # the timeout is baked into a client

@@ -1,11 +1,13 @@
 """Request and response models of the web API (``from sankey_studio.web.schemas import ...``).
 
-``queries`` holds the query-string models, ``forms`` the multipart form, ``settings`` the settings
-wire models and ``merge_settings``. The names are re-exported here so the import path stays stable.
+``queries`` holds the query-string models, ``forms`` the multipart form, ``folders`` the library
+folder wire models, ``settings`` the settings wire models and ``merge_settings``. The names are
+re-exported here so the import path stays stable.
 """
 
 from __future__ import annotations
 
+from sankey_studio.web.schemas.folders import MOVE_IDS_MAX, FolderList, MoveGraphsIn
 from sankey_studio.web.schemas.forms import (
     UPLOAD_FILE_FIELD,
     UploadForm,
@@ -19,6 +21,7 @@ from sankey_studio.web.schemas.queries import (
     LIST_LIMIT_MAX,
     CollectionsQuery,
     CompareQuery,
+    CreateQuery,
     EntriesQuery,
     ExportChart,
     ExportFormat,
@@ -27,6 +30,7 @@ from sankey_studio.web.schemas.queries import (
     ListQuery,
     RenderQuery,
     SampleQuery,
+    ScopeQuery,
     ThemeQuery,
     split_ids,
 )
@@ -50,21 +54,26 @@ __all__ = [
     "EXPORT_IDS_MAX",
     "IMAGE_SIDE_MAX",
     "LIST_LIMIT_MAX",
+    "MOVE_IDS_MAX",
     "UPLOAD_FILE_FIELD",
     "BootstrapOut",
     "CollectionsQuery",
     "CompareQuery",
     "ConnectionOut",
     "CopyReportOut",
+    "CreateQuery",
     "EntriesQuery",
     "ExportChart",
     "ExportFormat",
     "ExportQuery",
+    "FolderList",
     "IdsQuery",
     "ListQuery",
     "MongoConnectionIn",
+    "MoveGraphsIn",
     "RenderQuery",
     "SampleQuery",
+    "ScopeQuery",
     "SettingsIn",
     "SettingsOut",
     "SettingsSaved",

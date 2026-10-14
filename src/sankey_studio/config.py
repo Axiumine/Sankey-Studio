@@ -101,6 +101,9 @@ class BootstrapConfig(BaseSettings):
     remote_mode: bool = False
     #: ``--allow-remote-writes``: lift the read-only restriction in remote mode.
     remote_writes: bool = False
+    #: ``--allow-source-writes``: with ``remote_writes``, also allow writing edits back to
+    #: MongoDB sources. Files follow ``privileged_writes_allowed``. Loopback: always allowed.
+    source_writes: bool = False
 
     @field_validator("data_dir", "sources_dir")
     @classmethod
@@ -113,6 +116,8 @@ class BootstrapConfig(BaseSettings):
             raise ValueError("a non-loopback host needs remote_mode (--allow-remote)")
         if self.remote_writes and not self.remote_mode:
             raise ValueError("remote_writes needs remote_mode (--allow-remote)")
+        if self.source_writes and not self.remote_writes:
+            raise ValueError("source_writes needs remote_writes (--allow-remote-writes)")
         if "*" in self.allowed_hosts and not self.remote_mode:
             raise ValueError("allowed_hosts may only contain '*' in remote_mode")
         self._check_sources_dir()
@@ -167,3 +172,11 @@ class BootstrapConfig(BaseSettings):
     def privileged_writes_allowed(self) -> bool:
         """False in remote mode unless ``remote_writes``: settings/upload/delete are refused."""
         return not self.remote_mode or self.remote_writes
+
+    @property
+    def source_writes_allowed(self) -> bool:
+        """MongoDB write-back: always on loopback; in remote mode only with ``source_writes``.
+
+        Files use ``privileged_writes_allowed`` instead.
+        """
+        return not self.remote_mode or self.source_writes

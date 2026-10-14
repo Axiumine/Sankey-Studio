@@ -160,3 +160,34 @@ def test_the_saved_form_pairs_the_draft_with_the_name_description_and_tags() -> 
 def test_a_node_name_that_looks_like_a_prototype_key_survives() -> None:
     draft = {"source": TEXT, "transform": {"merge_nodes": json.loads('{"__proto__": "x"}')}}
     assert run_node([draft])["out"][0]["transform"] == {"merge_nodes": {"__proto__": "x"}}
+
+
+def test_a_server_answer_with_the_new_default_fields_has_the_same_form() -> None:
+    server = {
+        "source": {**SERVER_TEXT, "write_back": None},
+        "transform": {"extra_links": []},
+        "style": {"node_order": []},
+    }
+    assert run_node([server, {"source": TEXT}])["out"] == [{"source": FORM}, {"source": FORM}]
+
+
+def test_a_stored_write_back_preference_stays_on_both_sides() -> None:
+    pref = {"mode": "source", "target": "file:budget/2025.csv"}
+    loaded = {"source": {**SERVER_TEXT, "write_back": pref}}
+    typed = {"source": {**TEXT, "write_back": pref}}
+    kept = {"source": {**FORM, "write_back": pref}}
+    assert run_node([loaded, typed])["out"] == [kept, kept]
+
+
+def test_extra_links_with_a_null_category_match_the_ones_without() -> None:
+    link = {"source": "A", "target": "B", "value": 5}
+    server = {"source": TEXT, "transform": {"extra_links": [{**link, "category": None}]}}
+    typed = {"source": TEXT, "transform": {"extra_links": [{**link, "category": ""}]}}
+    plain = {"source": TEXT, "transform": {"extra_links": [link]}}
+    out = run_node([server, typed, plain])["out"]
+    assert out == [{"source": FORM, "transform": {"extra_links": [link]}}] * 3
+
+
+def test_a_stored_node_order_stays() -> None:
+    draft = {"source": TEXT, "style": {"node_order": ["b", "a"]}}
+    assert run_node([draft])["out"][0]["style"] == {"node_order": ["b", "a"]}

@@ -178,3 +178,18 @@ def is_reserved_category(value: str) -> bool:
     Raises ``ValueError`` like ``normalize_category``.
     """
     return category_key(value) in RESERVED_CATEGORY_KEYS
+
+
+#: A cell that starts with one of these (after leading blanks) can be read as a formula.
+FORMULA_STARTS = ("=", "+", "-", "@")
+#: Characters a spreadsheet may skip before it looks at the first real one.
+LEADING_BLANKS = " \t\r\n"
+
+
+def starts_like_formula(text: str) -> bool:
+    """True when a spreadsheet could execute ``text`` as a formula.
+
+    Triggers: the text starts with ``= + - @`` after leading blanks (space, TAB, CR, LF), or the
+    raw text starts with a TAB or a carriage return.
+    """
+    return text.lstrip(LEADING_BLANKS).startswith(FORMULA_STARTS) or text.startswith(("\t", "\r"))

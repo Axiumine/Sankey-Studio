@@ -110,7 +110,12 @@ def test_the_bytes_of_a_small_export_are_those_of_a_whole_json_dumps(web: WebApp
 
 def test_a_bundle_of_no_graph_is_still_a_json_document() -> None:
     body = encode_bundle(FakeLibrary(0, 0).get, [], HUGE)
-    assert json.loads(body) == {"format": "sankey-studio/graphs", "version": 1, "graphs": []}
+    assert json.loads(body) == {
+        "format": "sankey-studio/graphs",
+        "version": 2,
+        "graphs": [],
+        "folders": [],
+    }
 
 
 def test_a_repeated_id_is_loaded_and_written_once() -> None:

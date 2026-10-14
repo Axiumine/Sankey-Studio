@@ -1,4 +1,4 @@
-/* Editor page: the two-pane shell and the INPUT panels (meta, source, transform, style).
+/* Editor page: the row layout, the chart settings popover and the INPUT panels (meta, source, transform, style).
    The output panels (chart, entries, export, save bar) have their own sheet, pages-editor-output.css.
    Loaded by js/pages/editor.js before the page draws. Tokens only: no colour literals here, the
    colours come from tokens.css so light and dark follow the theme. Class names start with ed-. */
@@ -8,19 +8,68 @@
 .ed-root { min-width: 0; }
 .ed-slot { min-width: 0; }
 .ed-slot-savebar { display: contents; }
-.ed-pane-form { display: flex; flex-direction: column; gap: var(--space-3); }
-.ed-pane-output { display: flex; flex-direction: column; gap: var(--space-4); }
 .ed-slot:empty { display: none; }
 .ed-slot-entries { margin-top: var(--space-5); }
 
+/* The chart is a full-width row on top; its settings popover is anchored to the row. */
+.ed-chart-row { position: relative; min-width: 0; margin-bottom: var(--space-4); }
+
+/* Source and Transform share one row from 900px and stack below it. */
+.ed-form-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); align-items: start; }
+
 @media (min-width: 900px) {
-  .ed-jump { display: none; }
-  /* the output pane (chart, export) scrolls on its own: leave room for focus rings at its edges */
-  .ed-pane-output { padding: 2px; margin: -2px; }
+  .ed-form-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-5); }
 }
 
-.ed-card { overflow: visible; }
-.ed-meta .textarea { min-height: 4.25rem; }
+/* ------------------------------------------------------------------ chart settings popover */
+
+.ed-settings {
+  width: min(32rem, calc(100vw - 2 * var(--gutter)));
+  max-height: min(75vh, 44rem);
+  overflow-y: auto;
+}
+
+.ed-settings-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3) 0;
+}
+
+.ed-settings-title { margin: 0; font-size: var(--text-md); font-weight: var(--weight-semibold); }
+
+/* the panels were sections and cards of their own; inside the popover they are flat */
+.ed-settings .ed-section,
+.ed-settings .out-card { border: 0; border-radius: 0; box-shadow: none; background: transparent; }
+.ed-settings .out-export > .card-header { display: none; }
+/* the export card waits for the first preview; its tab must not be blank meanwhile */
+.ed-settings .out-export[hidden] { display: block !important; }
+
+.ed-details .textarea { min-height: 4.25rem; }
+
+/* ------------------------------------------------------------------ change data source dialog */
+
+.ed-kinds { display: grid; gap: var(--space-2); min-width: 0; margin: 0; padding: 0; border: 0; }
+.ed-kinds-legend { padding: 0; margin-bottom: var(--space-2); color: var(--ink); font-weight: var(--weight-semibold); }
+
+.ed-kind {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.ed-kind:hover { border-color: var(--border-strong); }
+.ed-kind:has(.ed-kind-input:checked) { border-color: var(--ink); background: var(--wash); }
+.ed-kind:has(.ed-kind-input:disabled) { cursor: not-allowed; opacity: 0.7; }
+.ed-kind-input { flex: none; margin-top: 0.2rem; }
+.ed-kind-body { display: grid; gap: var(--space-1); min-width: 0; }
+.ed-kind-label { color: var(--ink); font-weight: var(--weight-semibold); }
+.ed-kind-text { margin: 0; }
+.ed-kind-keep { padding-top: var(--space-1); }
 
 /* ------------------------------------------------------------------ sections */
 
@@ -101,6 +150,17 @@
 .ed-subtitle { font-size: var(--text-md); }
 .ed-narrow { max-width: 8rem; }
 .ed-toolbar { gap: var(--space-2); }
+/* the paste box: the Clear icon sits top right, clear of the vertical scrollbar; the bottom right is the resize grip and the horizontal scrollbar (wrap=off) */
+.ed-textarea { position: relative; display: flex; }
+.ed-textarea > .textarea { flex: 1 1 auto; padding-inline-end: calc(var(--space-5) + 1.625rem + var(--space-1)); }
+.ed-textarea > .btn.ed-textarea-clear {
+  position: absolute;
+  top: var(--space-1);
+  inset-inline-end: var(--space-5);
+  background-color: var(--surface); /* solid: a long line scrolled under the icon must not show through */
+}
+.ed-textarea > .btn.ed-textarea-clear:hover { background-image: linear-gradient(var(--wash), var(--wash)); }
+.ed-textarea > .btn.ed-textarea-clear:active { background-image: linear-gradient(var(--wash-strong), var(--wash-strong)); }
 .ed-count { margin-left: auto; color: var(--ink-secondary); font-size: var(--text-sm); }
 .ed-check { display: flex; flex-direction: column; gap: 2px; }
 .ed-title-group .btn { flex: none; }
@@ -402,3 +462,33 @@
   .ed-row[data-state="partial"] { box-shadow: inset 3px 0 0 Highlight; }
   .check input[role="switch"]:checked { background: Highlight; }
 }
+
+/* ------------------------------------------------------------------ new graph wizard */
+
+.ed-wizard { max-width: 48rem; margin-inline: auto; }
+.ed-wizard-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ink-secondary);
+  font-size: var(--text-sm);
+}
+.ed-wizard-steps li { display: inline-flex; align-items: center; gap: var(--space-2); }
+.ed-wizard-steps li[aria-current="step"] { color: var(--ink); font-weight: var(--weight-semibold); }
+.ed-wizard-num {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+}
+.ed-wizard-steps li[aria-current="step"] .ed-wizard-num { border-color: var(--ink); background: var(--wash); }
+.ed-wizard-heading { margin: 0; font-size: var(--text-lg); }
+.ed-wizard-heading:focus-visible { outline-offset: 2px; }
+.ed-wizard-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-2); }
+.ed-wizard-cancel { margin-inline-end: auto; }
+.ed-wizard-note { margin: 0; }

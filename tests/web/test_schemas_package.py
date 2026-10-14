@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 
 from sankey_studio.web import schemas
-from sankey_studio.web.schemas import forms, queries, settings
+from sankey_studio.web.schemas import folders, forms, queries, settings
 
 NAMED_IN_THE_SPEC = [
     "ThemeQuery",
@@ -13,6 +13,10 @@ NAMED_IN_THE_SPEC = [
     "CompareQuery",
     "IdsQuery",
     "ListQuery",
+    "CreateQuery",
+    "ScopeQuery",
+    "FolderList",
+    "MoveGraphsIn",
     "EntriesQuery",
     "ExportQuery",
     "CollectionsQuery",
@@ -35,10 +39,14 @@ def test_every_exported_name_exists_once_and_is_the_object_of_its_module() -> No
     assert len(schemas.__all__) == len(set(schemas.__all__))
     for name in schemas.__all__:
         exported = getattr(schemas, name)
-        homes = [m for m in (queries, forms, settings) if getattr(m, name, None) is exported]
+        homes = [
+            m for m in (queries, forms, folders, settings) if getattr(m, name, None) is exported
+        ]
         assert homes, name
 
 
 def test_the_package_exports_exactly_what_its_modules_export() -> None:
-    from_modules = {name for module in (queries, forms, settings) for name in module.__all__}
+    from_modules = {
+        name for module in (queries, forms, folders, settings) for name in module.__all__
+    }
     assert set(schemas.__all__) == from_modules

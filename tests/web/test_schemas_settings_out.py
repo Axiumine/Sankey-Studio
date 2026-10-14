@@ -240,7 +240,8 @@ def test_the_put_answer_carries_the_settings_and_no_report_without_a_copy(
 
 
 def test_the_put_answer_lists_the_copy_report(modes: Modes, settings: AppSettings) -> None:
-    report = CopyReport(copied=5, skipped=2, unreadable=3, unreadable_ids=("a" * 32, "b" * 32))
+    ids = ("a" * 32, "b" * 32)
+    report = CopyReport(5, 2, 3, ids, folders=4, folders_skipped=1)
     saved = settings_saved(UpdateResult(settings, report), modes.local)
     assert isinstance(saved.copy_report, CopyReportOut)
     assert saved.copy_report.model_dump() == {
@@ -248,6 +249,8 @@ def test_the_put_answer_lists_the_copy_report(modes: Modes, settings: AppSetting
         "skipped": 2,
         "unreadable": 3,
         "unreadable_ids": ["a" * 32, "b" * 32],
+        "folders": 4,
+        "folders_skipped": 1,
     }
 
 

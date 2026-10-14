@@ -223,7 +223,7 @@ def test_the_editor_options_feed_the_viewer_switches(
     editor = EditorPage(page, live_server)
     editor.goto()
     editor.paste(BUDGET_CATEGORISED.csv)
-    editor.name_field.fill(unique_name("Editor display"))
+    editor.set_name(unique_name("Editor display"))
     editor.open_section("style")
     expect(page.get_by_label("Show values in node labels")).to_have_count(0)  # renamed
     charts = ChartDom(page)
@@ -232,6 +232,7 @@ def test_the_editor_options_feed_the_viewer_switches(
     editor.wait_preview()
     expect(charts.node_label("Salary").locator("tspan")).to_have_text(["Salary", "3,000"])
     editor.open_donut()
+    editor.open_section("style")  # the chart settings popover closed when the Donut tab was used
     page.get_by_label("Show values", exact=True).check()
     wait_preview(page, "donut-chart")
     expect(charts.donut_slice(0).locator("tspan")).to_have_text(["46.1%", "3,800"])

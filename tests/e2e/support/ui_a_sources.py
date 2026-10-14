@@ -2,7 +2,8 @@
 
 ``SourcePanel(page)`` knows the tab strip (Text file, Paste, Upload, Manual, MongoDB), the upload
 control and its status line, the files table, and the column mapping block (the four column
-selects, the header checkbox and the "no category column" switch).
+selects, the header checkbox and the "no category column" switch), and the Clear icon of the
+Paste box with its "Cleared" toast (Undo).
 """
 
 from __future__ import annotations
@@ -57,6 +58,24 @@ class SourcePanel:
         if tab == "upload":
             panel = self.page.get_by_role("tabpanel", name="Upload")
             expect(panel.get_by_text("Choose a file", exact=True)).to_be_visible()
+
+    # ------------------------------------------------------------------ paste box
+
+    @property
+    def clear_button(self) -> Locator:
+        """The Clear icon inside the Paste box (visible only while the box holds text)."""
+        return self.tid("source-clear")
+
+    def clear(self) -> None:
+        self.clear_button.click()
+
+    @property
+    def cleared_toast(self) -> Locator:
+        """The "Cleared" toast that offers Undo."""
+        return self.tid("toast").filter(has_text="Cleared")
+
+    def undo_clear(self) -> None:
+        self.cleared_toast.get_by_role("button", name="Undo").click()
 
     # ------------------------------------------------------------------ upload
 

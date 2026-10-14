@@ -16,6 +16,8 @@
  *   extra lines. Only the copy that is drawn changes; a ResizeObserver wraps it again when the
  *   container changes width.
  * - A ResizeObserver keeps the chart fitted to its container (not only to the window).
+ * - `draw(..., {nodeEvents})` (the editor only): `nodeEvents()` returns `{click, move}` and is asked at each
+ *   event; see core/chart-nodes.js. The viewer, compare and export pass nothing.
  * - `handle.purge()` (or `disposeChart(div)`) frees Plotly's listeners and the observer: call it
  *   when the page or panel that owns the div goes away.
  * - `createChartFrame({height})` returns `{frame, surface}`: a `.chart-frame` with a reserved
@@ -26,6 +28,7 @@
  *   export_too_large or 501/502/503/504 (core/download.js `isClientFallback`).
  */
 
+import { attachNodeEvents, detachNodeEvents } from "./chart-nodes.js";
 import { h } from "./dom.js";
 import { stripBidi } from "./text.js";
 import { titleFit, wrapLayoutTitle } from "./title-wrap.js";
@@ -135,6 +138,7 @@ function makeHandle(div, Plotly) {
     resize: () => Plotly.Plots.resize(div),
     purge: () => {
       observer?.disconnect();
+      detachNodeEvents(div);
       Plotly.purge(div);
       handles.delete(div);
       titles.delete(div);
@@ -184,7 +188,7 @@ function prepare(div, copy, options) {
  * "true" once `Plotly.react` has resolved and "error" when loading plotly.js or drawing failed.
  * @param {HTMLElement} div
  * @param {{data: object[], layout?: object}} figure
- * @param {{theme?: string, label?: string, config?: object}} [options]
+ * @param {{theme?: string, label?: string, config?: object, nodeEvents?: () => object}} [options]
  * @returns {Promise<{div: HTMLElement, update: Function, resize: Function, purge: Function, downloadImage: Function}>}
  */
 export async function draw(div, figure, options = {}) {
@@ -196,6 +200,9 @@ export async function draw(div, figure, options = {}) {
     copy.layout ??= {};
     fitTitle(div, copy.layout);
     await Plotly.react(div, copy.data, copy.layout, { ...CHART_CONFIG, ...options.config });
+    if (options.nodeEvents) {
+      attachNodeEvents(div, options.nodeEvents);
+    }
     div.dataset.ready = "true";
     return handles.get(div) ?? makeHandle(div, Plotly);
   } catch (error) {

@@ -218,7 +218,7 @@ def test_other_errors_of_a_page_are_not_the_not_found_page_for_a_browser(
     def boom(*_args: object, **_kwargs: object) -> None:
         raise StorageError("Storage is unreachable")
 
-    monkeypatch.setattr(web.services.graphs().__class__, "list_graphs", boom)
+    monkeypatch.setattr(web.services.folders().__class__, "list_folders", boom)
     response = browse(web, "/")
     assert response.status_code == 503
     assert response.headers["content-type"] == HTML

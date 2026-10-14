@@ -8,12 +8,14 @@ from pydantic import Field, field_validator, model_validator
 
 from sankey_studio.models.base import (
     MAX_ENTRY_CATEGORIES,
+    MAX_EXTRA_LINKS,
     MAX_HIDE_NODES,
     MAX_MERGE_NODES,
     NAME_MAX,
     _Model,
 )
 from sankey_studio.models.fields import NameStr, OptUserCategory, UserCategory
+from sankey_studio.models.sources import Link
 
 
 class EntryCategory(_Model):
@@ -75,6 +77,9 @@ class TransformSpec(_Model):
         default_factory=list, max_length=MAX_ENTRY_CATEGORIES
     )
     category_rules: list[CategoryRule] = Field(default_factory=list, max_length=200)
+    #: Flows that live in this graph only (added without touching the data). RAW names, so
+    #: ``merge_nodes`` and ``hide_nodes`` apply like for any row; they count toward ``max_links``.
+    extra_links: list[Link] = Field(default_factory=list, max_length=MAX_EXTRA_LINKS)
     rules_override: bool = False
 
     @model_validator(mode="after")

@@ -11,6 +11,7 @@ from sankey_studio.models.base import (
     CATEGORY_MAX,
     HEX_COLOR_RE,
     MAX_COLOR_OVERRIDES,
+    MAX_NODE_ORDER,
     NAME_MAX,
     _Model,
 )
@@ -74,6 +75,17 @@ class StyleSpec(_Model):
     font_size: int = Field(default=13, ge=8, le=32)
     height: int = Field(default=560, ge=240, le=2400)
     donut: DonutStyle = Field(default_factory=DonutStyle)
+    #: Stored node order (post-merge names): layer 0 top to bottom, then layer 1, ... Names that
+    #: are not listed rank after all listed ones; names that vanished are ignored. Empty = the
+    #: order of the data.
+    node_order: list[NameStr] = Field(default_factory=list, max_length=MAX_NODE_ORDER)
+
+    @field_validator("node_order")
+    @classmethod
+    def _node_order(cls, v: list[str]) -> list[str]:
+        if len(set(v)) != len(v):
+            raise ValueError("node_order must not repeat a node name")
+        return v
 
     @field_validator("node_colors")
     @classmethod

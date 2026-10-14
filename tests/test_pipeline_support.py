@@ -129,12 +129,13 @@ class FakeClock:
 
 
 class RecordingCache:
-    """A dict-backed ``GraphCache`` that remembers every call (the app's cache, as a fake)."""
+    """A dict-backed ``ClearableCache`` that remembers every call (the app's cache, as a fake)."""
 
     def __init__(self) -> None:
         self.items: dict[str, SankeyGraph] = {}
         self.gets: list[str] = []
         self.puts: list[tuple[str, float]] = []
+        self.clears = 0
 
     def get(self, key: str, /) -> SankeyGraph | None:
         self.gets.append(key)
@@ -143,6 +144,10 @@ class RecordingCache:
     def put(self, key: str, value: SankeyGraph, ttl_s: float, /) -> None:
         self.puts.append((key, ttl_s))
         self.items[key] = value
+
+    def clear(self) -> None:
+        self.clears += 1
+        self.items.clear()
 
 
 def age_files(monkeypatch: pytest.MonkeyPatch) -> None:

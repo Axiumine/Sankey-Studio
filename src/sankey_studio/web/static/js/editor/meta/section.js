@@ -5,7 +5,9 @@
  *
  * `createSection({id, title, icon, open, testid})` -> `{el, body, setSummary(text),
  * setBadge(text, kind), setOpen(bool), isOpen()}`. Put the section's content in `body`.
- * The open/closed choice of each section is remembered on this device (guarded localStorage).
+ * The open/closed choice of each section is remembered on this device (guarded localStorage),
+ * unless `remember: false` (a section that must start open, e.g. inside a popover, and never
+ * stores its state).
  */
 
 import { h } from "../../core/dom.js";
@@ -34,11 +36,12 @@ function writeState(id, open) {
 
 /**
  * Builds a section.
- * @param {{id: string, title: string, icon?: string, open?: boolean, testid?: string}} options
+ * @param {{id: string, title: string, icon?: string, open?: boolean, testid?: string, remember?: boolean}} options
  * @returns {{el: HTMLDetailsElement, body: HTMLElement, setSummary: (text: string) => void, setBadge: (text: string, kind?: string) => void, setOpen: (open: boolean) => void, isOpen: () => boolean}}
  */
 export function createSection(options) {
-  const saved = readState()[options.id];
+  const remember = options.remember !== false;
+  const saved = remember ? readState()[options.id] : undefined;
   const summary = h("span", { class: "ed-section-summary" });
   const badge = h("span", { class: "ed-badge", hidden: true });
   const body = h("div", { class: "ed-section-body" });
@@ -51,7 +54,9 @@ export function createSection(options) {
     icon("chevron-down", { size: 16, class: "ed-section-chevron" }),
   );
   const el = h("details", { class: "ed-section", "data-section": options.id, open: typeof saved === "boolean" ? saved : options.open === true }, head, body);
-  el.addEventListener("toggle", () => writeState(options.id, el.open));
+  if (remember) {
+    el.addEventListener("toggle", () => writeState(options.id, el.open));
+  }
   return {
     el,
     body,

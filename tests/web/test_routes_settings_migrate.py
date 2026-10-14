@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
+from sankey_studio.models import FolderCreate
 from sankey_studio.storage.files.codec import graph_filename
 from sankey_studio.storage.migrate import MAX_UNREADABLE_IDS
 from sankey_studio.web.routers.settings import router
@@ -69,6 +70,8 @@ def test_a_switch_with_migrate_copies_every_graph_and_reports_it(web: WebApp) ->
         "skipped": 0,
         "unreadable": 0,
         "unreadable_ids": [],
+        "folders": 0,
+        "folders_skipped": 0,
     }
     assert (body["settings"]["storage_backend"], body["settings"]["storage_database"]) == (
         "mongo",
@@ -103,6 +106,23 @@ def test_graphs_the_destination_already_has_are_skipped_not_overwritten(web: Web
     assert (report["copied"], report["skipped"], report["unreadable"]) == (0, 2, 0)
 
 
+def test_a_switch_with_migrate_copies_the_folders_and_counts_them(web: WebApp) -> None:
+    folders = web.services.folders()
+    parent = folders.create_folder(FolderCreate(name="Finance"))
+    child = folders.create_folder(FolderCreate(name="Q3", parent_id=parent.id))
+    graph = web.services.graphs().create(create_data("in a folder"), folder_id=child.id)
+    response = web.client.put(f"{BASE}?migrate=true", json=to_mongo_body(web.client))
+    report = response.json()["copy_report"]
+    assert (report["copied"], report["folders"], report["folders_skipped"]) == (1, 2, 0)
+    assert [f.name for f in web.services.folders().list_folders()] == ["Finance", "Q3"]
+    assert web.services.graphs().get(graph.id).folder_id == child.id
+    again = web.client.put(BASE, json=to_file_body(web.client))
+    assert again.status_code == 200
+    second = web.client.put(f"{BASE}?migrate=true", json=to_mongo_body(web.client))
+    assert second.json()["copy_report"]["folders"] == 0
+    assert second.json()["copy_report"]["folders_skipped"] == 2
+
+
 # --------------------------------------------------------------------------- unreadable graphs
 
 
@@ -123,6 +143,8 @@ def test_unreadable_graphs_are_counted_and_named_in_the_response(web: WebApp) ->
         "skipped": 0,
         "unreadable": 2,
         "unreadable_ids": sorted(broken),
+        "folders": 0,
+        "folders_skipped": 0,
     }
     assert web.services.settings().storage_backend == "mongo"
     assert all((web.config.graphs_dir / graph_filename(i)).exists() for i in broken)

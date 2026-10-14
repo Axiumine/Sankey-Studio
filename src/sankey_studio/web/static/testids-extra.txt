@@ -99,3 +99,93 @@ display-menu-panel
 display-node-values
 display-donut-percent
 display-donut-value
+# js/editor/source/tab-paste.js: the Clear icon inside the paste box
+source-clear
+# js/editor/chart-settings.js: the gear in the chart header and its Style/Export popover
+chart-settings-button
+chart-settings-panel
+chart-settings-close
+chart-settings-tab-style
+chart-settings-tab-export
+# js/core/menu.js + editor/title-menu.js: the graph settings gear and its menu
+graph-settings-button
+graph-settings-menu
+graph-settings-details
+graph-settings-source
+# js/editor/details/dialog.js: the graph details dialog
+details-dialog
+details-done
+# js/editor/source/change-dialog.js: the change data source dialog
+change-source-dialog
+change-source-apply
+change-source-keep
+# js/core/dialog.js: the optional X button
+dialog-close
+# js/editor/edits/consent.js: the "Change your data too?" dialog
+write-back-dialog
+write-back-accept
+write-back-decline
+write-back-never
+write-back-cancel
+# js/editor/source/write-back-field.js: the write-back status of a file or collection source
+source-write-back
+# editor/wizard/index.js: new-graph wizard
+new-wizard
+wizard-step-details
+wizard-step-source
+wizard-next
+wizard-back
+wizard-create
+wizard-later
+wizard-cancel
+# editor/entries/add-dialog.js, add-form.js: add an entry from the Entries card (F7)
+entries-add
+add-entry-dialog
+add-entry-source
+add-entry-target
+add-entry-value
+add-entry-category
+add-entry-error
+add-entry-submit
+add-entry-cancel
+# editor/entries/stale-overrides.js, overlay-list.js: category edits that match nothing; the graph-only edits list
+entries-unmatched
+entries-overlays
+overlays-dialog
+overlay-remove
+# js/library/{breadcrumb,folder-cards,folder-dialogs,folders,card,selection-bar,view}.js: library collections (folders in code)
+folder-breadcrumb
+folder-crumb
+folder-new
+folder-new-graph
+folder-grid
+folder-card
+folder-open
+folder-rename
+folder-move
+folder-delete
+folder-dialog
+folder-name-input
+folder-name-error
+folder-name-confirm
+move-dialog
+move-option
+move-confirm
+folder-delete-dialog
+folder-delete-confirm
+graph-move
+selection-move
+graph-folder
+library-folder-empty
+library-folder-missing
+library-scope-note
+# editor/chart/order-reset.js, order-dialog.js: reset the stored node order and the keyboard twin of dragging a node
+chart-reset-order
+chart-order-open
+order-dialog
+order-up
+order-down
+# editor/entries/add-form.js: F2 direction choice of the Add a flow dialog (click a node)
+add-entry-direction
+add-entry-from-node
+add-entry-to-node

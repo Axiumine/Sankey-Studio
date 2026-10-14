@@ -65,6 +65,7 @@ def test_a_summary_has_what_the_library_card_shows(seeded: Seeded) -> None:
         "source_type": "text",
         "revision": 1,
         "updated_at": item["updated_at"],
+        "folder_id": None,
     }
     assert item["updated_at"].endswith("Z")
 

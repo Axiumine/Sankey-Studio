@@ -14,35 +14,47 @@ from sankey_studio.render.options import FigureOptions
 from sankey_studio.render.palette import MONO_COLOR, NODE_NEUTRAL, UNCATEGORIZED_COLOR, layer_color
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from sankey_studio.models import SankeyGraph, StyleSpec, Theme
 
 
 @dataclass(frozen=True, slots=True)
 class Drawn:
-    """The links and nodes that are drawn (all of them unless ``max_links`` cut the graph)."""
+    """The links and nodes that are drawn (all of them unless ``max_links`` cut the graph).
+
+    ``ordered`` is true when ``nodes`` follow a stored node order (at least one drawn node is
+    named in it): the figure then asks Plotly to keep the array order inside each layer.
+    """
 
     links: list[int]
     nodes: list[int]
     total_links: int
+    ordered: bool = False
 
     @property
     def truncated(self) -> bool:
         return len(self.links) < self.total_links
 
 
-def select_drawn(graph: SankeyGraph, max_links: int | None) -> Drawn:
+def select_drawn(graph: SankeyGraph, max_links: int | None, order: Sequence[str] = ()) -> Drawn:
     """Top-``max_links`` links by value (ties: first link first), in original order.
 
-    Nodes left without a drawn link are dropped.
+    Nodes left without a drawn link are dropped. The drawn nodes are sorted by their place in
+    ``order`` (a list of node names); names it does not list come after the listed ones, in graph
+    order, and names it lists that are not drawn are ignored. No ``order`` (or none of its names
+    drawn): graph order, exactly as before.
     """
     links = list(range(graph.n_links))
     if max_links is not None:
         largest_first = sorted(links, key=lambda i: -graph.link_value[i])
         links = sorted(largest_first[: max(max_links, 0)])
-    nodes = sorted(
-        {graph.link_source[link] for link in links} | {graph.link_target[link] for link in links}
-    )
-    return Drawn(links=links, nodes=nodes, total_links=graph.n_links)
+    ends = {graph.link_source[link] for link in links} | {graph.link_target[link] for link in links}
+    rank = {name: place for place, name in enumerate(order)}
+    unlisted = len(order)
+    nodes = sorted(ends, key=lambda node: (rank.get(graph.node_names[node], unlisted), node))
+    ordered = any(graph.node_names[node] in rank for node in nodes)
+    return Drawn(links=links, nodes=nodes, total_links=graph.n_links, ordered=ordered)
 
 
 def effective_mode(graph: SankeyGraph, style: StyleSpec, drawn: Drawn) -> str:
@@ -72,7 +84,7 @@ def make_scene(
 ) -> Scene:
     options = options or FigureOptions()
     node_map = ColorMap.for_graph(graph, style)
-    drawn = select_drawn(graph, options.max_links)
+    drawn = select_drawn(graph, options.max_links, style.node_order)
     return Scene(
         graph=graph,
         style=style,

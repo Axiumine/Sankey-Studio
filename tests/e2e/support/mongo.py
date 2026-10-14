@@ -11,6 +11,10 @@ but two calls the inspect routes make do not exist or have another signature the
 ``server.mongo.unreachable = True`` makes every operation raise ``ServerSelectionTimeoutError``
 at once (the app answers "MongoDB connection 'x' is unreachable"), without waiting for
 ``mongo_timeout_ms``; set it back to ``False`` and the data is there again.
+
+``E2EMongoClient(read_only=True)`` (or ``client.read_only = True``) is a database user without write
+rights: every write call raises ``OperationFailure`` with code 13 ("not authorized"), reads work.
+The write-back answers ``permission_denied`` and keeps the edit in the graph.
 """
 
 from __future__ import annotations
@@ -19,7 +23,7 @@ from typing import TYPE_CHECKING, Any, cast, override
 
 import mongomock
 from mongomock.database import Database as MongomockDatabase
-from pymongo.errors import ServerSelectionTimeoutError
+from pymongo.errors import OperationFailure, ServerSelectionTimeoutError
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Mapping
@@ -29,6 +33,26 @@ if TYPE_CHECKING:
     from pymongo.database import Database
 
 OUTAGE = "e2e: the MongoDB server is switched off (E2EMongoClient.unreachable)"
+DENIED = "e2e: not authorized on this database (E2EMongoClient.read_only)"
+#: The ``OperationFailure`` code of "Unauthorized".
+NOT_AUTHORIZED = 13
+WRITE_METHODS = (
+    "insert_one",
+    "insert_many",
+    "update_one",
+    "update_many",
+    "replace_one",
+    "delete_one",
+    "delete_many",
+    "bulk_write",
+    "find_one_and_update",
+    "find_one_and_replace",
+    "find_one_and_delete",
+)
+
+
+def _denied(*_args: Any, **_options: Any) -> Any:
+    raise OperationFailure(DENIED, code=NOT_AUTHORIZED)
 
 
 class NameCursor:
@@ -45,7 +69,18 @@ class NameCursor:
 
 
 class E2EDatabase(MongomockDatabase):
-    """A mongomock database whose ``list_collection_names`` accepts the driver's options."""
+    """A mongomock database whose ``list_collection_names`` accepts the driver's options.
+
+    When its client is ``read_only`` the collections it hands out refuse every write.
+    """
+
+    @override
+    def get_collection(self, name: str, *args: Any, **kwargs: Any) -> Any:
+        collection = cast("Any", super()).get_collection(name, *args, **kwargs)
+        if cast("Any", self._client).read_only:
+            for method in WRITE_METHODS:
+                setattr(collection, method, _denied)
+        return collection
 
     @override
     def list_collection_names(
@@ -59,9 +94,10 @@ class E2EDatabase(MongomockDatabase):
 
 
 class E2EMongoClient(mongomock.MongoClient):  # type: ignore[type-arg]
-    """``mongomock.MongoClient`` plus the two calls above and the ``unreachable`` switch."""
+    """``mongomock.MongoClient`` plus the two calls above and two switches (see the module doc)."""
 
     unreachable: bool = False
+    read_only: bool = False
 
     @override
     def get_database(self, name: str | None = None, *args: Any, **kwargs: Any) -> Database[Any]:

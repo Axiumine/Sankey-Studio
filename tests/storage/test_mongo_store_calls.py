@@ -107,6 +107,7 @@ def test_a_listing_asks_for_summaries_only_in_the_documented_order(
         "source.type": 1,
         "revision": 1,
         "updated_at": 1,
+        "folder_id": 1,
     }
     assert mongo_store._SORT == [("updated_at", -1), ("_id", 1)]
 
@@ -282,12 +283,21 @@ def test_reads_create_no_index_and_the_first_write_creates_both_once(
     mongo_repo.all_tags()
     assert calls.named("create_index") == []
     created = mongo_repo.create(create_data("g"))
-    assert [args for args, _ in calls.named("create_index")] == [("updated_at",), ("tags",)]
+    assert [args for args, _ in calls.named("create_index")] == [
+        ("updated_at",),
+        ("tags",),
+        ("folder_id",),
+    ]
     mongo_repo.put(definition(ID_A, "a"))
     mongo_repo.update(created.id, update_data(1))
     mongo_repo.delete(ID_A)
-    assert len(calls.named("create_index")) == 2  # not again
-    assert set(mongo_collection.index_information()) == {"_id_", "updated_at_1", "tags_1"}
+    assert len(calls.named("create_index")) == 3  # not again
+    assert set(mongo_collection.index_information()) == {
+        "_id_",
+        "updated_at_1",
+        "tags_1",
+        "folder_id_1",
+    }
 
 
 def test_updates_and_deletes_alone_create_no_index(
@@ -304,11 +314,11 @@ def test_ping_always_ensures_the_indexes_and_marks_the_repository_ready(
     mongo_repo: MongoGraphRepository, calls: Recorder
 ) -> None:
     mongo_repo.ping()
-    assert len(calls.named("create_index")) == 2
+    assert len(calls.named("create_index")) == 3
     mongo_repo.create(create_data("g"))  # already prepared by ping
-    assert len(calls.named("create_index")) == 2
+    assert len(calls.named("create_index")) == 3
     mongo_repo.ping()
-    assert len(calls.named("create_index")) == 4
+    assert len(calls.named("create_index")) == 6
 
 
 def test_the_collection_is_the_graph_collection_of_the_storage_database(

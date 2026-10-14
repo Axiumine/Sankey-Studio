@@ -70,6 +70,9 @@ def store_down(web: WebApp, monkeypatch: pytest.MonkeyPatch) -> None:
     repo = type(web.services.graphs())
     for method in ("list_graphs", "count", "get", "create"):
         monkeypatch.setattr(repo, method, boom)
+    folders = type(web.services.folders())  # the library and new-graph pages read these
+    for method in ("list_folders", "list_in", "count_in", "get_folder"):
+        monkeypatch.setattr(folders, method, boom)
 
 
 def mongo_settings(app_settings: AppSettings) -> AppSettings:
@@ -150,6 +153,7 @@ def test_the_folder_page_is_the_answer_when_the_settings_cannot_be_read(
         raise domain.StorageError(LEAK)
 
     monkeypatch.setattr(type(web.services), "graphs", boom)
+    monkeypatch.setattr(type(web.services), "folders", boom)
     web.config.data_dir.mkdir(parents=True, exist_ok=True)
     web.config.settings_file.write_text("{ not json", encoding="utf-8")
     response = web.client.get("/", headers=BROWSER)

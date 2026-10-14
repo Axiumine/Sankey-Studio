@@ -15,6 +15,7 @@ from sankey_studio.render.tables import (
     EntryRow,
     NodeRow,
     category_table,
+    drawn_node_rows,
     entries_page,
     nodes_table,
 )
@@ -251,6 +252,24 @@ def test_nodes_table_lists_layers_and_flows() -> None:
     assert rows[1] == NodeRow("Budget", 1, 5800.0, 4800.0)
     assert [r.name for r in rows] == list(budget().node_names)
     assert nodes_table(make_graph([])) == []
+
+
+def test_drawn_node_rows_follow_the_given_nodes_in_the_given_order() -> None:
+    graph = budget()
+    rows = drawn_node_rows(graph, [8, 1, 0])
+    assert rows == [
+        NodeRow("Cash", 3, 500.0, 0.0),
+        NodeRow("Budget", 1, 5800.0, 4800.0),
+        NodeRow("Salary", 0, 0.0, 5000.0),
+    ]
+    assert drawn_node_rows(graph, []) == []
+    assert drawn_node_rows(graph, range(graph.n_nodes)) == nodes_table(graph)
+
+
+def test_drawn_node_rows_keep_the_raw_names() -> None:
+    hostile = "<b>R&D</b>\u202e"
+    graph = make_graph([(hostile, "x" * 40, 1.0, None)])
+    assert [row.name for row in drawn_node_rows(graph, [0, 1])] == [hostile, "x" * 40]
 
 
 def test_category_table_mirrors_the_donut_slices() -> None:

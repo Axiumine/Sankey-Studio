@@ -66,7 +66,7 @@ def test_the_import_route_is_the_one_the_body_limit_knows() -> None:
 
 
 def test_an_import_may_exceed_the_json_cap_up_to_16_mib(web: WebApp) -> None:
-    bundle = '{"format":"sankey-studio/graphs","version":1,"graphs":[],"pad":"%s"}'
+    bundle = '{"format":"sankey-studio/graphs","version":2,"graphs":[],"pad":"%s"}'
     fixed = len(bundle % "")
     at_json_cap_plus = bundle % ("x" * (JSON_BODY_BYTES + 1 - fixed))
     ok = web.client.post(IMPORT_PATH, content=at_json_cap_plus, headers=JSON_HEADERS)

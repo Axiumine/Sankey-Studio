@@ -4,8 +4,10 @@
  * State shape
  *   draft   a GraphDraft: `{source, transform, style}` exactly as the API takes it (POST /preview,
  *           /entries, /export) - the single source of truth for what is drawn.
- *   meta    `{id, name, description, tags, revision, created_at, updated_at}`: what is saved
+ *   meta    `{id, name, description, tags, revision, created_at, updated_at, folder_id}`: what is saved
  *           around the draft (`id`/`revision` are null for a graph that was never saved).
+ *           `folder_id` (the collection the graph sits in, or the one a new graph will be created
+ *           in) is read-only metadata: it is not editable and `toPayload()` never sends it.
  *   bundle  the last RenderBundle from POST /preview (or null).
  *   status  `{saving, dirty, previewing, error}`; `error` is `{source, status, code, message,
  *           details}` from the last failed preview/save, or null. `source` says who wrote it:
@@ -39,7 +41,7 @@
  */
 
 const DRAFT_KEYS = ["source", "transform", "style"];
-const META_KEYS = ["id", "name", "description", "tags", "revision", "created_at", "updated_at"];
+const META_KEYS = ["id", "name", "description", "tags", "revision", "created_at", "updated_at", "folder_id"];
 const EDITABLE_META = ["name", "description", "tags"];
 
 /** A new, empty draft: an inline text source. */
@@ -51,7 +53,7 @@ export function emptyDraft() {
 export function initialState(overrides = {}) {
   return {
     draft: emptyDraft(),
-    meta: { id: null, name: "", description: "", tags: [], revision: null, created_at: null, updated_at: null },
+    meta: { id: null, name: "", description: "", tags: [], revision: null, created_at: null, updated_at: null, folder_id: null },
     bundle: null,
     status: { saving: false, dirty: false, previewing: false, error: null },
     ...overrides,

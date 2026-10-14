@@ -143,6 +143,19 @@ function indexOfRef(ref, cells, hasHeader) {
   return hasHeader ? cells.findIndex((cell) => key(cell) === key(ref)) : -1;
 }
 
+/** Without a header the category is the fourth column, as on the server (csv_rows.CATEGORY_POSITION). */
+const CATEGORY_POSITION = 3;
+
+function autoCategory(spec, cells, hasHeader, picks) {
+  if (spec.detect_category === false) {
+    return -1;
+  }
+  if (hasHeader) {
+    return cells.findIndex((cell) => key(cell) === "category");
+  }
+  return picks.includes(CATEGORY_POSITION) ? -1 : CATEGORY_POSITION; // a pick that already reads column 4 keeps it
+}
+
 /**
  * Which column each role reads from, as the server resolves it: -1 when none.
  * @param {object} spec  the text source (`source_column`, ..., `has_header`, `detect_category`)
@@ -152,15 +165,17 @@ function indexOfRef(ref, cells, hasHeader) {
 export function roleIndexes(spec, cells) {
   const hasHeader = spec.has_header !== false;
   const out = {};
+  const picks = [];
   ROLES.forEach((role, position) => {
     const ref = spec[`${role}_column`];
     if (ref != null) {
       out[role] = indexOfRef(ref, cells, hasHeader);
     } else if (role === "category") {
-      out[role] = hasHeader && spec.detect_category !== false ? cells.findIndex((cell) => key(cell) === "category") : -1;
+      out[role] = autoCategory(spec, cells, hasHeader, picks);
     } else {
       out[role] = hasHeader ? cells.findIndex((cell) => key(cell) === role) : position;
     }
+    picks.push(out[role]);
   });
   return out;
 }

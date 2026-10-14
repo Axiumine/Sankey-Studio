@@ -98,7 +98,7 @@ def test_picking_a_category_colour_recolours_the_swatch_and_marks_the_graph_unsa
     page: WatchedPage, live_server: LiveServer, api: httpx.Client
 ) -> None:
     editor = open_editor(page, live_server, BUDGET_CATEGORISED.csv)
-    editor.name_field.fill(unique_name("Picked colour"))
+    editor.set_name(unique_name("Picked colour"))
     graph_id = editor.save()
     expect(editor.save_status).to_have_attribute("data-state", "saved")
     editor.open_donut()
@@ -151,7 +151,7 @@ def test_the_one_colour_field_shows_only_in_the_mono_mode_and_saves_and_resets_t
     page: WatchedPage, live_server: LiveServer, api: httpx.Client
 ) -> None:
     editor = open_editor(page, live_server, BUDGET.csv)
-    editor.name_field.fill(unique_name("One colour"))
+    editor.set_name(unique_name("One colour"))
     graph_id = editor.save()
     editor.open_section("style")
     mode = editor.tid("style-color-mode")
@@ -181,6 +181,7 @@ def test_the_one_colour_field_shows_only_in_the_mono_mode_and_saves_and_resets_t
     saved = json_of(api.get(f"/api/v1/graphs/{graph_id}"))
     assert saved["style"]["mono_color"] == GREEN
 
+    editor.open_section("style")  # the chart settings popover closes when the page is used
     reset.click()
     editor.wait_preview()
 

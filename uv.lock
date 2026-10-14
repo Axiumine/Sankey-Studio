@@ -1183,7 +1183,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115" },
     { name = "jinja2", specifier = ">=3.1" },
     { name = "kaleido", specifier = ">=1.0" },
-    { name = "plotly", specifier = ">=5.24" },
+    { name = "plotly", specifier = ">=7.1" },
     { name = "pydantic", specifier = ">=2.9" },
     { name = "pydantic-settings", specifier = ">=2.6" },
     { name = "pymongo", specifier = ">=4.10" },

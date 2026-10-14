@@ -12,9 +12,9 @@ from playwright.sync_api import expect
 
 from tests.e2e.support.builders import BUDGET_CATEGORISED, LAYERED, graph_draft
 from tests.e2e.support.clients import make_client, seed_graph
+from tests.e2e.support.ui_a_wizard import NewGraphWizard
 from tests.e2e.support.ui_b_common import PHONE, overflow_pixels, poll_js
 from tests.e2e.support.ui_b_compare import ComparePage
-from tests.e2e.support.ui_b_editor import EditorPage
 from tests.e2e.support.ui_b_library import LibraryPage
 from tests.e2e.support.ui_b_settings import SettingsPage
 from tests.e2e.support.ui_b_viewer import ViewerPage
@@ -59,12 +59,6 @@ def wait_charts_drawn(page: WatchedPage) -> None:
     expect(page.locator("[data-ready=false], [data-ready=error]")).to_have_count(0)
 
 
-def positions(page: WatchedPage, testid: str) -> dict[str, float]:
-    box = page.get_by_test_id(testid).first.bounding_box()
-    assert box is not None, f"{testid} is not on the page"
-    return {"x": box["x"], "y": box["y"], "width": box["width"]}
-
-
 # ------------------------------------------------------------------------------ no sideways scroll
 
 PAGES: Final = {
@@ -106,24 +100,25 @@ def test_a_phone_has_no_horizontal_scroll_or_clipped_control_on_any_page_not_fou
         assert overflow_pixels(page) <= 0, path
 
 
-# ------------------------------------------------------------------------------ layout changes
-
-
-def test_the_editor_is_two_columns_on_a_desktop_and_stacks_on_a_phone(
-    page: WatchedPage, live_server: LiveServer, seeded: Seeded
+@pytest.mark.parametrize("viewport", [PHONE], ids=["phone"])
+@pytest.mark.parametrize("kind", ["paste", "text", "upload", "manual", "mongo"])
+def test_the_wizard_fits_a_phone_on_both_steps_for_every_kind_of_source(
+    page: WatchedPage, live_server: LiveServer, kind: str
 ) -> None:
-    editor = EditorPage(page, live_server, seeded.cats)
-    editor.goto()
-    wait_charts_drawn(page)
-    form, chart = positions(page, "editor-name"), positions(page, "sankey-chart")
-    assert chart["x"] > form["x"] + form["width"], "desktop: the chart sits beside the form"
-    page.set_viewport_size(PHONE)
-    poll_js(page, "innerWidth === 390", what="the phone width")
-    form, chart = positions(page, "editor-name"), positions(page, "sankey-chart")
-    assert chart["y"] > form["y"], "phone: the chart comes after the form"
-    assert abs(chart["x"] - form["x"]) < 40, "phone: one column"
-    assert overflow_pixels(page) <= 0
-    expect(page.get_by_role("link", name="Go to the chart")).to_be_visible()
+    page.goto(live_server.url_for("/graphs/new"))
+    wizard = NewGraphWizard(page)
+    wizard.expect_showing()
+    assert overflow_pixels(page) <= 0, "step 1 is wider than the window"
+    assert page.evaluate(CLIPPED_JS) == []
+    wizard.fill_details("A wizard name that is long enough to wrap on a narrow phone screen")
+    wizard.next()
+
+    wizard.tid(f"source-tab-{kind}").click()
+
+    expect(wizard.tid("wizard-step-source")).to_be_visible()
+    assert overflow_pixels(page) <= 0, f"step 2 ({kind}) is wider than the window"
+    assert page.evaluate(CLIPPED_JS) == [], f"clipped controls on step 2 ({kind})"
+    expect(wizard.tid("wizard-cancel")).to_be_in_viewport()
 
 
 # ------------------------------------------------------------------------------ charts resize

@@ -16,6 +16,8 @@
 
 * ``remote_mode: bool`` - ``--allow-remote``: read-only remote server (banners, 403 on every write).
 * ``allow_remote_writes: bool`` - ``--allow-remote-writes``: only valid together with remote_mode.
+* ``allow_source_writes: bool`` - ``--allow-source-writes``: MongoDB write-back on a remote server;
+  only valid together with allow_remote_writes.
 * ``settings: Mapping[str, Any]`` - ``AppSettings`` fields written to ``settings.json`` before the
   server starts (``{"max_links": 100, "max_drawn_links": 50}``), bypassing the read-only guard.
 * ``export_unavailable: bool`` - image exports (svg/png) answer the production 501
@@ -69,6 +71,7 @@ class ServerOptions(TypedDict, total=False):
 
     remote_mode: bool
     allow_remote_writes: bool
+    allow_source_writes: bool
     settings: Mapping[str, Any]
     export_unavailable: bool
     seed_mongo: Callable[[MongoClient[Any]], None]
@@ -187,6 +190,7 @@ def make_config(root: Path, port: int, options: ServerOptions) -> BootstrapConfi
         mongo_uri=None,
         remote_mode=options.get("remote_mode", False),
         remote_writes=options.get("allow_remote_writes", False),
+        source_writes=options.get("allow_source_writes", False),
     )
 
 

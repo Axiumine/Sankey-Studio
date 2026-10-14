@@ -63,7 +63,8 @@ class AppSettings(_Model):
 
     storage_backend: Literal["file", "mongo"] = "file"
     storage_connection: str | None = None
-    #: Database that holds the ``sankey_studio_graphs`` collection when the backend is Mongo.
+    #: Database that holds the ``sankey_studio_graphs`` and ``sankey_studio_collections``
+    #: (library folders) collections when the backend is Mongo.
     storage_database: str = Field(default="sankey_studio", max_length=64)
     mongo_connections: list[MongoConnection] = Field(default_factory=list, max_length=20)
     theme: Literal["system", "light", "dark"] = "system"

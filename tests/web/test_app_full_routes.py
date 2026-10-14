@@ -40,15 +40,23 @@ SPEC_ROUTES: Final = [
     "POST /api/v1/sources/detect",
     "POST /api/v1/preview",
     "POST /api/v1/entries",
+    "POST /api/v1/edits/plan",
+    "POST /api/v1/edits/write",
     "GET /api/v1/graphs",
     "POST /api/v1/graphs",
     "GET /api/v1/graphs/export",
     "POST /api/v1/graphs/import",
+    "POST /api/v1/graphs/move",
     "GET /api/v1/graphs/{graph_id}",
     "PUT /api/v1/graphs/{graph_id}",
     "DELETE /api/v1/graphs/{graph_id}",
     "POST /api/v1/graphs/{graph_id}/duplicate",
     "GET /api/v1/graphs/{graph_id}/render",
+    "GET /api/v1/folders",
+    "POST /api/v1/folders",
+    "GET /api/v1/folders/{folder_id}",
+    "PUT /api/v1/folders/{folder_id}",
+    "DELETE /api/v1/folders/{folder_id}",
     "GET /api/v1/compare/render",
     "GET /api/v1/tags",
     "GET /api/v1/graphs/{graph_id}/export",
@@ -86,7 +94,7 @@ def shadowed(routes: list[BaseRoute]) -> list[tuple[str, str]]:
 def test_the_app_serves_exactly_the_routes_of_the_spec(web: WebApp) -> None:
     actual = [endpoint.label for endpoint in app_endpoints(web)]
     assert sorted(actual) == sorted(SPEC_ROUTES)
-    assert len(actual) == len(set(actual)) == 35
+    assert len(actual) == len(set(actual)) == 43
 
 
 def test_the_registry_and_the_app_agree(web: WebApp) -> None:
@@ -94,7 +102,7 @@ def test_the_registry_and_the_app_agree(web: WebApp) -> None:
     assert {e.label for e in UNSAFE} == {
         label for label in SPEC_ROUTES if label.split()[0] != "GET"
     }
-    assert len(UNSAFE) == 14
+    assert len(UNSAFE) == 20
 
 
 def test_the_static_mount_is_registered_after_every_route(web: WebApp) -> None:
@@ -102,7 +110,7 @@ def test_the_static_mount_is_registered_after_every_route(web: WebApp) -> None:
     *others, last = (context.original_route for context in contexts)
     assert isinstance(last, Mount)
     assert (last.path, last.name) == ("/static", "static")
-    assert len(others) == len(api_contexts(web.app.routes)) == 35
+    assert len(others) == len(api_contexts(web.app.routes)) == 43
     assert STATIC_DIR.is_dir()
     assert not web.app.docs_url
     assert not web.app.redoc_url
@@ -140,6 +148,7 @@ def test_the_shadow_check_accepts_the_static_route_first() -> None:
         ("POST /api/v1/graphs/import", "POST /api/v1/graphs/{graph_id}/duplicate"),
         ("GET /graphs/new", "GET /graphs/{graph_id}"),
         ("GET /api/v1/graphs/export", "GET /graphs/{graph_id}"),
+        ("POST /api/v1/graphs/move", "POST /api/v1/graphs/{graph_id}/duplicate"),
     ],
 )
 def test_static_paths_are_declared_before_their_dynamic_siblings(

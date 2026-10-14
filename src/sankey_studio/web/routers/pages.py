@@ -4,6 +4,9 @@ Pages (``GET``, always HTML):
 
 * ``/`` library, ``/graphs/new`` and ``/graphs/{id}/edit`` editor, ``/graphs/{id}`` viewer,
   ``/compare?ids=`` compare, ``/settings``. ``/graphs/new`` is declared BEFORE ``/graphs/{id}``.
+* ``/?folder=<id>`` is the library inside one folder ("collection"), ``/graphs/new?folder=<id>`` the
+  editor for a graph that will be saved in it. The value is lenient: an invalid or unknown id (or
+  another parameter) is ignored and the page shows the top level, never an error.
 * Every page renders ONE template (``page.html``) and embeds its data only as
   ``{{ boot|tojson }}`` inside ``<script type="application/json" id="page-data">``; user text
   (graph names, tags) reaches the page through Jinja's autoescape or through that block, never
@@ -21,8 +24,8 @@ Pages (``GET``, always HTML):
   error is headed "Something went wrong". The page offers the library, Settings and a plain
   "Reload" link (``href=""``, no script). It never contains the requested URL, id or any other
   request text, nor the text of the exception. Every other client keeps the JSON envelope
-  (``web/errors.py`` decides, ``error_page`` renders). ``/graphs/new`` and ``/settings`` never
-  touch the graph store, so they open while it is down.
+  (``web/errors.py`` decides, ``error_page`` renders). ``/graphs/new`` (unless it names a folder)
+  and ``/settings`` never touch the graph store, so they open while it is down.
 * Every HTML answer carries ``Cache-Control: no-store``: Back/Forward must never show a page that
   was rendered before the graph changed or went away.
 * The pages are plain ``def`` routes: reading the library is file or Mongo I/O, which Starlette
@@ -73,13 +76,20 @@ from starlette.templating import Jinja2Templates
 from sankey_studio.errors import NotFoundError, SettingsError
 from sankey_studio.models import GraphId
 from sankey_studio.storage.common import summary_of
+from sankey_studio.storage.folder_tree import effective
+from sankey_studio.storage.folders_base import ROOT_SCOPE
 from sankey_studio.web.assets import static_url
 from sankey_studio.web.deps import ConfigDep, ServicesDep, get_config, get_services
-from sankey_studio.web.schemas.queries import COMPARE_IDS_MAX, LIST_LIMIT_MAX, split_ids
+from sankey_studio.web.schemas.queries import (
+    COMPARE_IDS_MAX,
+    LIST_LIMIT_MAX,
+    ScopeQuery,
+    split_ids,
+)
 
 if TYPE_CHECKING:
     from sankey_studio.config import BootstrapConfig
-    from sankey_studio.models import GraphSummary
+    from sankey_studio.models import FolderSummary, GraphSummary
     from sankey_studio.services import Services
 
 __all__ = [
@@ -113,6 +123,8 @@ NO_STORE: Final = "no-store"
 _NO_STORE_HEADERS: Final = MappingProxyType({"Cache-Control": NO_STORE})
 #: What a graph with no visible name is called in headings, titles and link labels.
 UNTITLED: Final = "Untitled graph"
+#: The same for a folder ("collection" in the UI).
+UNTITLED_FOLDER: Final = "Untitled collection"
 #: Heading (``<h1>`` and title) of each error page; the key is the ``kind`` of the boot data.
 HEADINGS: Final = {
     "page": "Page not found",
@@ -276,20 +288,70 @@ def _graph_links(graphs: list[GraphSummary]) -> tuple[PageLink, ...]:
     return tuple(PageLink(f"/graphs/{graph.id}", _graph_title(graph.name)) for graph in graphs)
 
 
+def _folder_links(folders: list[FolderSummary]) -> tuple[PageLink, ...]:
+    return tuple(
+        PageLink(f"/?folder={folder.id}", f"Collection: {_folder_title(folder.name)}")
+        for folder in folders
+    )
+
+
+def _folder_title(name: str) -> str:
+    """A folder name for a link: plain, ``UNTITLED_FOLDER`` when nothing visible is left."""
+    return _plain(name).strip() or UNTITLED_FOLDER
+
+
 @router.get("/")
-def library_page(request: Request, services: ServicesDep, config: ConfigDep) -> Response:
-    """The library: the first page of the newest graphs (the page asks the API for more)."""
-    repo = services.graphs()
-    graphs = repo.list_graphs(query=None, tag=None, limit=LIST_LIMIT_MAX, offset=0)
-    data = {"graphs": _dump(graphs), "total": repo.count(query=None, tag=None)}
-    view = PageView("library", "Graphs", (*NAV, *_graph_links(graphs)), data)
-    return render_page(request, config, view)
+def library_page(
+    query: Annotated[ScopeQuery, Query()],
+    request: Request,
+    services: ServicesDep,
+    config: ConfigDep,
+) -> Response:
+    """The library: the first page of the newest graphs directly in the folder ``?folder=`` names.
+
+    No folder, or one that is invalid or unknown, is the top level. ``folders`` is every folder
+    (the page builds the breadcrumb and the cards from it); a folder whose parent no longer
+    exists is listed at the top level. The page asks the API for more graphs.
+    """
+    repository = services.folders()
+    folders = repository.list_folders()
+    known = {folder.id for folder in folders}
+    scope = effective(query.folder, known)
+    graphs = repository.list_in(scope or ROOT_SCOPE, limit=LIST_LIMIT_MAX, offset=0)
+    inside = [f for f in folders if effective(f.parent_id, known) == scope]
+    data = {
+        "graphs": _dump(graphs),
+        "total": repository.count_in(scope or ROOT_SCOPE),
+        "folders": [folder.model_dump(mode="json") for folder in folders],
+        "folder": scope,
+    }
+    links = (*NAV, *_folder_links(inside), *_graph_links(graphs))
+    return render_page(request, config, PageView("library", "Graphs", links, data))
+
+
+def _existing_folder(folder_id: str, services: Services) -> str | None:
+    """``folder_id`` if a folder with that id exists, else ``None`` (malformed ids included)."""
+    try:
+        return services.folders().get_folder(folder_id).id
+    except NotFoundError:
+        return None
 
 
 @router.get("/graphs/new")
-def new_page(request: Request, config: ConfigDep) -> Response:
-    """The editor for a graph that does not exist yet (declared before ``/graphs/{id}``)."""
-    return render_page(request, config, PageView("new", "New graph", data={"graph": None}))
+def new_page(
+    query: Annotated[ScopeQuery, Query()],
+    request: Request,
+    services: ServicesDep,
+    config: ConfigDep,
+) -> Response:
+    """The editor for a graph that does not exist yet (declared before ``/graphs/{id}``).
+
+    ``folder_id`` of the boot data is the existing folder ``?folder=`` names, else ``null``. The
+    store is only asked when a folder is named, so the page opens without one while it is down.
+    """
+    folder_id = _existing_folder(query.folder, services) if query.folder else None
+    data = {"graph": None, "folder_id": folder_id}
+    return render_page(request, config, PageView("new", "New graph", data=data))
 
 
 def _graph_view(name: Literal["edit", "viewer"], graph_id: str, services: Services) -> PageView:

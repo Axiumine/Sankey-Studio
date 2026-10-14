@@ -6,6 +6,7 @@ downloads it, and the downloads must be inert too.
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING
 from xml.etree import ElementTree as ET
 
@@ -28,13 +29,10 @@ SVG_NS = "{http://www.w3.org/2000/svg}"
 
 
 def type_hostile_graph(editor: EditorPage) -> None:
-    editor.name_field.fill(hostile.NAME)
-    editor.tid("editor-tags").fill(hostile.TAG)
-    editor.tid("editor-tags").press("Enter")
-    editor.tid("editor-description").fill(hostile.DESCRIPTION)
+    editor.set_details(name=hostile.NAME, description=hostile.DESCRIPTION, tags=(hostile.TAG,))
     editor.source.fill(hostile.hostile_csv())
     wait_preview(editor.page)
-    editor.tid("section-style").click()
+    editor.open_section("style")
     editor.tid("style-title").fill(hostile.TITLE)
     wait_preview(editor.page)
 
@@ -49,16 +47,16 @@ def test_hostile_text_typed_into_the_editor_stays_text_through_save_reload_and_s
     shown = hostile.literal_text(editor.tid("sankey-chart"))
     for label in hostile.LITERAL_NODES:
         assert label in shown
-    expect(editor.heading).to_have_text("New graph")
+    expect(editor.heading).to_have_text(re.compile(r"^New graph"))
     inert.check()
     editor.save()
     page.wait_for_url("**/graphs/*/edit")
     expect(editor.status).to_contain_text("All changes saved")
     page.reload()
     editor.page.locator("#page-root[data-ready=true]").wait_for()
-    expect(editor.name_field).to_have_value(hostile.NAME)
+    editor.expect_name(hostile.NAME)
     expect(editor.heading).to_have_text(f"Edit {hostile.NAME}")
-    description = editor.tid("editor-description").input_value()
+    description = editor.description_value()
     assert len(description) == len(hostile.DESCRIPTION)  # nothing was cut or escaped
     expect(editor.source).to_have_value(hostile.hostile_csv())
     inert.check()

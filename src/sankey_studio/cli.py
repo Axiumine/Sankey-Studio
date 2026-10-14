@@ -62,6 +62,7 @@ class ServeArgs:
     sources_dir: Path | None = None
     allow_remote: bool = False
     allow_remote_writes: bool = False
+    allow_source_writes: bool = False
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -82,6 +83,11 @@ def _parser() -> argparse.ArgumentParser:
         action="store_true",
         help="with --allow-remote: also allow changes to settings, files and graphs",
     )
+    serve.add_argument(
+        "--allow-source-writes",
+        action="store_true",
+        help="with --allow-remote-writes: also allow writing edits back to MongoDB sources",
+    )
     return parser
 
 
@@ -95,6 +101,7 @@ def parse_serve_args(argv: Sequence[str] | None = None) -> ServeArgs:
         sources_dir=ns.sources_dir,
         allow_remote=ns.allow_remote,
         allow_remote_writes=ns.allow_remote_writes,
+        allow_source_writes=ns.allow_source_writes,
     )
 
 
@@ -117,6 +124,8 @@ def build_config(args: ServeArgs) -> BootstrapConfig:
         overrides["remote_mode"] = True
     if args.allow_remote_writes:
         overrides["remote_writes"] = True
+    if args.allow_source_writes:
+        overrides["source_writes"] = True
     config = BootstrapConfig(**overrides)
     if config.log_level.lower() not in LOG_LEVELS:  # uvicorn would fail with a KeyError later
         raise InvalidConfigError("log_level", f"must be one of {', '.join(LOG_LEVELS)}")
@@ -187,6 +196,7 @@ def _announce(config: BootstrapConfig) -> None:
     print("* REMOTE MODE: NO AUTHENTICATION. Anyone who can reach this address can")
     print(f"* use the app. Bound to {_address(config)}; changes are {writes}.")
     print("*" * 72)
+    print(f"source writes: {'ENABLED' if config.source_writes else 'DISABLED'}")
     _announce_hosts(config)
 
 

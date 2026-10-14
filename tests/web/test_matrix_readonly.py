@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Final
 import pytest
 
 from sankey_studio.web.deps import MSG_READ_ONLY
-from tests.web.test_matrix_support import ENDPOINTS, SAFE, UNSAFE, Endpoint, ids
+from tests.web.test_matrix_support import ENDPOINTS, SAFE, UNKNOWN_ID, UNSAFE, Endpoint, ids
 from tests.web.test_routes_graphs_support import API, BUDGET, draft_json, save
 
 if TYPE_CHECKING:
@@ -25,11 +25,17 @@ PERSISTING: Final = {
     "DELETE /api/v1/graphs/{graph_id}",
     "POST /api/v1/graphs/{graph_id}/duplicate",
     "POST /api/v1/graphs/import",
+    "POST /api/v1/graphs/move",
+    "POST /api/v1/folders",
+    "PUT /api/v1/folders/{folder_id}",
+    "DELETE /api/v1/folders/{folder_id}",
+    "POST /api/v1/edits/write",
 }
 #: Pure computations: they stay available.
 PURE: Final = {
     "POST /api/v1/preview",
     "POST /api/v1/entries",
+    "POST /api/v1/edits/plan",
     "POST /api/v1/export",
     "POST /api/v1/sources/detect",
 }
@@ -49,8 +55,8 @@ def send(web: WebApp, endpoint: Endpoint, body: bytes) -> tuple[int, object]:
 def test_every_unsafe_route_is_classified() -> None:
     assert PERSISTING.isdisjoint(PURE)
     assert {e.label for e in UNSAFE} == PERSISTING | PURE
-    assert len(PERSISTING_ENDPOINTS) == 10
-    assert len(PURE_ENDPOINTS) == 4
+    assert len(PERSISTING_ENDPOINTS) == 15
+    assert len(PURE_ENDPOINTS) == 5
 
 
 @pytest.mark.parametrize("endpoint", PERSISTING_ENDPOINTS, ids=ids(PERSISTING_ENDPOINTS))
@@ -73,6 +79,7 @@ def test_the_refused_requests_wrote_nothing(remote_web: WebApp) -> None:
     for endpoint in PERSISTING_ENDPOINTS:
         send(remote_web, endpoint, b"{}")
     assert remote_web.services.graphs().count() == 0
+    assert remote_web.services.folders().list_folders() == []
     assert not remote_web.config.settings_file.exists()
     assert not remote_web.config.effective_sources_dir.exists()
 
@@ -115,8 +122,10 @@ def test_every_read_is_available_in_read_only_mode(remote_web: WebApp) -> None:
         f"{API}/graphs/export?ids={stored.id}",
         f"{API}/compare/render?ids={stored.id}",
         f"{API}/tags",
+        f"{API}/folders",
         f"{API}/sources/files",
         "/",
+        f"/?folder={UNKNOWN_ID}",
         f"/graphs/{stored.id}",
         f"/graphs/{stored.id}/edit",
         f"/compare?ids={stored.id}",

@@ -22,8 +22,11 @@ BUNDLE_FIELDS = [
     "stats",
     "entries",
     "entries_total",
+    "nodes",
     "warnings",
 ]
+#: ``nodes`` is optional (only ``POST /preview`` fills it); every other field is required.
+REQUIRED_FIELDS = [name for name in BUNDLE_FIELDS if name != "nodes"]
 STATS_FIELDS = [
     "nodes",
     "links",
@@ -45,13 +48,20 @@ def test_the_model_fields_are_in_the_documented_order() -> None:
     assert list(BundleStats.model_fields) == STATS_FIELDS
 
 
-@pytest.mark.parametrize("field", BUNDLE_FIELDS)
+@pytest.mark.parametrize("field", REQUIRED_FIELDS)
 def test_a_bundle_without_one_field_is_refused(field: str) -> None:
     complete = bundle().model_dump()
     del complete[field]
     with pytest.raises(ValidationError) as caught:
         RenderBundle.model_validate(complete)
     assert error_digest(caught) == [((field,), "missing")]
+
+
+def test_a_bundle_without_nodes_has_an_empty_node_list() -> None:
+    complete = bundle().model_dump()
+    del complete["nodes"]
+    assert RenderBundle.model_validate(complete).nodes == []
+    assert bundle().nodes == []
 
 
 @pytest.mark.parametrize("field", STATS_FIELDS)

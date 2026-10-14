@@ -28,8 +28,13 @@ mutated (`make cov` and `make mutate` leave it out), and it is part of `make ci`
 through `make e2e`. `make e2e-mongo` is not: `make check`, `make ci` and `make full` must pass without
 any database.
 
-The suite has roughly 770 tests (`uv run pytest tests/e2e --collect-only -q | tail -1`); about 740 run
-in `make e2e` and about 40 need a real MongoDB.
+The suite has roughly 1,070 tests (`uv run pytest -m e2e tests/e2e --collect-only -q | tail -1`); about
+1,010 run in `make e2e` and about 60 need a real MongoDB.
+
+**`-m e2e` is needed by hand.** `pyproject.toml` runs pytest with `-m 'not memory and not e2e'`, so a
+plain `uv run pytest tests/e2e/ui/test_smoke_nav.py` deselects every test and runs nothing. Name the
+marker on the command line (`uv run pytest -m e2e tests/e2e/ui/test_smoke_nav.py`); the later `-m` wins.
+The make targets already do.
 
 | Directory | Driven by | Covers |
 |---|---|---|
@@ -49,6 +54,9 @@ HTTP flows (`tests/e2e/http/`, one file group per area):
 | `test_exports_*` | File names, headers and formats without Chrome; SVG and PNG drawn by Chrome (marked `slow`); hostile text; one image export at a time; no Chrome process left behind |
 | `test_library_*` | 25 saved graphs listed, searched, tagged and paged; create, duplicate, edit with the revision check, delete; JSON bundle export and import |
 | `test_mongo_*`, `test_storage_switch_flow` | MongoDB sources and the file or MongoDB graph store, written once and shared with `tests/e2e/mongo/` |
+| `test_edits_flow` | `POST /edits/plan` and `/edits/write` for pasted text, manual links, a cycle (422 before any dialog), a managed file after the consent, and the MongoDB scenarios of `http_b_edit_flows`; a read-only remote server plans but never writes, `--allow-remote-writes` unlocks files but not MongoDB, `allow_source_writes` unlocks MongoDB |
+| `test_folders_flow` | Collections: create, rename, move, delete, `?folder=` listing, bundle v2 export and import, the page boot data, the storage switch carrying the tree; written once in `http_b_folder_flows` for the file store and mongomock |
+| `test_preview_nodes` | `nodes` of `POST /preview` aligned with the figure, `style.node_order` and `transform.extra_links`, and the order drawn by Chrome |
 | `test_limits_*` | `max_links`, `max_drawn_links`, cycles and the validation of the limits themselves |
 | `test_security_*` | Host, Origin and Fetch-Metadata rules, response headers, error bodies without internals or echoes, read-only remote mode, secrets |
 
@@ -58,11 +66,18 @@ Browser flows (`tests/e2e/ui/`):
 |---|---|
 | `test_smoke_nav` | Shell, navigation, keyboard-only paths, focus ring, dialogs |
 | `test_draw_graph` | Drawing from pasted CSV, live preview, saving, reload, viewer and library |
-| `test_categorise_*` | Entries table and category tools, the pager, the donut, colour by category |
+| `test_categorise_*` | Entries table and category tools, the pager, the donut, colour by category; `test_categorise_new_name_ui` and `test_categorise_write_through_ui` pin that a typed category reaches the data and the other entries keep theirs |
+| `test_new_graph_wizard_*`, `test_graph_menu_ui`, `test_change_source_dialog_ui`, `test_overlays_question_ui` | The wizard (both steps, "Do it later", the leave guard, the collection scope), the title gear, the details dialog, the change-source dialog and the keep-your-edits question |
+| `test_editor_layout_ui`, `test_chart_settings_popover_ui` | The chart row and the form row, the chart settings popover (open, close, focus, errors, phone width) |
+| `test_entries_add_*`, `test_entries_overlays_ui` | The Add entry dialog for every source kind, the "Graph-only edits" chip and list, the unmatched notice |
+| `test_chart_node_drag_ui`, `test_chart_node_click_ui` | Dragging bars, the Order nodes dialog, Reset order; clicking a bar to add a flow |
+| `test_write_back_*` | The consent dialog and its four answers, the status line of the Source panel, MongoDB, aggregate and read-only remote servers |
+| `test_sources_headerless_ui`, `test_sources_paste_clear_ui` | The fourth column as category without a header; the Clear icon and its Undo |
 | `test_export_*` | Every download of the viewer and the editor, and the browser-drawn fallback when the server answers 501 |
 | `test_viewer_display_*` | The viewer's display menu: icon, panel and its three ways to close, the tab strip, the Sankey and donut switches, the downloads that carry them, the saved style, a failed redraw |
 | `test_sources_*` | Text file and upload tabs, column mapping, the manual table, the MongoDB tab with and without a connection |
 | `test_library_*`, `test_compare_*` | Browsing, actions, bundles, the 409 conflict; the compare cards and the 12-graph limit |
+| `test_library_folder*` | Collections in the library: the scope in the address, breadcrumb, create, rename, move and delete, impossible places, search across collections, a read-only server, hostile names |
 | `test_settings_*`, `test_readonly_ui` | Limits, MongoDB connections, storage backend, theme; the read-only remote server |
 | `test_theme_dark_ui`, `test_responsive_ui` | Tokens and chart surfaces in both themes, phone-width layout |
 | `test_resilience_*` | Error sentences instead of JSON, not-found pages, a slow server |
@@ -84,15 +99,15 @@ for kaleido (`uv run plotly_get_chrome`, see the README) and skip when the serve
 make e2e                        # everything, in 5 parallel shards (about the time of one shard)
 make e2e E2E_SHARDS=3           # another number of shards
 make e2e-serial                 # one process, one stream of output (the same as E2E_SHARDS=1)
-uv run pytest tests/e2e/ui/test_smoke_nav.py                       # one file
-uv run pytest "tests/e2e/ui/test_smoke_nav.py::test_escape_closes_the_delete_dialog_and_the_chart_tabs_follow_the_arrow_keys"
-uv run pytest tests/e2e -k "theme and dark" -x                     # by keyword, stop at the first failure
-uv run pytest tests/e2e/http -m "not slow"                         # HTTP flows without the Chrome exports
+uv run pytest -m e2e tests/e2e/ui/test_smoke_nav.py                # one file (-m e2e is required, see above)
+uv run pytest -m e2e "tests/e2e/ui/test_smoke_nav.py::test_escape_closes_the_delete_dialog_and_the_chart_tabs_follow_the_arrow_keys"
+uv run pytest -m e2e tests/e2e -k "theme and dark" -x              # by keyword, stop at the first failure
+uv run pytest -m "e2e and not slow" tests/e2e/http                 # HTTP flows without the Chrome exports
 E2E_SHARD=2/5 uv run pytest tests/e2e -m "e2e and not mongo" -p no:cacheprovider   # one shard by hand
 ```
 
 * **Marks.** Every test below `tests/e2e` gets the `e2e` mark from `tests/e2e/conftest.py`, which is why
-  `make test` (`-m "not memory and not e2e"`) leaves them out. `mongo` marks the tests that need a real
+  `make test` (`-m "not memory and not e2e"`, also the `addopts` default) leaves them out. `mongo` marks the tests that need a real
   MongoDB and `slow` the ones that start Chrome on the server; `make e2e` runs `-m "e2e and not
   mongo"`. Markers are strict, and `filterwarnings = error` applies here as everywhere.
 * **Shards.** `make e2e` runs `E2E_SHARDS` pytest processes at once, each with
@@ -149,9 +164,13 @@ make mongo-down
   teardown, after the server has stopped, even when the test failed. `MongoWorld.drop()` refuses a
   database without that prefix, and nothing else is read, written or dropped.
 * **Same scenarios.** The Mongo and storage flows are written once (`http_b_mongo_flows`,
-  `http_b_mongo_guards`, `http_b_storage_flows`) against a `FlowEnv`. `tests/e2e/http` runs them on
+  `http_b_mongo_guards`, `http_b_storage_flows`, and for write-back and collections `http_b_edit_flows`
+  and `http_b_folder_flows`) against a `FlowEnv`. `tests/e2e/http` runs them on
   `mongomock_world()`, `tests/e2e/mongo` on `real_world(uri)` with the production client factory
-  `sankey_studio.mongo.default_factory`.
+  `sankey_studio.mongo.default_factory`. The write-back twin (`tests/e2e/mongo/test_source_write_back.py`) and
+  the collection twin (`tests/e2e/mongo/test_real_folders_flow.py`) are where the real driver and the real
+  unique `(parent_id, name_key)` index are proven; `E2EMongoClient(read_only=True)` is a database user without
+  write rights (writes raise `OperationFailure` code 13), used by the mongomock suite for `permission_denied`.
 * **Unset or down.** Without `SANKEY_TEST_MONGO_URI` the tests skip, and the reason says so. With the
   variable set and nothing answering they fail (they do not skip): `SANKEY_TEST_MONGO_URI is set but
   the server did not answer: <error type>`. `make e2e-mongo` runs in one process, without shards.
@@ -174,6 +193,7 @@ explicitly, so no `SANKEY_*` variable of your shell can leak in. The options:
 |---|---|
 | `remote_mode: bool` | `--allow-remote`: a read-only remote server (banners, 403 `read_only_mode` on every write) |
 | `allow_remote_writes: bool` | `--allow-remote-writes`; only valid together with `remote_mode` |
+| `allow_source_writes: bool` | `--allow-source-writes`: MongoDB write-back on a remote server; only valid together with `allow_remote_writes` |
 | `settings: Mapping` | `AppSettings` fields written to `settings.json` before start, bypassing the read-only guard (`{"max_links": 100, "max_drawn_links": 50}`) |
 | `export_unavailable: bool` | Image exports (`svg`, `png`) answer the production 501 `export_unavailable`, because Chrome is installed on the test machine but the browser fallback has to be tested. HTML, JSON and CSV exports and every other route are real (`support/unavailable.py`) |
 | `seed_mongo: Callable` | Called with the mongomock client before the server starts (`builders.seed_flows`) |
@@ -278,6 +298,13 @@ helpers of `support/uiwait.py`, which wait on the signals described in
 | `wait_preview(page)` | `wait_idle` then `wait_chart`: the safe wait after an edit |
 | `wait_charts(page, count)` | `count` charts ready, none drawing or failed (compare page) |
 | `chart_state(page, testid)` | The current `data-ready` (`true`, `false`, `error`) or `None`, without waiting |
+| `wait_wizard_or_editor(page)` (`support/ui_a_wizard.py`) | `new-wizard` or `#page-root[data-ready=true]` on `/graphs/new`: the page has decided which of the two it shows, so a probe made now is right |
+
+New signals the page objects wait on: `new-wizard[data-step]` and `#page-root[data-wizard]`, `chart-settings-panel[hidden]`
+with `chart-settings-button[aria-expanded]`, `graph-settings-button[aria-expanded]`, `sankey-chart[data-node-order]`
+(the node names in figure order, joined by `|`, set after each draw), and the attached or detached dialogs. After a
+drag the chart animates for about half a second: `ChartDom.expect_stack(names)` polls the bar positions and
+`ChartDom.expect_drawn_order` the order, never a clock.
 
 Two more bounded waits cover what is not in a browser. `wait_until(probe, timeout=10, what=...)`
 (`support/waits.py`) polls a probe every 50 ms and fails with `timed out after Ns waiting for <what>;
@@ -297,15 +324,35 @@ releases them and reports whether the app aborted one.
 | Modules | Provide |
 |---|---|
 | `ui_a_editor`, `ui_a_entries`, `ui_a_sources`, `ui_a_manual`, `ui_a_mongo` | The editor, the entries table and the source tabs |
-| `ui_a_viewer`, `ui_a_charts`, `ui_a_downloads`, `ui_a_display` | The viewer, `ChartDom` (Sankey, donut and legend read from the Plotly DOM), real downloads and PNG info, the viewer's display menu and a log of its `/render` and `/export` requests |
+| `ui_a_viewer`, `ui_a_charts`, `ui_a_downloads`, `ui_a_display` | The viewer, `ChartDom` (Sankey, donut and legend read from the Plotly DOM; `bar`, `click_bar`, `drag_bar`, `drawn_order`, `expect_stack`, `watch_restyles`, `flow_dialog` for the node click), real downloads and PNG info, the viewer's display menu and a log of its `/render` and `/export` requests |
+| `ui_a_wizard`, `ui_a_chrome` | `NewGraphWizard` and `WizardInput`, `finish_wizard`; `GraphMenu`, `DetailsDialog`, `ChangeSourceDialog`, `ChartSettings` and `EditorChrome` (the dual-mode helpers, see below) |
+| `ui_a_edits` | `ConsentDialog` (accept, decline, never, cancel), `WriteBackStatus` (the status line and "Ask me again"), `file_graph` and `mongo_graph` (save a graph on a managed file or a mongomock collection), `write_file`, `commit_three_at_once` |
 | `ui_a_keyboard`, `ui_a_seed` | `tab_until` and `focus_ring`; seeding a graph through the API |
 | `ui_b_library`, `ui_b_compare`, `ui_b_settings`, `ui_b_editor`, `ui_b_viewer` | The library, compare, settings, a slim editor and the viewer with the figure readers |
+| `ui_b_folders` | `FolderLibrary` (the library with its collections: breadcrumb, cards, name and move dialogs, `new_folder`, `open_folder`, `rename_folder`, `move_folder`, `delete_folder`, `move_graph`, `move_picked`), `seed_folder` and `seed_filed_graph` |
 | `ui_b_common`, `ui_b_hold`, `ui_b_hostile` | Viewports, CSS and download helpers, `Hold`, `HostileGraph` and `Inert` |
 | `http_a_*` | Helpers of the first HTTP suites: settings, categories, exports, library, exact request targets, PNG and SVG readers (no imaging library), HTML export parsing, a response recorder, Chrome process counting |
-| `http_b_*` | Limits, security expectations (routes, headers, internals scan), `Tape`, and the Mongo and storage scenarios with `MongoWorld` and `FlowEnv` |
+| `http_b_*` | Limits, security expectations (routes, headers, internals scan), `Tape`, and the Mongo, storage, write-back (`http_b_edit_flows`) and collection (`http_b_folder_flows`) scenarios with `MongoWorld` and `FlowEnv` |
 
 The letters in `a` and `b` only record which of the two original authoring groups wrote a module; they
 are ordinary modules, import what you need.
+
+**Dual-mode page objects.** The editor chrome (the new-graph wizard, the title gear and details dialog, the
+chart settings popover) landed after most tests were written, so `EditorPage`, `EditGraphPage` and the helpers of
+`ui_a_wizard` and `ui_a_chrome` probe the DOM ONCE (a `locator.count()` for `new-wizard`,
+`graph-settings-button` or `chart-settings-button`, made after the page decided: `wait_wizard_or_editor`) and
+take the path of the page that has the element, else the older path. A test written with them (`set_details`,
+`set_name`, `expect_details`, `open_section("style")`, `open_export()`, `NewGraphWizard.complete_if_shown`)
+does not know which editor it drives. Rules that follow from the chrome:
+
+* On `/graphs/new` the wizard comes first; `expect_ready` finishes it with a unique name and "Do it later", so the
+  editor always has a name (a test that needs an empty name empties it through the details dialog).
+* Name, description and tags live in the details dialog (`editor-name|description|tags` are inside it), Style and
+  Export in the chart settings popover. The popover is not modal and closes on any click or focus outside it, so
+  call `open_section("style")` or `open_export()` right before using those controls after touching the page
+  (both are idempotent).
+* A saved graph with a file or MongoDB source asks the consent question on its first data edit; seed with
+  `file_graph` or `mongo_graph` and answer through `ConsentDialog`.
 
 ### Builders and samples
 
@@ -417,6 +464,7 @@ Checklist for a test that fails now and then (run it five times in a row, alone 
 
 | Symptom | Cause and fix |
 |---|---|
+| A test file runs nothing: `N deselected` | The default `addopts` deselects `e2e`. Add `-m e2e` (`uv run pytest -m e2e <file>`) |
 | Every browser test is skipped: `no browser could be started (system Chrome: ...; bundled Chromium: ...)` | Neither browser starts. Install Chrome, or run `uv run playwright install chromium`; `-ra` (the project default) prints the reasons |
 | Export tests skip with `Chrome is not available: the server answers 501 export_unavailable` | kaleido finds no Chrome. Run `uv run plotly_get_chrome` or install Chrome |
 | A passing test ends in an error: `the browser reported problems:` | The browser logged a console error, page error, failed request, 4xx or 5xx, or a CSP violation. Read the lines and `problems-<n>.txt`; fix the app, or allow the expected noise per test with `allow_http` and a comment |

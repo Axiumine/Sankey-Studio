@@ -154,13 +154,13 @@ def test_the_editor_keeps_hostile_text_in_its_fields_and_tables(
     editor = EditorPage(page, live_server, graphs.first)
     editor.goto()
     expect(editor.heading).to_have_text(f"Edit {hostile.NAME}")
-    expect(editor.name_field).to_have_value(hostile.NAME)
-    expect(editor.tid("editor-description")).to_have_value(hostile.DESCRIPTION)
-    expect(page.get_by_text(hostile.TAG, exact=True)).to_be_visible()  # the tag chip
+    editor.expect_details(  # the name and description fields and the tag chip
+        name=hostile.NAME, description=hostile.DESCRIPTION, tags=(hostile.TAG,)
+    )
     expect(editor.source).to_have_value(hostile.hostile_csv())
     expect(editor.tid("entries-row").filter(has_text=hostile.IMG)).to_have_count(1)
     expect(editor.tid("category-table")).to_contain_text(hostile.BOLD)
-    editor.tid("section-style").click()
+    editor.open_section("style")
     expect(editor.tid("style-title")).to_have_value(hostile.TITLE)  # the chart title field
     inert.check()
     editor.expect_settled()

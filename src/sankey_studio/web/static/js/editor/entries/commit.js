@@ -5,18 +5,21 @@
  *   1. the typed text is checked locally (reserved "Other"/"Uncategorized", length, control
  *      characters, the 20,000 single-entry limit) for an instant, plain answer;
  *   2. the row shows the new category at once (`ui.applied`);
- *   3. `POST /entries?limit=1` with the candidate draft asks the server whether the draft is still
- *      valid; on 200 the edit is written to `store.draft` (so the preview, the donut and "unsaved
- *      changes" follow), on any failure the row is rolled back (`ui.rejected`) and nothing was
- *      written. An invalid draft therefore never reaches the live preview.
+ *   3. `edits.setCategory` (the edit engine, ../edits/) asks the server where the category goes: into
+ *      the data (manual links, pasted text, a file or a collection, the last two only after the
+ *      person agreed in the consent dialog) or, when the data cannot hold it, into this graph
+ *      (`transform.entry_categories`). On success the draft changes (so the preview, the donut and
+ *      "unsaved changes" follow); on a refusal the row is rolled back (`ui.rejected`) and nothing
+ *      was written; Cancel in the dialog or an outdated edit rolls back without a message.
  * Edits run one after another in the order they were made, each against the draft as it is when its
- * turn comes, so quick Enter, Enter, Enter never overwrite each other.
+ * turn comes, so quick Enter, Enter, Enter never overwrite each other (and raise one dialog).
  *
  * `createCommitter({api, store, ui})` -> `{commitEntry(entry, text), addRule(query, text), undoRule(rule)}`. `ui` is `{known(): string[], row(entry), applied(entry, patch), pending(entry, bool),
  * rejected(entry, message, previous)}`.
  */
 
-import { fieldErrors } from "../../core/api.js";
+import { editsFor } from "../edits/index.js";
+import { problemText } from "../edits/remote.js";
 import { trackEdit } from "../output-panel-kit.js";
 import {
   canonicalCategory,
@@ -25,35 +28,23 @@ import {
   limitProblem,
   ruleFor,
   ruleProblem,
-  withCategory,
   withRule,
   withoutRuleLike,
 } from "./edits.js";
 
-const NOISE = /^(Value error|Assertion failed),\s*/;
-
-/**
- * One sentence for a failed validation request.
- * @param {unknown} error
- * @returns {string}
- */
-export function editProblem(error) {
-  const first = error?.details?.length ? fieldErrors(error)[0] : null;
-  if (first?.message) {
-    return `The server did not accept that: ${first.message.replace(NOISE, "")}`;
-  }
-  return error?.friendly ?? error?.message ?? "The change could not be checked.";
-}
+/** One sentence for a failed validation request. */
+export const editProblem = problemText;
 
 function keyOf(entry) {
   return `${entry.source}\u0000${entry.target}`;
 }
 
 class Committer {
-  constructor({ api, store, ui }) {
+  constructor({ api, store, ui, edits }) {
     this.api = api;
     this.store = store;
     this.ui = ui;
+    this.edits = edits ?? editsFor({ api, store });
     this.queue = Promise.resolve();
     this.inflight = new Map();
   }
@@ -98,17 +89,27 @@ class Committer {
 
   async runEntry({ entry, category, previous }, key) {
     try {
-      await this.validate(withCategory(this.store.get().draft, entry, category));
-      this.store.patch("draft", (draft) => withCategory(draft, entry, category));
+      const result = await this.edits.setCategory(entry, category);
+      if (!result.ok) {
+        this.refused(entry, result, previous);
+        return false;
+      }
       this.ui.applied(entry, { category }, { confirmed: true });
       return true;
-    } catch (error) {
-      this.ui.rejected(entry, editProblem(error), previous);
-      return false;
     } finally {
       this.inflight.delete(key);
       this.ui.pending(entry, false);
     }
+  }
+
+  /** A cancelled or outdated edit rolls the row back quietly; any other refusal says why. */
+  refused(entry, result, previous) {
+    if (result.cancelled || result.stale) {
+      const row = previous ?? {};
+      this.ui.applied(entry, { category: row.category ?? null, mixed: row.mixed ?? false, overridden: row.overridden ?? false });
+      return;
+    }
+    this.ui.rejected(entry, result.message ?? "The change could not be checked.", previous);
   }
 
   /**

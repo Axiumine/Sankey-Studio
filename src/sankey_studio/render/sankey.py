@@ -56,7 +56,12 @@ def _share(part: float, whole: float) -> str:
 
 
 def node_block(scene: Scene) -> dict[str, Any]:
-    """Labels (truncated, escaped), colours, outline and hover of the drawn nodes."""
+    """Labels (truncated, escaped), colours, outline and hover of the drawn nodes.
+
+    A stored node order (``scene.drawn.ordered``) adds ``sort: "input"``: Plotly then keeps the
+    array order of the nodes inside each layer. No node ``x``/``y`` is ever emitted (Plotly
+    ignores a coordinate of exactly 0 and re-snaps the rest), so the order is all that is pinned.
+    """
     graph, style = scene.graph, scene.style
     surface = TOKENS[scene.theme].surface
     labels, hover = [], []
@@ -73,7 +78,7 @@ def node_block(scene: Scene) -> dict[str, Any]:
                 value_text(graph.node_out[node], style),
             ]
         )
-    return {
+    block: dict[str, Any] = {
         "label": labels,
         "color": [node_color(scene, node) for node in scene.drawn.nodes],
         "pad": style.node_pad,
@@ -82,6 +87,9 @@ def node_block(scene: Scene) -> dict[str, Any]:
         "customdata": hover,
         "hovertemplate": NODE_HOVER,
     }
+    if scene.drawn.ordered:
+        block["sort"] = "input"
+    return block
 
 
 def link_hover(scene: Scene, link: int) -> list[str]:

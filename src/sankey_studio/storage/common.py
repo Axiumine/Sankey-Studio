@@ -64,11 +64,17 @@ def summary_of(graph: GraphDefinition) -> GraphSummary:
         source_type=graph.source.type,
         revision=graph.revision,
         updated_at=graph.updated_at,
+        folder_id=graph.folder_id,
     )
 
 
-def new_definition(data: GraphCreate, now: datetime) -> GraphDefinition:
-    """A brand-new stored graph: fresh id, revision 1, both timestamps ``now``."""
+def new_definition(
+    data: GraphCreate, now: datetime, folder_id: str | None = None
+) -> GraphDefinition:
+    """A brand-new stored graph: fresh id, revision 1, both timestamps ``now``.
+
+    ``folder_id`` is the library folder it is created in (``None`` = the top level).
+    """
     return GraphDefinition(
         id=new_graph_id(),
         name=data.name,
@@ -80,13 +86,18 @@ def new_definition(data: GraphCreate, now: datetime) -> GraphDefinition:
         schema_version=SCHEMA_VERSION,
         created_at=now,
         updated_at=now,
+        folder_id=folder_id,
     )
 
 
 def revised_definition(
     current: GraphDefinition, data: GraphUpdate, now: datetime
 ) -> GraphDefinition:
-    """``current`` replaced by the editable fields of ``data``: revision + 1, ``updated_at`` now."""
+    """``current`` replaced by the editable fields of ``data``: revision + 1, ``updated_at`` now.
+
+    The folder is not an editable field: ``current.folder_id`` is kept, so a stale editor tab can
+    never move a graph back.
+    """
     return GraphDefinition(
         id=current.id,
         name=data.name,
@@ -99,6 +110,7 @@ def revised_definition(
         revision=current.revision + 1,
         created_at=current.created_at,
         updated_at=now,
+        folder_id=current.folder_id,
     )
 
 

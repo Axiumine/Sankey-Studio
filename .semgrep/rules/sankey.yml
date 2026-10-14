@@ -34,9 +34,9 @@ rules:
     languages: [python]
     severity: ERROR
     message: >-
-      MongoDB writes are only allowed in the graph store. Sources, inspection and rendering are
-      read-only. A deliberate write must carry
-      "# nosemgrep: sankey-no-mongo-writes -- <reason>" on the line.
+      MongoDB writes are only allowed in the library store (graphs, collections) and the opt-in
+      source write-back (all under storage/). Sources, inspection and rendering are read-only. A
+      deliberate write must carry "# nosemgrep: sankey-no-mongo-writes -- <reason>" on the line.
     patterns:
       - pattern: $COLL.$METHOD(...)
       - metavariable-regex:

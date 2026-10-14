@@ -7,24 +7,19 @@
  * (format, column mapping, preview). Switching tabs keeps what was entered on the other tabs.
  * Server problems (422 details, source_error) are shown at the field they are about, or in a
  * notice at the top of the section, with a badge on the header when the section is closed.
- * Test ids: source-tab-text|paste|upload|manual|mongo, section-source (header).
+ * A file or MongoDB source also shows the write-back status (./write-back-field.js).
+ * Test ids: source-tab-text|paste|upload|manual|mongo, section-source (header), source-write-back.
  */
 
 import { createScope, h } from "../../core/dom.js";
 import { formatCount } from "../../core/format.js";
-import { createTabs } from "../../core/tabs.js";
 import { registerPanel } from "../panels.js";
 import { createErrorNotice } from "../meta/notice.js";
 import { createSection } from "../meta/section.js";
-import { createFiles } from "./files.js";
-import { createManualTab } from "./tab-manual.js";
-import { createMongoData } from "./mongo-data.js";
-import { createMongoTab } from "./tab-mongo.js";
-import { createPasteTab } from "./tab-paste.js";
 import { createReading } from "./reading.js";
-import { createTextTab } from "./tab-text.js";
-import { createUploadTab } from "./tab-upload.js";
-import { TABS, createSwitcher, kindOf, tabOf } from "./model.js";
+import { createSwitcher, kindOf, tabOf } from "./model.js";
+import { createTabSet } from "./tab-set.js";
+import { createWriteBackField } from "./write-back-field.js";
 
 const CODES = ["source_error", "unsafe_source", "source_not_found", "graph_too_large", "payload_too_large"];
 const FORMAT_NAMES = { csv: "CSV", tsv: "TSV", sankeymatic: "SankeyMATIC text", json: "JSON" };
@@ -72,29 +67,13 @@ function mountSource(container, ctx) {
   const { store, api, toast, settings } = ctx;
   const scope = createScope();
   const fields = {};
-  const files = createFiles(api);
-  const switcher = createSwitcher(store, settings);
+  const switcher = ctx.switcher ?? createSwitcher(store, settings);
   const section = createSection({ id: "source", title: "Data source", icon: "database", open: true, testid: "section-source" });
-  let tabs = null;
-  const goto = (id) => tabs.select(id, true);
-  const text = createTextTab({ store, files, fields, goto });
-  const paste = createPasteTab({ store, toast, fields });
-  const upload = createUploadTab({ store, files, settings, toast });
-  const manual = createManualTab({ store, fields, toast });
-  const mongo = createMongoTab({ store, api, data: createMongoData(api), settings, fields });
-  const reading = createReading({ store, api, files, fields });
-  const contents = { text: text.el, paste: paste.el, upload: upload.el, manual: manual.el, mongo: mongo.el };
-  tabs = createTabs({
-    label: "Where the data comes from",
-    selected: tabOf(store.get().draft.source),
-    tabs: TABS.map((tab) => ({ ...tab, content: contents[tab.id] })),
-    onSelect: (id) => {
-      switcher.switchTo(id);
-      if (id === "mongo") {
-        mongo.onShow();
-      }
-    },
-  });
+  const tabSet = createTabSet({ store, api, toast, settings, switcher, fields });
+  const { tabs, parts } = tabSet;
+  const { manual } = parts;
+  const reading = createReading({ store, api, files: parts.files, fields });
+  const writeBack = createWriteBackField({ store });
   const notice = createErrorNotice({
     store,
     domain: "source",
@@ -110,10 +89,10 @@ function mountSource(container, ctx) {
   }, { select: (state) => state.draft.source }));
   scope.add(store.subscribe((_, state) => section.setSummary(summarise(state)), { select: (state) => state.draft.source, immediate: true }));
   scope.add(store.subscribe((_, state) => section.setSummary(summarise(state)), { select: (state) => state.bundle?.stats }));
-  for (const part of [text, paste, upload, manual, mongo, reading, notice]) {
+  for (const part of [tabSet, reading, notice, writeBack]) {
     scope.add(part.dispose);
   }
-  section.body.append(notice.el, h("div", { class: "ed-source-tabs" }, tabs.el), reading.el);
+  section.body.append(notice.el, h("div", { class: "ed-source-tabs" }, tabs.el), writeBack.el, reading.el);
   container.replaceChildren(section.el);
   return () => scope.dispose();
 }

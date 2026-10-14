@@ -28,6 +28,8 @@ RECORD_MAX_CHARS = 65_536
 #: Header names used when no column is given, and the positions used without a header.
 DEFAULT_COLUMNS = (("source", 0), ("target", 1), ("value", 2))
 CATEGORY_HEADER = "category"
+#: Without a header the category is the fourth column, like source, target and value above.
+CATEGORY_POSITION = 3
 TAB = "\t"
 
 
@@ -64,15 +66,18 @@ class _Header:
         name, position = default
         return position if self._index is None else self.find(name)
 
-    def category(self, ref: str | int | None, *, detect: bool) -> int | None:
-        """The category column: explicit wins; else a 'category' header when ``detect``."""
+    def category(self, ref: str | int | None, *, detect: bool, taken: frozenset[int]) -> int | None:
+        """The category column: explicit wins; else, when ``detect``, a 'category' header, or
+        without a header the fourth column unless an explicit pick already reads it (``taken``)."""
         if isinstance(ref, int):
             return ref
         if ref is not None:
             return self.find(ref)
-        if detect and self._index is not None:
-            return self._index.get(CATEGORY_HEADER)
-        return None
+        if not detect:
+            return None
+        if self._index is None:
+            return None if CATEGORY_POSITION in taken else CATEGORY_POSITION
+        return self._index.get(CATEGORY_HEADER)
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,15 +109,18 @@ def resolve_columns(job: ParseJob, cells: list[str] | None) -> Columns:
     spec = job.spec
     header = _Header(job.label, cells)
     source, target, value = DEFAULT_COLUMNS
-    return Columns(
+    picks = (
         header.required(spec.source_column, source),
         header.required(spec.target_column, target),
         header.required(spec.value_column, value),
-        header.category(spec.category_column, detect=spec.detect_category),
     )
+    category = header.category(
+        spec.category_column, detect=spec.detect_category, taken=frozenset(picks)
+    )
+    return Columns(*picks, category)
 
 
-def _delimiter(job: ParseJob) -> str:
+def delimiter_of(job: ParseJob) -> str:
     """An explicit delimiter is honoured verbatim; else tab for tsv, else sniffed."""
     if job.spec.delimiter is not None:
         return job.spec.delimiter
@@ -130,35 +138,46 @@ class _RecordBudget:
         self._job = job
         self._lines = lines
         self._used = 0
-        self._first: int | None = None
+        #: Number of the first physical line of the record being read (0 = none yet).
+        self.first = 0
 
     def reset(self) -> None:
         """A record is complete: the next line starts a new one."""
         self._used = 0
-        self._first = None
+        self.first = 0
 
     def feed(self) -> Iterator[str]:
         for line in self._job.usable(self._lines):
-            if self._first is None:
-                self._first = line.number
+            if not self.first:
+                self.first = line.number
             self._used += len(line.text)
             if self._used > RECORD_MAX_CHARS:
                 raise SourceError(
-                    f"{self._job.label}:{self._first}: "
+                    f"{self._job.label}:{self.first}: "
                     f"a record is longer than {RECORD_MAX_CHARS} characters"
                 )
             yield line.text
 
 
-def _records(job: ParseJob, lines: LineReader) -> Iterator[tuple[int, list[str]]]:
-    """Non-blank records with the number of the last physical line they used."""
+@dataclass(frozen=True, slots=True)
+class Record:
+    """One non-blank record: the physical lines it spans (inclusive) and its cells."""
+
+    first: int
+    last: int
+    cells: list[str]
+
+
+def iter_records(job: ParseJob, lines: LineReader) -> Iterator[Record]:
+    """Non-blank records with the first and last physical line they used."""
     budget = _RecordBudget(job, lines)
-    reader = csv.reader(budget.feed(), delimiter=_delimiter(job))
+    reader = csv.reader(budget.feed(), delimiter=delimiter_of(job))
     try:
-        for record in reader:
+        for cells in reader:
+            first = budget.first
             budget.reset()
-            if any(cell.strip() for cell in record):
-                yield lines.number, record
+            if any(cell.strip() for cell in cells):
+                yield Record(first, lines.number, cells)
     except csv.Error as exc:
         raise SourceError(f"{job.label}:{lines.number}: invalid CSV data ({exc})") from None
 
@@ -166,10 +185,10 @@ def _records(job: ParseJob, lines: LineReader) -> Iterator[tuple[int, list[str]]
 def csv_links(job: ParseJob, stream: TextIO) -> Iterator[RawLink]:
     lines = LineReader(stream, LINE_MAX, job.label)
     columns = None if job.spec.has_header else resolve_columns(job, None)
-    for number, record in _records(job, lines):
+    for record in iter_records(job, lines):
         if columns is None:
-            columns = resolve_columns(job, record)
+            columns = resolve_columns(job, record.cells)
             continue
-        link = job.link(columns.row(number, record))
+        link = job.link(columns.row(record.last, record.cells))
         if link is not None:
             yield link

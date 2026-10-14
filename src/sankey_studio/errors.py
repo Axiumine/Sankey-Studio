@@ -127,6 +127,24 @@ class BundleError(SankeyError):
     code = "bundle_error"
 
 
+class FolderRuleError(SankeyError):
+    """A library-folder rule is broken: a cycle, too deep a tree or too many folders."""
+
+    status_code = 422
+    code = "folder_rule"
+
+
+class FolderNameTakenError(SankeyError):
+    """A folder with this name already exists in the same place.
+
+    A direct ``SankeyError`` subclass on purpose: the browser reads ``409`` with code
+    ``conflict`` as a stale revision, and a name clash must not look like one.
+    """
+
+    status_code = 409
+    code = "folder_name_taken"
+
+
 class BusyError(SankeyError):
     """A bounded resource (Mongo pool slot, export slot) is in use; try again shortly."""
 
@@ -199,3 +217,31 @@ class PayloadTooLargeError(SankeyError):
 
     status_code = 413
     code = "payload_too_large"
+
+
+# --------------------------------------------------------------------------- source write-back
+
+
+class SourceEditRefused(SourceError):  # noqa: N818 - the name is part of the write-back contract
+    """An edit cannot be written back to the data source (an expected answer, not a failure).
+
+    ``reason`` is one of ``models.edits.Reason`` (typed ``str`` here: this module imports
+    nothing). Mostly an internal signal; it reaches HTTP only as ``no_consent``.
+    """
+
+    status_code = 422
+    code = "source_edit_refused"
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(f"This edit cannot be written back to the source ({reason})")
+        self.reason = reason
+
+
+class SourceWriteError(SankeyError):
+    """A write to a source failed in a way that leaves the result unknown (driver or OS error).
+
+    The message names the connection (or the file) and the exception class only.
+    """
+
+    status_code = 502
+    code = "source_write_failed"

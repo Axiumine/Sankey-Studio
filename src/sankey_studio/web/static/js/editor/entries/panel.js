@@ -11,27 +11,33 @@
  *   `Link.category` of every link of the pair for a manual source).
  * - "Categorise all entries matching this filter" adds ONE glob rule (./bulk.js).
  * - Hints: categorised entries the donut basis ignores (./hints.js), the 20,000 single-entry limit.
+ * - Header: "Add entry" (./add-dialog.js), the "Graph-only edits (N)" chip (./overlay-list.js); above
+ *   the table the "N category edits no longer match" notice (./stale-overrides.js).
  * Test ids: `entries-table`, `entries-row`, `entries-search`, `entries-uncategorized-only`,
  * `entries-sort`, `entries-pager-next`, `entries-pager-prev`, `entries-total`, `category-cell`,
  * `category-clear`, `category-datalist`, `categorise-all-matching`, `category-error`, plus
- * `entries-basis-hint` and `categorise-category` (./bulk.js).
+ * `entries-basis-hint` and `categorise-category` (./bulk.js), `entries-add`, `entries-overlays`,
+ * `entries-unmatched`.
  */
 
 import { announce } from "../../core/a11y.js";
 import { h, uid } from "../../core/dom.js";
 import { formatNumber } from "../../core/format.js";
 import { icon } from "../../core/icons.js";
+import { editsFor } from "../edits/index.js";
 import { present, slot } from "../output-panel-kit.js";
-import { createBulk } from "./bulk.js";
+import { createAddButton } from "./add-dialog.js";
+import { applyBulk, createBulk } from "./bulk.js";
 import { createCommitter } from "./commit.js";
-import { bulkProblem, describeRule } from "./edits.js";
 import { basisHint } from "./hints.js";
 import { createCategoryNames } from "./names.js";
 import { createStaleNotice } from "./notice.js";
+import { createOverlayList } from "./overlay-list.js";
 import { createLoader, PAGE_SIZE } from "./query.js";
 import { CATEGORY_DATALIST_ID, createRowsView } from "./rows.js";
 import { createPager } from "./pager.js";
 import { placeholderFor } from "./placeholders.js";
+import { createStaleOverrides } from "./stale-overrides.js";
 import { createToolbar } from "./toolbar.js";
 
 const SEARCH_DELAY_MS = 250;
@@ -44,7 +50,8 @@ class EntriesPanel {
     this.state = { phase: "loading", rows: [], total: 0, page: 1, pages: 1, error: null };
     this.searchTimer = null;
     this.loader = createLoader({ api: ctx.api, store: ctx.store, onState: (state) => this.onState(state) });
-    this.committer = createCommitter({ api: ctx.api, store: ctx.store, ui: this.feedback() });
+    this.edits = editsFor(ctx);
+    this.committer = createCommitter({ api: ctx.api, store: ctx.store, ui: this.feedback(), edits: this.edits });
     this.build();
     this.unsubscribe = this.subscribe();
     this.paintBundle();
@@ -66,7 +73,7 @@ class EntriesPanel {
     const titleId = uid("entries-title");
     this.rows = createRowsView({ onCommit: (entry, text) => this.committer.commitEntry(entry, text), onNext: (entry, step) => this.focusNeighbour(entry, step) });
     this.toolbar = createToolbar({ onSearch: () => this.searchSoon(), onFilter: () => this.filterNow() });
-    this.bulk = createBulk({ onApply: (text) => this.applyBulk(text) });
+    this.bulk = createBulk({ onApply: (text) => applyBulk(this, text) });
     this.total = h("span", { class: "out-total nums", "data-testid": "entries-total" });
     this.error = h("p", { class: "field-error out-category-error", role: "alert", "data-testid": "category-error" });
     this.basis = h("div", { class: "notice out-basis", "data-kind": "info", "data-testid": "entries-basis-hint" });
@@ -74,6 +81,9 @@ class EntriesPanel {
     this.slots = { error: slot(), bulk: slot(), basis: slot(), loadError: slot() };
     this.datalist = h("datalist", { id: CATEGORY_DATALIST_ID, "data-testid": "category-datalist" });
     this.names = createCategoryNames({ store: this.store, datalist: this.datalist });
+    this.add = createAddButton({ store: this.store, edits: this.edits, names: this.names });
+    this.overlays = createOverlayList({ store: this.store, after: this.add.el });
+    this.unmatched = createStaleOverrides({ store: this.store });
     this.overlay = h("div", { class: "out-overlay" });
     this.pager = createPager({ onPage: (page) => this.goTo(page), pageSize: PAGE_SIZE });
     this.block = h("div", { class: "table-block out-table-block" }, h("div", { class: "table-wrap", role: "region", tabindex: "0", "aria-label": "Entries table" }, this.rows.el), this.pager.el);
@@ -82,11 +92,12 @@ class EntriesPanel {
       h(
         "section",
         { class: "card out-card out-entries-card", "aria-labelledby": titleId },
-        h("div", { class: "card-header" }, h("h2", { class: "card-title", id: titleId }, "Entries"), this.total),
+        h("div", { class: "card-header" }, h("div", { class: "out-entries-heading" }, h("h2", { class: "card-title", id: titleId }, "Entries"), this.total), h("div", { class: "out-entries-tools" }, this.overlays.el, this.add.el)),
         h(
           "div",
           { class: "card-body out-stack" },
           h("p", { class: "out-note" }, "Each row is one flow from a source to a target. Giving a flow a category is optional: it unlocks the donut chart and colouring by category."),
+          this.unmatched.el,
           this.toolbar.el,
           this.slots.error,
           this.slots.bulk,
@@ -249,37 +260,10 @@ class EntriesPanel {
     this.showError(message);
   }
 
-  async applyBulk(text) {
-    const query = this.toolbar.values().q;
-    const problem = bulkProblem(this.state, query);
-    if (this.bulk.button.disabled) {
-      return; // a rule is being added: Enter held down or pressed twice must not add copies
-    }
-    if (problem) {
-      this.showError(problem);
-      return;
-    }
-    this.bulk.setBusy(true);
-    const result = await this.committer.addRule(query, text);
-    this.bulk.setBusy(false);
-    if (!result.ok) {
-      this.showError(result.message);
-      this.bulk.category.focus();
-      return;
-    }
-    this.clearError();
-    this.bulk.category.value = "";
-    this.names.add(result.rule.category);
-    this.toast?.show(`Rule added: ${describeRule(result.rule)} get "${result.rule.category}". You can edit it under Transform.`, {
-      kind: "success",
-      action: { label: "Undo", onClick: () => this.committer.undoRule(result.rule) },
-    });
-  }
-
   dispose() {
     clearTimeout(this.searchTimer);
     this.loader.dispose();
-    for (const off of this.unsubscribe) {
+    for (const off of [...this.unsubscribe, this.add.dispose, this.overlays.dispose, this.unmatched.dispose]) {
       off();
     }
     this.container.replaceChildren();

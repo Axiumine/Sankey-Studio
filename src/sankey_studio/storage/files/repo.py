@@ -12,13 +12,7 @@ import os
 from typing import TYPE_CHECKING
 
 from sankey_studio.errors import NotFoundError, StorageError
-from sankey_studio.storage.atomic import (
-    check_writable,
-    ensure_private_dir,
-    fsync_dir,
-    os_reason,
-    write_atomic,
-)
+from sankey_studio.storage.atomic import check_writable, fsync_dir, os_reason
 from sankey_studio.storage.base import check_graph_id
 from sankey_studio.storage.common import (
     Clock,
@@ -30,8 +24,8 @@ from sankey_studio.storage.common import (
     stale_error,
     utc_now,
 )
-from sankey_studio.storage.files.codec import encode_graph, graph_filename, read_graph
-from sankey_studio.storage.files.locks import DirState, dir_state
+from sankey_studio.storage.files.codec import graph_filename, read_graph
+from sankey_studio.storage.files.locks import DirState, open_state
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -51,11 +45,7 @@ MSG_NOT_FOUND = "Graph not found"
 
 class FileGraphRepository:
     def __init__(self, graphs_dir: Path, *, clock: Clock = utc_now) -> None:
-        try:
-            ensure_private_dir(graphs_dir)
-        except OSError as exc:
-            raise StorageError(f"The graphs directory is not usable: {os_reason(exc)}") from exc
-        self._state: DirState = dir_state(graphs_dir)
+        self._state: DirState = open_state(graphs_dir)
         self._dir = self._state.directory
         self._clock = clock
 
@@ -115,18 +105,10 @@ class FileGraphRepository:
 
     # ------------------------------------------------------------------ writes
 
-    def _store(self, graph: GraphDefinition) -> None:
-        """Write ``graph`` and its index entry. The caller holds the directory lock."""
-        try:
-            write_atomic(self._path(graph.id), encode_graph(graph))
-            self._state.index.remember(graph)
-        except OSError as exc:
-            raise StorageError(f"The graph could not be saved: {os_reason(exc)}") from exc
-
-    def create(self, data: GraphCreate) -> GraphDefinition:
-        graph = new_definition(data, self._clock())
+    def create(self, data: GraphCreate, *, folder_id: str | None = None) -> GraphDefinition:
+        graph = new_definition(data, self._clock(), folder_id)
         with self._state.lock:
-            self._store(graph)
+            self._state.store(graph)
         return graph
 
     def update(self, graph_id: str, data: GraphUpdate) -> GraphDefinition:
@@ -135,7 +117,7 @@ class FileGraphRepository:
             if current.revision != data.revision:
                 raise stale_error(current.revision, current.updated_at)
             graph = revised_definition(current, data, self._clock())
-            self._store(graph)
+            self._state.store(graph)
         return graph
 
     def put(self, graph: GraphDefinition, *, overwrite: bool = False) -> GraphDefinition:
@@ -146,7 +128,7 @@ class FileGraphRepository:
                 raise exists_error(
                     found.revision if found else None, found.updated_at if found else None
                 )
-            self._store(graph)
+            self._state.store(graph)
         return graph
 
     def delete(self, graph_id: str) -> None:

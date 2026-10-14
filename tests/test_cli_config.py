@@ -182,6 +182,7 @@ def test_a_wildcard_bind_names_no_url_and_says_how_to_allow_hosts(tool: Cli, cas
         "* REMOTE MODE: NO AUTHENTICATION. Anyone who can reach this address can\n"
         "* use the app. Bound to all interfaces, port 9100; changes are DISABLED (read-only).\n"
         f"{STARS}\n"
+        "source writes: DISABLED\n"
         f"Accepted Host headers: {', '.join(case.accepted)}\n"
         'Any other host in the URL gets "400 Invalid host header". To accept more, set\n'
         "SANKEY_ALLOWED_HOSTS to the JSON list of ALL accepted hosts, for example:\n"
@@ -205,7 +206,10 @@ def test_the_wildcard_bind_answers_its_accepted_hosts_and_refuses_the_old_banner
 def test_a_star_in_allowed_hosts_is_announced_as_any_host(tool: Cli) -> None:
     result = tool.run("--host", "192.0.2.7", "--allow-remote", allowed_hosts='["*"]')
     assert result.status == 0
-    tail = f"{STARS}\nAccepted Host headers: any (allowed_hosts contains '*')\n"
+    tail = (
+        f"{STARS}\nsource writes: DISABLED\n"
+        "Accepted Host headers: any (allowed_hosts contains '*')\n"
+    )
     assert result.out.endswith(tail)
     assert len(tool.served) == 1
 
@@ -225,6 +229,7 @@ def remote_banner(data_dir: Path, address: str, accepted: list[str], example: li
         "* REMOTE MODE: NO AUTHENTICATION. Anyone who can reach this address can\n"
         f"* use the app. Bound to {address}; changes are DISABLED (read-only).\n"
         f"{STARS}\n"
+        "source writes: DISABLED\n"
         f"Accepted Host headers: {', '.join(accepted)}\n"
         'Any other host in the URL gets "400 Invalid host header". To accept more, set\n'
         "SANKEY_ALLOWED_HOSTS to the JSON list of ALL accepted hosts, for example:\n"

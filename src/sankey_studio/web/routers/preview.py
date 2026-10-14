@@ -28,8 +28,13 @@ def preview(
     services: ServicesDep,
     cache: ResultCacheDep,
 ) -> RenderBundle:
-    """Draw ``draft`` (figure, legend, donut, tables) in the requested theme."""
-    return render_bundle(services, draft, BundleOptions(theme=query.theme), cache)
+    """Draw ``draft`` (figure, legend, donut, tables) in the requested theme.
+
+    The bundle also lists the drawn nodes (``nodes``, aligned with the figure's node labels):
+    the editor needs their names for node order and node clicks.
+    """
+    options = BundleOptions(theme=query.theme, with_nodes=True)
+    return render_bundle(services, draft, options, cache)
 
 
 @router.post("/entries")

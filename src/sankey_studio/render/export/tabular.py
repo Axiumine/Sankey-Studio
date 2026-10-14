@@ -8,15 +8,11 @@ from typing import TYPE_CHECKING, Literal
 
 from sankey_studio.errors import NoCategoriesError
 from sankey_studio.render.donut_fold import NO_CATEGORIES_TEXT, category_totals
+from sankey_studio.util import starts_like_formula
 
 if TYPE_CHECKING:
     from sankey_studio.models import SankeyGraph
     from sankey_studio.render.donut_fold import Basis
-
-#: A cell that starts with one of these (after leading blanks) can be read as a formula.
-FORMULA_STARTS = ("=", "+", "-", "@")
-#: Characters a spreadsheet may skip before it looks at the first real one.
-LEADING_BLANKS = " \t\r\n"
 
 
 def csv_cell(text: str) -> str:
@@ -25,7 +21,7 @@ def csv_cell(text: str) -> str:
     Triggers: the text starts with ``= + - @`` after leading blanks, or the raw text starts with a
     tab or carriage return.
     """
-    if text.lstrip(LEADING_BLANKS).startswith(FORMULA_STARTS) or text.startswith(("\t", "\r")):
+    if starts_like_formula(text):
         return "'" + text
     return text
 

@@ -7,7 +7,12 @@ from typing import TYPE_CHECKING, Annotated
 from pydantic import AfterValidator, Field
 
 from sankey_studio.errors import UnsafeSourceError
-from sankey_studio.models.base import CATEGORY_MAX, GRAPH_ID_PATTERN, NAME_MAX
+from sankey_studio.models.base import (
+    CATEGORY_MAX,
+    FOLDER_LABEL_MAX,
+    GRAPH_ID_PATTERN,
+    NAME_MAX,
+)
 from sankey_studio.util import is_reserved_category, normalize_category
 
 if TYPE_CHECKING:
@@ -25,6 +30,14 @@ NameStr = Annotated[str, Field(min_length=1, max_length=NAME_MAX), AfterValidato
 
 #: A saved-graph id (``uuid4().hex``). Validated before any path or query use.
 GraphId = Annotated[str, Field(pattern=GRAPH_ID_PATTERN)]
+
+#: A library-folder id (same shape as a graph id). Validated before any path or query use.
+FolderId = Annotated[str, Field(pattern=GRAPH_ID_PATTERN)]
+
+#: A folder label: non-empty, bounded, trimmed, no NUL.
+FolderLabel = Annotated[
+    str, Field(min_length=1, max_length=FOLDER_LABEL_MAX), AfterValidator(_name_check)
+]
 
 
 def _user_category(v: str) -> str:

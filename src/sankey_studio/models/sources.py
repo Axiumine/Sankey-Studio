@@ -17,6 +17,7 @@ from sankey_studio.models.base import (
     _Model,
 )
 from sankey_studio.models.fields import NameStr, OptUserCategory, _safe_name
+from sankey_studio.models.writeback import WriteBackPref
 from sankey_studio.mongo_safety import (
     check_filter,
     check_pipeline,
@@ -87,15 +88,19 @@ class TextSource(_Model):
     target_column: ColumnRef | None = None
     value_column: ColumnRef | None = None
     #: Optional category column. A column NAME that is not in the header is a ``SourceError``.
-    #: ``None`` -> a "category" header is used when ``detect_category`` is true, else no category.
+    #: ``None`` -> a "category" header is used when ``detect_category`` is true (without a
+    #: header: the fourth column), else no category.
     #: In ``sankeymatic`` text a category is appended as ``| category``.
     category_column: ColumnRef | None = None
-    #: Off switch for the "category" header auto-detection (an unrelated column named
-    #: "category" must not switch categories on). An explicit ``category_column`` always wins.
+    #: Off switch for the category auto-detection, i.e. the "category" header or, without a
+    #: header, the fourth column (an unrelated column named "category" must not switch
+    #: categories on). An explicit ``category_column`` always wins.
     detect_category: bool = True
     #: Any Python TEXT codec (``utf-8``, ``utf-8-sig``, ``utf-16``, ``cp1252``, ...); stored in
     #: canonical form. Byte-to-byte codecs (zlib, base64, ...) are refused: they would inflate.
     encoding: str = Field(default="utf-8", max_length=32)
+    #: Whether edits are written back to the file. ``None`` = ask. Ignored for ``inline``.
+    write_back: WriteBackPref | None = None
 
     @field_validator("path")
     @classmethod
@@ -137,7 +142,7 @@ class TextSource(_Model):
 
 
 class MongoSource(_Model):
-    """Documents from a MongoDB collection (read-only).
+    """Documents from a MongoDB collection (read-only unless the owner opts into write-back).
 
     ``find`` mode: ``filter`` selects documents, each document is one flow.
     ``aggregate`` mode: ``pipeline`` output documents are the flows.
@@ -162,6 +167,8 @@ class MongoSource(_Model):
     category_field: str | None = None
     limit: int = Field(default=10_000, ge=1, le=1_000_000)
     max_time_ms: int | None = Field(default=None, ge=100, le=300_000)
+    #: Whether edits are written back to the collection. ``None`` = ask.
+    write_back: WriteBackPref | None = None
 
     @field_validator("database")
     @classmethod

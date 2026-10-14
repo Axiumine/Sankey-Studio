@@ -10,10 +10,10 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from sankey_studio.render.legend import LegendItem
-from sankey_studio.render.tables import CategoryRow, EntryRow
+from sankey_studio.render.tables import CategoryRow, EntryRow, NodeRow
 
 __all__ = ["BundleStats", "DonutEmptyReason", "RenderBundle"]
 
@@ -64,6 +64,9 @@ class RenderBundle(BaseModel):
     #: A preview of the entries table; the full list is paged by ``POST /entries``.
     entries: list[EntryRow]
     entries_total: int
+    #: One row per drawn node, aligned with ``figure.data[0].node.label``. Only ``POST /preview``
+    #: fills it; every other bundle carries ``[]``.
+    nodes: list[NodeRow] = Field(default_factory=list)
     warnings: list[str]
 
     @model_validator(mode="after")

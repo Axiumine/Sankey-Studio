@@ -146,7 +146,7 @@ def test_an_unknown_query_parameter_is_a_422(client: TestClient, path: str) -> N
 
 def test_list_query_from_the_query_string(client: TestClient) -> None:
     response = client.get("/list", params={"q": " food ", "tag": "", "limit": "5", "offset": "10"})
-    assert response.json() == {"q": "food", "tag": None, "limit": 5, "offset": 10}
+    assert response.json() == {"q": "food", "tag": None, "folder": None, "limit": 5, "offset": 10}
     assert client.get("/list", params={"limit": "200"}).status_code == 200
     assert client.get("/list", params={"limit": "201"}).status_code == 422
     assert client.get("/list", params={"offset": "-1"}).status_code == 422

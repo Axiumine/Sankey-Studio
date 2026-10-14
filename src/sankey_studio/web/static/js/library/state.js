@@ -1,9 +1,11 @@
 /**
- * State of the library page: the query (search, tag, sort, page) that the URL keeps, and the
- * set of graphs picked for a comparison.
+ * State of the library page: the query (collection, search, tag, sort, page) that the URL keeps,
+ * and the set of graphs picked for a comparison.
  *
- * The query lives in the address (`/?q=rent&tag=demo&sort=name-asc&page=2`) so a reload, the back
- * button and a copied link show the same list. Defaults are left out of the URL.
+ * The query lives in the address (`/?folder=<id>&q=rent&tag=demo&sort=name-asc&page=2`) so a
+ * reload, the back button and a copied link show the same list. Defaults are left out of the URL.
+ * `folder` is the collection being browsed ("" = the top level). A search or a tag looks at every
+ * collection, so the list only follows `folder` while neither is set (`isScoped`).
  */
 
 import { stripBidi } from "../core/text.js";
@@ -31,19 +33,41 @@ export const SORTS = Object.freeze([
 
 export const DEFAULT_SORT = SORTS[0].value;
 
+const FOLDER_ID = /^[0-9a-f]{32}$/;
+
+/**
+ * True for a collection id as the API makes them (32 lowercase hex characters).
+ * @param {unknown} id
+ * @returns {boolean}
+ */
+export function isFolderId(id) {
+  return typeof id === "string" && FOLDER_ID.test(id);
+}
+
+/**
+ * True while the list follows the collection (no search text and no tag).
+ * @param {{q: string, tag: string}} state
+ * @returns {boolean}
+ */
+export function isScoped(state) {
+  return !state.q && !state.tag;
+}
+
 /**
  * Reads the query state from a location search string. Search text and tag lose control and
  * bidirectional characters (a value made only of them is no filter), and the page is capped at
  * `PAGE_MAX`.
  * @param {string} search  such as `location.search`
- * @returns {{q: string, tag: string, sort: string, page: number}}
+ * @returns {{folder: string, q: string, tag: string, sort: string, page: number}}
  */
 export function readQuery(search) {
   const params = new URLSearchParams(search);
+  const folder = params.get("folder") ?? "";
   const sort = params.get("sort");
   const page = Number.parseInt(params.get("page") ?? "1", 10);
   const text = (name, max) => stripBidi(params.get(name) ?? "").trim().slice(0, max);
   return {
+    folder: isFolderId(folder) ? folder : "",
     q: text("q", Q_MAX),
     tag: text("tag", TAG_MAX),
     sort: SORTS.some((item) => item.value === sort) ? sort : DEFAULT_SORT,
@@ -53,11 +77,14 @@ export function readQuery(search) {
 
 /**
  * The address search string for a state (empty for the defaults).
- * @param {{q: string, tag: string, sort: string, page: number}} state
+ * @param {{folder: string, q: string, tag: string, sort: string, page: number}} state
  * @returns {string}
  */
 export function queryString(state) {
   const params = new URLSearchParams();
+  if (state.folder) {
+    params.set("folder", state.folder);
+  }
   if (state.q) {
     params.set("q", state.q);
   }
@@ -76,7 +103,7 @@ export function queryString(state) {
 
 /**
  * Writes the state into the address without adding a history entry.
- * @param {{q: string, tag: string, sort: string, page: number}} state
+ * @param {{folder: string, q: string, tag: string, sort: string, page: number}} state
  */
 export function writeQuery(state) {
   const next = `${location.pathname}${queryString(state)}`;
@@ -89,7 +116,7 @@ export function writeQuery(state) {
  * The graphs picked for comparison: an ordered set with a cap.
  * `toggle(id, name)` returns false when the cap blocks an addition.
  * @param {number} [max]
- * @returns {{has: (id: string) => boolean, toggle: (id: string, name?: string) => boolean, remove: (id: string) => void, clear: () => void, ids: () => string[], size: () => number, full: () => boolean, subscribe: (fn: () => void) => () => void}}
+ * @returns {{has: (id: string) => boolean, toggle: (id: string, name?: string) => boolean, remove: (id: string) => void, clear: () => void, ids: () => string[], items: () => {id: string, name: string}[], size: () => number, full: () => boolean, subscribe: (fn: () => void) => () => void}}
  */
 export function createSelection(max = MAX_COMPARE) {
   const picked = new Map();
@@ -121,6 +148,7 @@ export function createSelection(max = MAX_COMPARE) {
       }
     },
     ids: () => Array.from(picked.keys()),
+    items: () => Array.from(picked, ([id, name]) => ({ id, name })),
     size: () => picked.size,
     full: () => picked.size >= max,
     subscribe(fn) {

@@ -128,7 +128,7 @@ def test_two_links_on_one_pair_are_one_entry_and_a_category_applies_to_both(
     editor: EditorPage, table: ManualTable, api: httpx.Client
 ) -> None:
     entries = EntriesPanel(editor.page)
-    editor.name_field.fill(unique_name("Manual pair"))
+    editor.set_name(unique_name("Manual pair"))
     table.fill_row(1, ("A", "B", "10"))
     table.add_row()
     table.fill_row(2, ("A", "B", "5"))

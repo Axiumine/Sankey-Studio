@@ -10,7 +10,7 @@ from pydantic import ValidationError
 
 from sankey_studio.bundle import BundleStats, RenderBundle
 from sankey_studio.render.legend import LegendItem
-from sankey_studio.render.tables import CategoryRow, EntryRow
+from sankey_studio.render.tables import CategoryRow, EntryRow, NodeRow
 
 DONUT: dict[str, Any] = {"data": [], "layout": {}}
 
@@ -64,9 +64,11 @@ def test_the_bundle_has_exactly_the_documented_fields() -> None:
         "stats",
         "entries",
         "entries_total",
+        "nodes",
         "warnings",
     }
     assert "donut_legend" not in dumped
+    assert dumped["nodes"] == []
 
 
 def test_the_stats_have_exactly_the_documented_fields() -> None:
@@ -112,6 +114,16 @@ def test_render_types_dump_as_plain_json_objects() -> None:
         }
     ]
     assert json.loads(json.dumps(dumped)) == dumped
+
+
+def test_node_rows_dump_as_plain_json_objects_and_round_trip() -> None:
+    full = bundle(nodes=[NodeRow("a", 0, 0.0, 3.5), NodeRow("b", 1, 3.5, 0.0)])
+    dumped = full.model_dump(mode="json")
+    assert dumped["nodes"] == [
+        {"name": "a", "layer": 0, "node_in": 0.0, "node_out": 3.5},
+        {"name": "b", "layer": 1, "node_in": 3.5, "node_out": 0.0},
+    ]
+    assert RenderBundle.model_validate_json(full.model_dump_json()) == full
 
 
 def test_a_bundle_survives_a_json_round_trip() -> None:

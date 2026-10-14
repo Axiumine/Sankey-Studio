@@ -35,6 +35,18 @@ export function displayName(name) {
   return isShown(name) ? stripBidi(name) : UNTITLED;
 }
 
+/** What a collection with no visible name is called (the no-script list of the server says the same). */
+export const UNTITLED_FOLDER = "Untitled collection";
+
+/**
+ * The name to draw for a collection: the name without control characters, or "Untitled collection".
+ * @param {unknown} name
+ * @returns {string}
+ */
+export function folderLabel(name) {
+  return isShown(name) ? stripBidi(name) : UNTITLED_FOLDER;
+}
+
 /**
  * A copy of a graph summary whose `name` can be shown and whose tags are all visible.
  * @template {{name?: string, tags?: string[]}} T

@@ -205,6 +205,33 @@ def test_new_and_revised_graphs_are_stamped_with_the_current_schema_version(
     assert revised_definition(definition(), update_data(1), NOW).schema_version == 2
 
 
+FOLDER = "f" * 32
+
+
+def _in_folder(folder_id: str | None) -> Any:
+    return definition(ID_A).model_copy(update={"folder_id": folder_id})
+
+
+@pytest.mark.parametrize("folder_id", [None, FOLDER])
+def test_the_summary_carries_the_folder(folder_id: str | None) -> None:
+    assert summary_of(_in_folder(folder_id)).folder_id == folder_id
+
+
+@pytest.mark.parametrize("folder_id", [None, FOLDER])
+def test_a_new_definition_sits_in_the_folder_it_is_created_in(folder_id: str | None) -> None:
+    assert new_definition(create_data("g"), NOW, folder_id).folder_id == folder_id
+
+
+def test_a_new_definition_defaults_to_the_top_level() -> None:
+    assert new_definition(create_data("g"), NOW).folder_id is None
+
+
+@pytest.mark.parametrize("folder_id", [None, FOLDER])
+def test_a_revision_keeps_the_folder_of_the_stored_graph(folder_id: str | None) -> None:
+    revised = revised_definition(_in_folder(folder_id), update_data(1), NOW)
+    assert revised.folder_id == folder_id
+
+
 def test_the_revision_counter_follows_the_stored_graph_not_the_request() -> None:
     current = definition(spec=Spec(revision=7))
     assert revised_definition(current, update_data(7), NOW).revision == 8

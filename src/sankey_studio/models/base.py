@@ -29,6 +29,16 @@ MAX_ENTRY_CATEGORIES = 20_000
 MAX_MERGE_NODES = 5_000
 MAX_HIDE_NODES = 1_000
 MAX_COLOR_OVERRIDES = 1_000
+#: Extra (graph-only) flows kept in ``TransformSpec.extra_links``.
+MAX_EXTRA_LINKS = 2_000
+#: Names kept in ``StyleSpec.node_order``.
+MAX_NODE_ORDER = 5_000
+#: Longest opaque write-back target key (``WriteBackPref.target``).
+WRITE_TARGET_MAX = 400
+#: Library folders ("collections" in the UI): label length, nesting depth and total count.
+FOLDER_LABEL_MAX = 100
+FOLDER_DEPTH_MAX = 8
+FOLDERS_MAX = 1_000
 #: ``entries`` preview rows in a ``RenderBundle``; the full list is paged via ``POST /entries``.
 ENTRIES_PREVIEW_LIMIT = 2_000
 ENTRIES_PAGE_MAX = 500

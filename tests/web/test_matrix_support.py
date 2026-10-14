@@ -24,7 +24,7 @@ UNSAFE_METHODS: Final = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 #: A well-formed graph id that is never stored.
 UNKNOWN_ID: Final = "0" * 32
 _PARAMETER: Final = re.compile(r"\{(\w+)(?::(\w+))?\}")
-_FILLERS: Final = {"graph_id": UNKNOWN_ID, "name": "x"}
+_FILLERS: Final = {"graph_id": UNKNOWN_ID, "folder_id": UNKNOWN_ID, "name": "x"}
 
 
 class Endpoint(NamedTuple):

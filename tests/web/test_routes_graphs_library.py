@@ -65,6 +65,7 @@ def test_a_summary_has_the_listing_fields_only(client: TestClient, library: list
         "source_type": "manual",
         "revision": 1,
         "updated_at": "2026-01-01T12:01:00Z",
+        "folder_id": None,
     }
 
 

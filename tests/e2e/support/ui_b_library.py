@@ -20,7 +20,9 @@ if TYPE_CHECKING:
     from playwright.sync_api import Locator
 
 SETTLED: Final = (
-    "[data-testid=graph-card], [data-testid=library-empty], [data-testid=library-no-results]"
+    "[data-testid=graph-card], [data-testid=library-empty], [data-testid=library-no-results],"
+    " [data-testid=folder-card], [data-testid=library-folder-empty],"
+    " [data-testid=library-folder-missing]"
 )
 PAGE_SIZE: Final = 12
 

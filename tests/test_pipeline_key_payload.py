@@ -86,7 +86,8 @@ def test_the_payload_is_source_transform_row_cap_and_stamp_and_never_the_style(
     draft = csv_draft(top_links=5)
     payload = payload_of(env, spy, draft)
     assert sorted(payload) == ["max_links", "source", "stamp", "transform"]
-    assert payload["source"] == draft.source.model_dump(mode="json")
+    assert payload["source"] == draft.source.model_dump(mode="json", exclude={"write_back"})
+    assert "write_back" not in payload["source"]  # a consent preference is not data
     assert payload["transform"] == draft.transform.model_dump(mode="json")
     assert payload["max_links"] == env.services.settings().max_links
     assert payload["stamp"] == {}

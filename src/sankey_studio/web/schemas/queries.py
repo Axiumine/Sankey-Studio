@@ -11,13 +11,31 @@ sizes, ``clamp_sample_size``, ``EntriesOptions.window``).
 
 from __future__ import annotations
 
-from typing import Annotated, Literal
+from typing import TYPE_CHECKING, Annotated, Final, Literal
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_validator
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+)
 
-from sankey_studio.models import ENTRIES_PAGE_MAX, NAME_MAX, TAG_MAX, GraphId, StyleSpec, Theme
+from sankey_studio.models import (
+    ENTRIES_PAGE_MAX,
+    NAME_MAX,
+    TAG_MAX,
+    FolderId,
+    GraphId,
+    StyleSpec,
+    Theme,
+)
 from sankey_studio.render.options import EntriesOptions, EntrySort, ImageOptions
 from sankey_studio.sources.mongo_inspect import SAMPLE_DEFAULT, SAMPLE_MAX, SAMPLE_MIN
+
+if TYPE_CHECKING:
+    from typing import Self
 
 __all__ = [
     "COMPARE_IDS_MAX",
@@ -26,6 +44,7 @@ __all__ = [
     "LIST_LIMIT_MAX",
     "CollectionsQuery",
     "CompareQuery",
+    "CreateQuery",
     "EntriesQuery",
     "ExportChart",
     "ExportFormat",
@@ -34,6 +53,7 @@ __all__ = [
     "ListQuery",
     "RenderQuery",
     "SampleQuery",
+    "ScopeQuery",
     "ThemeQuery",
     "split_ids",
 ]
@@ -46,6 +66,9 @@ EXPORT_IDS_MAX = 200
 IMAGE_SIDE_MAX = 100_000
 SCALE_MAX = 100.0
 LIST_LIMIT_MAX = 200
+#: ``?folder=`` of ``GET /graphs``: the top level (``root``) or one folder id.
+FOLDER_SCOPE_PATTERN: Final = r"^(root|[0-9a-f]{32})$"
+MSG_SCOPE_ALONE = "folder cannot be combined with q or tag"
 
 ExportChart = Literal["sankey", "donut"]
 ExportFormat = Literal["svg", "png", "html", "json", "csv"]
@@ -128,10 +151,16 @@ class IdsQuery(_Query):
 
 
 class ListQuery(_Query):
-    """``?q=&tag=&limit=&offset=`` of ``GET /graphs``. A blank ``q`` or ``tag`` means no filter."""
+    """``?q=&tag=&folder=&limit=&offset=`` of ``GET /graphs``.
+
+    A blank ``q`` or ``tag`` means no filter. ``folder`` (``root`` or a folder id) lists the
+    graphs directly in that folder instead of searching the library, so it cannot be combined
+    with a ``q`` or ``tag`` that filters.
+    """
 
     q: Annotated[str | None, Field(max_length=NAME_MAX)] = None
     tag: Annotated[str | None, Field(max_length=TAG_MAX)] = None
+    folder: Annotated[str | None, Field(pattern=FOLDER_SCOPE_PATTERN)] = None
     limit: int = Field(default=LIST_LIMIT_MAX, ge=1, le=LIST_LIMIT_MAX)
     offset: int = Field(default=0, ge=0)
 
@@ -139,6 +168,31 @@ class ListQuery(_Query):
     @classmethod
     def _blank(cls, value: str | None) -> str | None:
         return value or None
+
+    @model_validator(mode="after")
+    def _scope_is_not_a_search(self) -> Self:
+        if self.folder is not None and (self.q or self.tag):
+            raise ValueError(MSG_SCOPE_ALONE)
+        return self
+
+
+class CreateQuery(_Query):
+    """``?folder=`` of ``POST /graphs``: the folder the new graph is saved in (none = top level)."""
+
+    folder: FolderId | None = None
+
+
+class ScopeQuery(BaseModel):
+    """``?folder=`` of the library page and the new-graph page.
+
+    Lenient on purpose: a page must open for any URL a person typed or bookmarked, so the value is
+    any text (an invalid or unknown folder is ignored by the route) and other parameters are
+    ignored too.
+    """
+
+    model_config = ConfigDict(extra="ignore", str_strip_whitespace=True)
+
+    folder: str = ""
 
 
 class EntriesQuery(_Query):

@@ -8,7 +8,8 @@ Loaded graphs are kept in a small per-``Services`` LRU (``ResultCache``) so pagi
 entries table does not parse a 25 MB file or query Mongo again on every keystroke. The key is the
 digest of the source and transform specs in the order the user wrote them (a reordered MongoDB
 ``$sort`` is another query, so the dict keys are not sorted; a reorder only costs a miss; the style
-is not part of it: it never changes the graph), plus what the specs do not say: the stat of a file
+is not part of it: it never changes the graph, and neither is ``source.write_back``: a consent
+preference does not change the data), plus what the specs do not say: the stat of a file
 source (inode, size, mtime, ctime; a file touched in the last two seconds is not cached at all),
 the identity of a Mongo connection, and ``AppSettings.max_links``. Entries live 120 s,
 Mongo-backed ones 30 s.
@@ -35,10 +36,12 @@ from sankey_studio.render.donut import build_donut_figure
 from sankey_studio.render.legend import legend_items
 from sankey_studio.render.options import FigureOptions
 from sankey_studio.render.sankey import build_figure, truncation_note
-from sankey_studio.render.tables import category_table, entry_rows
+from sankey_studio.render.scene import select_drawn
+from sankey_studio.render.tables import category_table, drawn_node_rows, entry_rows
 from sankey_studio.sources import open_source
 from sankey_studio.sources.base import Diagnostics
 from sankey_studio.sources.files import resolve_source_path
+from sankey_studio.sources.overlay import with_extra_links
 from sankey_studio.util import mask_uri
 
 if TYPE_CHECKING:
@@ -54,7 +57,7 @@ if TYPE_CHECKING:
         Theme,
         TransformSpec,
     )
-    from sankey_studio.render.tables import EntryRow
+    from sankey_studio.render.tables import EntryRow, NodeRow
     from sankey_studio.services import Services
     from sankey_studio.sources.base import SourceContext
 
@@ -64,6 +67,7 @@ __all__ = [
     "MONGO_TTL_S",
     "RACY_WINDOW_NS",
     "BundleOptions",
+    "ClearableCache",
     "GraphCache",
     "ResultCache",
     "assemble_bundle",
@@ -98,6 +102,17 @@ class GraphCache(Protocol):  # pragma: no mutate block - interface only, never e
     def get(self, key: str, /) -> SankeyGraph | None: ...
 
     def put(self, key: str, value: SankeyGraph, ttl_s: float, /) -> None: ...
+
+
+class ClearableCache(GraphCache, Protocol):  # pragma: no mutate block - interface only
+    """A ``GraphCache`` that can also be emptied.
+
+    A write to the data behind the cached graphs (a MongoDB source edit) must not be followed by
+    a preview that is served from the old copy. ``edits`` sits below ``web`` and may import only
+    this module, so the slice of the web layer's cache it needs is declared here.
+    """
+
+    def clear(self) -> None: ...
 
 
 class ResultCache:
@@ -145,6 +160,11 @@ class ResultCache:
             self._items.move_to_end(key)
             while len(self._items) > self._max_entries:
                 del self._items[next(iter(self._items))]
+
+    def clear(self) -> None:
+        """Drop every entry: the data behind the cached graphs changed."""
+        with self._lock:
+            self._items.clear()
 
 
 _CACHES: weakref.WeakKeyDictionary[Services, ResultCache] = weakref.WeakKeyDictionary()
@@ -230,14 +250,18 @@ def _stamp(spec: SourceSpec, ctx: SourceContext) -> dict[str, Any] | None:
 def cache_key(draft: GraphDraft, ctx: SourceContext) -> str | None:
     """Digest of source + transform (+ stamp and ``max_links``); ``None`` when not cacheable.
 
-    The style is left out on purpose: it never changes the graph. The keys of the specs are NOT
-    sorted: the order of a ``$sort`` document or a ``$group`` changes the result, so two spellings
-    are two keys (the model fields come in declaration order, the user's dicts in their own).
+    The style is left out on purpose (it never changes the graph, so a dragged node order costs a
+    re-render, not a re-parse), and so is ``source.write_back`` (a consent preference). The keys
+    of the specs are NOT sorted: the order of a ``$sort`` document or a ``$group`` changes the
+    result, so two spellings are two keys (the model fields come in declaration order, the user's
+    dicts in their own).
     """
     stamp = _stamp(draft.source, ctx)
     if stamp is None:
         return None
-    specs = draft.model_dump(mode="json", include={"source", "transform"})
+    specs = draft.model_dump(
+        mode="json", include={"source", "transform"}, exclude={"source": {"write_back"}}
+    )
     payload = {**specs, "max_links": ctx.settings.max_links, "stamp": stamp}
     text = json.dumps(payload, separators=(",", ":"))
     return hashlib.sha256(text.encode()).hexdigest()
@@ -269,6 +293,8 @@ def build_graph_from_draft(
     The source context is strict exactly when ``draft.transform.strict``; ``AppSettings.max_links``
     caps the raw rows. Errors (``SourceError``, ``GraphBuildError``, ...) are never cached.
     ``cache`` is the app's cache; without one the per-``Services`` cache (``cache_for``) is used.
+    ``transform.extra_links`` (entries that live in the graph only) follow the rows of the source
+    and count toward the row cap.
     """
     ctx = services.source_context(strict=draft.transform.strict)
     cache = cache_for(services) if cache is None else cache
@@ -278,7 +304,8 @@ def build_graph_from_draft(
         if cached is not None:
             return cached
     diag = Diagnostics()
-    links = open_source(draft.source, ctx).iter_links(diag)
+    rows = open_source(draft.source, ctx).iter_links(diag)
+    links = with_extra_links(rows, draft.transform.extra_links)
     graph = build_graph(links, draft.transform, max_raw_links=ctx.settings.max_links, diag=diag)
     _require_finite_totals(graph)
     if key is not None:
@@ -298,6 +325,8 @@ class BundleOptions:
     preview. ``max_drawn_links`` draws only the top-N links (``None``: all); ``render_bundle`` and
     ``render_compare`` fill it from ``AppSettings.max_drawn_links`` when it is ``None``. ``style``
     replaces ``draft.style`` for the drawing (the viewer's label switches); ``None`` keeps it.
+    ``with_nodes`` fills ``RenderBundle.nodes`` (one row per drawn node, aligned with the figure's
+    node labels); only the preview asks for it.
     """
 
     theme: Theme
@@ -305,6 +334,7 @@ class BundleOptions:
     entries_limit: int = ENTRIES_PREVIEW_LIMIT
     max_drawn_links: int | None = None
     style: StyleSpec | None = None
+    with_nodes: bool = False
 
 
 def preview_entries(
@@ -350,6 +380,12 @@ def _donut(
     return figure, (None if figure["data"] else "basis_empty")
 
 
+def _node_rows(graph: SankeyGraph, style: StyleSpec, options: BundleOptions) -> list[NodeRow]:
+    """The drawn nodes in figure order: ``rows[i]`` names ``figure.data[0].node.label[i]``."""
+    drawn = select_drawn(graph, options.max_drawn_links, style.node_order)
+    return drawn_node_rows(graph, drawn.nodes)
+
+
 def assemble_bundle(graph: SankeyGraph, draft: GraphDraft, options: BundleOptions) -> RenderBundle:
     """Everything the page needs for ``graph``, drawn in ``options.theme`` with ``options.style``
     (``draft.style`` when it is ``None``)."""
@@ -361,6 +397,7 @@ def assemble_bundle(graph: SankeyGraph, draft: GraphDraft, options: BundleOption
     warnings = list(graph.warnings)
     if drawn < graph.n_links:
         warnings.append(truncation_note(drawn, graph.n_links))
+    nodes = _node_rows(graph, style, options) if options.with_nodes else []
     return RenderBundle(
         figure=build_figure(graph, style, theme, figure_options),
         legend=legend_items(graph, style, theme, figure_options),
@@ -372,6 +409,7 @@ def assemble_bundle(graph: SankeyGraph, draft: GraphDraft, options: BundleOption
         stats=_stats(graph, drawn),
         entries=entries,
         entries_total=entries_total,
+        nodes=nodes,
         warnings=warnings,
     )
 

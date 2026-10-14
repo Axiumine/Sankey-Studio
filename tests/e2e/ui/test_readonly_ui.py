@@ -125,6 +125,10 @@ def test_the_library_lists_graphs_but_cannot_change_them_and_an_empty_one_offers
     library = LibraryPage(page, live_server)
     library.goto()
     expect_banners(library)
+    expect(library.page.locator(".readonly-note")).to_have_text(
+        "Read-only server: duplicating, deleting, moving and importing are turned off. "
+        "You can still open, preview and export graphs."
+    )
     card = library.card(name)
     expect(card).to_be_visible()
     for action in ("graph-duplicate", "graph-delete"):
@@ -155,6 +159,7 @@ def test_the_editor_previews_and_exports_but_cannot_save_or_upload(
     )
     editor.source.fill(BUDGET.csv.replace("3000", "3300"))
     expect(editor.tid("stats")).to_contain_text("4,100")  # the preview recomputed the totals
+    editor.open_export()
     name, text = download_text(page, editor.tid("export-csv").click)
     assert name.endswith(".csv")
     assert text.splitlines()[0] == "source,target,value,category"

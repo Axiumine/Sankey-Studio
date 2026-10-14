@@ -54,7 +54,7 @@ function themeSwitch(previewTheme) {
 function mountStyle(container, ctx) {
   const { store } = ctx;
   const scope = createScope();
-  const section = createSection({ id: "style", title: "Style", icon: "bar-chart", testid: "section-style" });
+  const section = createSection({ id: "style", title: "Style", icon: "bar-chart", testid: "section-style", open: true, remember: false });
   const built = buildStyleFields(store);
   const notice = createErrorNotice({
     store,

@@ -175,6 +175,7 @@ def test_use_cache_replaces_the_cache_of_one_instance(tmp_path: Path) -> None:
 def test_the_cache_goes_away_with_its_services(tmp_path: Path) -> None:
     services = Services.create(BootstrapConfig(data_dir=tmp_path / "one"))
     cache = weakref.ref(cache_for(services))
+    gc.collect()  # earlier tests may leave collectable services behind
     before = len(pipeline._CACHES)
     del services
     gc.collect()

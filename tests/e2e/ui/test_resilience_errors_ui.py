@@ -123,7 +123,7 @@ def test_a_failed_save_keeps_the_edit_and_the_next_try_works(
     assert "{" not in toast.inner_text()
     expect(editor.status).to_have_attribute("data-state", "error")
     expect(editor.status).to_contain_text("Could not save the graph.")
-    expect(editor.name_field).to_have_value("Renamed after trouble")  # nothing is lost
+    editor.expect_name("Renamed after trouble")  # nothing is lost
     page.unroute(route)
     editor.save()
     expect(editor.status).to_contain_text("Revision 2")
@@ -247,7 +247,7 @@ def test_outages_give_a_friendly_message_and_recover_and_a_stopped_server_does_n
     toast = editor.expect_toast(UNREACHABLE, "error")
     assert "{" not in toast.inner_text()
     expect(editor.status).to_have_attribute("data-state", "error")
-    expect(editor.name_field).to_have_value("Typed while offline")  # the edit is kept
+    editor.expect_name("Typed while offline")  # the edit is kept
     page.unroute(API_ROUTE)
     editor.save()
     expect(editor.status).to_contain_text("Revision 2")

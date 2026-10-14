@@ -1,5 +1,9 @@
 /**
- * Library data: one page of graphs, the tag list, and the three row actions.
+ * Library data: one page of graphs, the tag list, and the row actions.
+ *
+ * While no search text and no tag is set, the list is the collection the state names (`folder=`
+ * of the API: a 32-hex id, or `root` for the top level). A search or a tag looks at every
+ * collection, so no `folder` is sent then (the API refuses the combination).
  *
  * The API lists graphs newest first and has no sort option. "Recently updated" therefore pages
  * on the server (`limit`/`offset`); every other sort loads the matching graphs (at most
@@ -9,7 +13,7 @@
 
 import { api } from "../core/api.js";
 import { withDisplayName } from "./names.js";
-import { DEFAULT_SORT, PAGE_SIZE } from "./state.js";
+import { DEFAULT_SORT, isScoped, PAGE_SIZE } from "./state.js";
 
 /** Most graphs loaded for a client-side sort (five requests of 200). */
 export const FETCH_CAP = 1000;
@@ -36,6 +40,16 @@ export function graphHref(id, suffix = "") {
     throw new TypeError("not a graph id");
   }
   return `/graphs/${id}${suffix}`;
+}
+
+/**
+ * The query parameters that choose which graphs are listed: the collection while the list is
+ * scoped, the search text and tag otherwise.
+ * @param {{folder?: string, q: string, tag: string}} state
+ * @returns {{folder?: string, q?: string, tag?: string}}
+ */
+export function scopeQuery(state) {
+  return isScoped(state) ? { folder: state.folder || "root" } : { q: state.q, tag: state.tag };
 }
 
 const compareText = (a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
@@ -76,12 +90,12 @@ async function fetchAll(base, signal) {
 
 /**
  * Loads the page of graphs the state asks for.
- * @param {{q: string, tag: string, sort: string, page: number}} state
+ * @param {{folder?: string, q: string, tag: string, sort: string, page: number}} state
  * @param {AbortSignal} [signal]
  * @returns {Promise<{items: object[], total: number, truncated: boolean}>}
  */
 export async function fetchPage(state, signal) {
-  const base = { q: state.q, tag: state.tag };
+  const base = scopeQuery(state);
   const offset = (state.page - 1) * PAGE_SIZE;
   if (state.sort === DEFAULT_SORT) {
     const page = await api.get("/graphs", { query: { ...base, limit: PAGE_SIZE, offset }, signal });
@@ -97,14 +111,14 @@ export async function fetchPage(state, signal) {
 }
 
 /**
- * The ids to export when nothing is picked: the newest graphs that match the filters.
- * @param {{q: string, tag: string}} state
+ * The ids to export when nothing is picked: the newest graphs the list shows.
+ * @param {{folder?: string, q: string, tag: string}} state
  * @param {AbortSignal} [signal]
  * @returns {Promise<{ids: string[], total: number}>}
  */
 export async function fetchExportIds(state, signal) {
   const page = await api.get("/graphs", {
-    query: { q: state.q, tag: state.tag, limit: REQUEST_MAX, offset: 0 },
+    query: { ...scopeQuery(state), limit: REQUEST_MAX, offset: 0 },
     signal,
   });
   return { ids: page.items.map((item) => item.id), total: page.total };

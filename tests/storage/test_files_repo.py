@@ -13,6 +13,7 @@ import pytest
 
 from sankey_studio.errors import ConflictError, NotFoundError, StorageError
 from sankey_studio.storage import FileGraphRepository, atomic
+from sankey_studio.storage.files import locks as locks_module
 from sankey_studio.storage.files import repo as repo_module
 from tests.storage.support import (
     ID_A,
@@ -284,7 +285,7 @@ def test_a_failed_create_raises_a_storage_error_and_stores_nothing(
     graphs_dir: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     repo = FileGraphRepository(graphs_dir)
-    monkeypatch.setattr(repo_module, "write_atomic", _raiser(OSError(errno.EIO, "disk")))
+    monkeypatch.setattr(locks_module, "write_atomic", _raiser(OSError(errno.EIO, "disk")))
     with pytest.raises(StorageError) as info:
         repo.create(create_data("g"))
     assert info.value.message == "The graph could not be saved: disk"

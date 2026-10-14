@@ -13,6 +13,7 @@ from playwright.sync_api import expect
 
 from tests.e2e.support.builders import BUDGET, BUDGET_CATEGORISED, graph_draft, unique_name
 from tests.e2e.support.clients import fetch_json, seed_graph
+from tests.e2e.support.ui_a_wizard import NewGraphWizard, WizardInput
 from tests.e2e.support.uiwait import (
     DONUT_CHART,
     chart_state,
@@ -84,6 +85,7 @@ def test_the_editor_waits_follow_the_dom_signals(
     page.goto(live_server.url_for("/graphs/new"))
     wait_shell(page)
     wait_page(page, "new")
+    NewGraphWizard(page).complete_if_shown(WizardInput(name=unique_name("Harness")))
     wait_editor(page)
     page.get_by_test_id("source-content").fill(BUDGET.csv)
     wait_preview(page)
@@ -97,6 +99,7 @@ def test_a_changed_input_is_waited_for_until_the_new_chart_is_drawn(
     page: WatchedPage, live_server: LiveServer
 ) -> None:
     page.goto(live_server.url_for("/graphs/new"))
+    NewGraphWizard(page).complete_if_shown(WizardInput(name=unique_name("Harness")))
     wait_editor(page)
     source = page.get_by_test_id("source-content")
     source.fill(BUDGET.csv)
