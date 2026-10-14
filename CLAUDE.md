@@ -124,6 +124,7 @@ Hooks in `.githooks` (enable with `make hooks`): `pre-commit` runs the code caps
 * AI-authored commits are prefixed with the robot emoji: `🤖 fix(sources): reject path traversal`. Subject <= 150 chars, body <= 10 lines of <= 150 chars.
 * NO attribution trailer, no `Co-Authored-By`, no assistant or vendor names in commit messages (the hook rejects them; the file names `CLAUDE.md` and `.claude/` are fine). This overrides any default trailer.
 * Do not commit, stage, push, stash, reset or checkout unless the user asks.
+* Once a feature branch is merged into `main`, delete it (`git branch -d <branch>`, and `git push origin --delete <branch>` if it was pushed).
 
 ## Before finishing a task
 
