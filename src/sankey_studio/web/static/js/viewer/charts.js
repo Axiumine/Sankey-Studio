@@ -9,8 +9,9 @@
  *   with `?theme=`; `update(bundle, theme)` then redraws in place (Plotly.react), so nothing jumps.
  *   The donut is drawn when its tab is first opened (a hidden chart has no size to draw at).
  *
- * - At the right of the tab row sits the display menu (display-menu.js): the switches for the
- *   values and percentages printed on the charts. `display.onChange(key, on)` is the page's.
+ * - At the right of the tab row sit the chart tools: the display menu (display-menu.js), the
+ *   switches for the values and percentages printed on the charts (`display.onChange(key, on)` is
+ *   the page's), and whatever the page adds with `addTool` (the export menu, export-menu.js).
  *
  * Test ids: chart-tab-sankey, chart-tab-donut, sankey-chart, donut-chart, donut-hint (and the
  * ones of display-menu.js, parts.js and links-table.js).
@@ -63,12 +64,14 @@ class Charts {
     this.theme = "light";
     this.onTab = onTab;
     this.sankey = slot("sankey-chart", figureHeight(bundle.figure));
+    this.sankey.surface.classList.add("static-legend");
     this.donut = bundle.donut_available ? slot("donut-chart", figureHeight(bundle.donut)) : null;
     this.legendHolder = h("div", { class: "legend-block" });
     this.categoryHolder = h("div", { class: "stack stack-sm" });
     this.links = createLinksTable(graph);
     this.menu = createDisplayMenu({ values: display.values, donut: this.donut !== null, onChange: display.onChange });
-    this.tabs = createTabs({ label: "Chart type", tabs: this.tabList(), actions: this.menu.el, onSelect: (id) => this.selected(id) });
+    this.tools = h("div", { class: "chart-tools" }, this.menu.el);
+    this.tabs = createTabs({ label: "Chart type", tabs: this.tabList(), actions: this.tools, onSelect: (id) => this.selected(id) });
     this.el = h("div", { class: "card chart-card" }, h("div", { class: "card-body" }, h("h2", { class: "visually-hidden" }, "Chart"), this.tabs.el));
   }
 
@@ -93,6 +96,11 @@ class Charts {
     if (changed) {
       announce(id === "donut" ? "Donut chart" : "Sankey chart");
     }
+  }
+
+  /** Adds a control (an icon button with its popover) after the display menu, at the right of the tab row. */
+  addTool(el) {
+    this.tools.append(el);
   }
 
   /** Remembers the donut basis ("all", "initial", "terminal") for the note under the donut. */

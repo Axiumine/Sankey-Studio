@@ -107,27 +107,23 @@ export function categoryTable(categories, options = {}) {
   );
 }
 
-function tile(label, value, note) {
-  return h("div", { class: "stat" }, h("div", { class: "stat-label" }, label), h("div", { class: "stat-value nums" }, value), note ? h("div", { class: "stat-note text-muted text-xs" }, note) : null);
+function tile(label, value) {
+  return h("div", { class: "stat" }, h("div", { class: "stat-label" }, label), h("div", { class: "stat-value nums" }, value));
 }
 
 /**
- * The numbers strip: nodes, links, flow in/out, layers, categories.
- * @param {{nodes: number, links: number, drawn_links: number, total_in: number, total_out: number, layers: number, category_count: number}} stats
+ * The numbers strip: flow in/out and categories.
+ * @param {{total_in: number, total_out: number, category_count: number}} stats
  * @param {{suffix?: string}} [options]
  * @returns {HTMLElement}
  */
 export function statsStrip(stats, options = {}) {
   const suffix = options.suffix ?? "";
-  const cut = stats.drawn_links < stats.links;
   return h(
     "div",
     { class: "stat-grid", role: "group", "aria-label": "Graph statistics", "data-testid": "stats" },
-    tile("Nodes", formatNumber(stats.nodes, { maximumFractionDigits: 0 })),
-    tile("Links", formatNumber(stats.links, { maximumFractionDigits: 0 }), cut ? `${formatNumber(stats.drawn_links, { maximumFractionDigits: 0 })} drawn` : null),
     tile("Total in", amount(stats.total_in, suffix)),
     tile("Total out", amount(stats.total_out, suffix)),
-    tile("Layers", formatNumber(stats.layers, { maximumFractionDigits: 0 })),
     tile("Categories", formatNumber(stats.category_count, { maximumFractionDigits: 0 })),
   );
 }

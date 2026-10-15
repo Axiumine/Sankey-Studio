@@ -99,6 +99,9 @@ display-menu-panel
 display-node-values
 display-donut-percent
 display-donut-value
+# js/viewer/export-menu.js: the settings gear of the chart card and its export popover
+export-menu-button
+export-menu-panel
 # js/editor/source/tab-paste.js: the Clear icon inside the paste box
 source-clear
 # js/editor/chart-settings.js: the gear in the chart header and its Style/Export popover
