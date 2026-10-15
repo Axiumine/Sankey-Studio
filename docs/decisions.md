@@ -54,6 +54,7 @@ Contents
 | [ADR-34](#adr-34-edits-are-written-back-to-the-data-when-the-person-agrees) | Edits are written back to the data when the person agrees |
 | [ADR-35](#adr-35-collections-are-a-tree-stored-beside-the-graphs) | Collections are a tree stored beside the graphs |
 | [ADR-36](#adr-36-editor-chrome) | Editor chrome |
+| [ADR-37](#adr-37-git-hooks-are-the-one-place-the-checks-run) | Git hooks are the one place the checks run |
 
 ## ADR-01 Storage protocol and graph ids
 
@@ -628,3 +629,79 @@ into a collection while that collection is being deleted ends up at the top leve
 **Why.** The chart is the point of the page: the form fields that are touched once per graph
 (details, style) should not compete with it, and the dialogs, popover and wizard are accessible
 patterns the app already had (focus trap, Esc, return of focus).
+
+## ADR-37 Git hooks are the one place the checks run
+
+**Decision.** Every quality check runs from a git hook and nowhere else automatically. The hooks
+`pre-commit`, `pre-merge-commit` and `pre-push` are three-line shims over `scripts/githook_gate.py`
+(standard library only); `commit-msg` is unchanged.
+
+* *Tiers.* A commit and a clean `--no-ff` merge run `fast` (lint, typecheck, caps) on the index
+  tree. A push runs the messages of the new commits through `commit-msg`, then `fast`, `cov`,
+  `memray` and `e2e`. A push whose REMOTE ref is `refs/heads/main` or `refs/tags/*` also runs
+  `security` (semgrep-test, semgrep, trivy), `e2e-mongo`, `qodana` and `mutation` (`mutate` then
+  `mutate-gate` as one check). The `main` tier (push plus security) exists only for
+  `make gate-main`. The release tier is bound to every push of `main`, not to a tag convention:
+  no tag exists, so a tag-only tier would never fire.
+* *Stamps.* A check that passed leaves a stamp keyed on the check and the tree hash in
+  `<git-common-dir>/hook-stamps/`, and the next commit or push of that tree skips it. It is written
+  only after every step exited 0, no test was skipped and neither the tree nor
+  `git status --porcelain --untracked-files=all` changed during the run. `security` also carries
+  the UTC date. Each stamp stores the duration of its steps.
+* *Inline.* `pre-push` runs the missing checks itself, sequentially, in the foreground, and stops at
+  the first failure. It does so only on a clean working tree whose HEAD is the pushed commit;
+  otherwise it refuses before running anything and says what to do. A retry resumes, because the
+  stamps of the finished checks stay.
+* *Fail closed.* A skipped test fails a check (only the 8 mongo unit tests may skip in `cov`), so
+  the machine is part of the gate: Chrome, `node`, `bash` and Linux `/proc` are prerequisites of
+  `cov`; a push that has to run `security` is refused while any `*_OFFLINE` variable is set
+  (matched by suffix, so a new switch is caught too); a missing `QODANA_TOKEN` fails `qodana`; a busy
+  lock, a malformed ref line and any error refuse. A dry run exits 0 only when nothing would run and
+  every new commit message passes `commit-msg`. A check starts only on the state that was verified
+  for its tree, and a push job that passed must have left its stamp. The child environment
+  loses git's local variables, `PYTEST_ADDOPTS` and `SANKEY_TEST_MONGO_URI`, and `UV_LOCKED=1`.
+* *One at a time.* A `flock` on `<git-common-dir>/hook-gate.lock` allows one gate run, and checks run
+  sequentially (two e2e runs at once would mean ten Chromes, which break the 15 s and 20 s timeouts).
+* *Logic in Python.* The gate is Python with an injectable runner, clock and output, under the code
+  caps like every script, so it is unit-tested without running a hook. Signals are handled with
+  process groups: a bash `trap` is deferred while a foreground child runs, and `setsid` without
+  `-w` returns at once, which would let a hook pass without running anything.
+* *Agents.* Agents never run the gates by hand (`CLAUDE.md`); they run only the tests of their own
+  change, and push with `run_in_background`.
+
+**Why.** Before this, only the code caps ran in a hook, and `CLAUDE.md` claimed the hooks ran the
+full suite. Lint, typecheck, coverage, memory, e2e, the scanners and mutation ran when someone
+remembered. Worse, some checks passed without running: the 8 mongo-marked unit tests never ran
+(`make cov` skips them without `SANKEY_TEST_MONGO_URI`, and `make e2e-mongo` selected only
+`e2e and mongo`); e2e and the image exports skip and exit 0 without Chrome; `mutate-gate` judged
+whatever `mutants/` held; `SEMGREP_OFFLINE` and `TRIVY_OFFLINE` silently weakened the scans. The
+rule is now one sentence: tests run in the hooks, and a check that did not run is a failure.
+
+* A stamp is keyed on the tree because that is what a check vouches for: a commit-time pass is
+  reused at push, amend, rebase and cherry-pick keep their stamps, a `--no-ff` merge of an unmoved
+  `main` reuses the branch's, and a failed or dropped push loses nothing that finished.
+* `pre-push` runs the checks inline instead of refusing and printing a command: it keeps one rule
+  for people and agents, and the stamp lookup is the same code path. The cost is a long hook.
+* The scanners' rules and databases change without the tree changing, so the `security` stamp
+  expires with the UTC day. `mutation` (about 19 minutes in the last local run, a figure no earlier
+  document states) and the `qodana` scan are tree-keyed because they judge the code.
+* `qodana` is required for `main` and tags and runs a fresh `make cov` first, because it imports
+  `coverage.xml` and only warns when it is missing or stale. It runs before `mutation` so a missing
+  token fails before the long mutation run.
+* The hooks are client-side only. The project has no CI and no branch protection, and none was
+  added: the hooks are a convenience gate that stops mistakes, not a security boundary.
+
+**Accepted risks.** `--no-verify`, `core.hooksPath` overrides and a clone without `make hooks` skip
+every hook (the rules for agents forbid them; nothing enforces it). A push gate of 30+ minutes holds
+the connection to the remote open, and whether SSH survives that is untested; if it drops, the stamps
+are kept and the next push is instant, and `make gate-release` first avoids it. A commit is refused
+while a push gate holds the lock. Stamps do not record the environment (Docker images, Chrome,
+anything outside `uv.lock`). A gate killed with SIGKILL can leave the project Mongo or child
+processes running, free the lock while they run, and leave stale holder text in it (the lock
+stays with the gate on purpose: a descendant that outlived a normal run would otherwise keep every
+later commit and push waiting); killing only
+`git` leaves the gate running to the end, and it still writes its stamps. A partial staging
+(`git add -p`) is validated as the working tree, not the index; the commit is unstamped and
+`pre-push` checks the committed tree. `git push --dry-run` is recognised from the command lines of
+the hook's ancestors (`/proc`); without `/proc` it runs `pre-push` for real. Several runtimes are
+unknown until the first real runs, which print and store them.

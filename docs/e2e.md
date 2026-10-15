@@ -25,8 +25,10 @@ what only a running server and a real browser decide: the headers on the wire, t
 CSRF guards, downloads, images drawn by Chrome, lazy chart drawing, the Content-Security-Policy, theme
 paint, keyboard use and layout. The e2e suite covers those. It is not measured for coverage and not
 mutated (`make cov` and `make mutate` leave it out), and it is part of `make ci` and `make full`
-through `make e2e`. `make e2e-mongo` is not: `make check`, `make ci` and `make full` must pass without
-any database.
+through `make e2e`. It is also the `e2e` check of the `pre-push` hook, which runs it before every
+push that has no stamp for the pushed tree ([quality.md](quality.md#git-hooks)). `make e2e-mongo` is
+not part of `make check`, `make ci` or `make full`, which must pass without any database; the
+`pre-push` hook runs it only for `main` and tags, against its own Mongo.
 
 The suite has roughly 1,070 tests (`uv run pytest -m e2e tests/e2e --collect-only -q | tail -1`); about
 1,010 run in `make e2e` and about 60 need a real MongoDB.
@@ -94,7 +96,10 @@ Install the dependencies once with `make sync`. The browser tests need Chrome: t
 system Chrome first (Playwright channel `chrome`) and then the Chromium that Playwright downloads
 (`uv run playwright install chromium`). Without either, every test that needs a browser is skipped with
 the reason, and the HTTP tests still run. The tests that draw SVG or PNG on the server also need Chrome
-for kaleido (`uv run plotly_get_chrome`, see the README) and skip when the server answers 501.
+for kaleido (`uv run plotly_get_chrome`, see the README) and skip when the server answers 501. Those
+skips are a convenience for a developer who runs one file; the `pre-push` hook reads the JUnit report
+of `make e2e` and fails on any skipped test, so a push from a machine without a working browser is
+refused instead of passing on HTTP tests alone.
 
 ```bash
 make e2e                        # everything, in 5 parallel shards (about the time of one shard)
@@ -125,6 +130,10 @@ E2E_SHARD=2/5 uv run pytest tests/e2e -m "e2e and not mongo" -p no:cacheprovider
   trace.
 * **Parameters.** `-p no:cacheprovider` is what the make targets pass; do the same when you run shards
   by hand. `-ra` (the project default) prints the reason of every skip.
+* **JUnit.** `make e2e JUNIT=/tmp/run/report.xml` also writes one JUnit file per shard
+  (`report-1.xml` to `report-5.xml`), `make e2e-mongo` writes `report-1.xml` (the e2e selection) and
+  `report-2.xml` (the mongo-marked unit tests). The `pre-push` hook passes this variable and fails
+  on a skipped test, a missing report or a run with no test. Without `JUNIT` nothing changes.
 
 **Artefacts.** A test that fails, or that passes but leaves browser problems, writes
 `.e2e-artifacts/<test-id>/` (git-ignored, replaced on the next failure of the same test;
@@ -174,7 +183,16 @@ make mongo-down
   write rights (writes raise `OperationFailure` code 13), used by the mongomock suite for `permission_denied`.
 * **Unset or down.** Without `SANKEY_TEST_MONGO_URI` the tests skip, and the reason says so. With the
   variable set and nothing answering they fail (they do not skip): `SANKEY_TEST_MONGO_URI is set but
-  the server did not answer: <error type>`. `make e2e-mongo` runs in one process, without shards.
+  the server did not answer: <error type>`. `make e2e-mongo` runs two pytest processes, without
+  shards: `-m "e2e and mongo"` (the flows above, which keep a Playwright loop alive for the whole
+  session), then `-m "mongo and not e2e"` (the 8 mongo-marked unit tests, which skip in `make cov`).
+* **In the pre-push hook.** The `e2e-mongo` check (pushes of `main` and tags) needs no setup. It
+  pings `127.0.0.1:27117`; if nothing answers and `make mongo-absent` confirms that Docker lists no
+  project container, it runs `make mongo-up`, waits up to 60 s, runs `make e2e-mongo` with
+  `SANKEY_TEST_MONGO_URI=mongodb://127.0.0.1:27117`, and runs `make mongo-down` afterwards only when
+  it started the Mongo itself (a container of yours that is still booting is waited for and left
+  running). A skipped test fails the check, so the
+  "unset" case above cannot pass silently.
 * **A new real-Mongo test** carries `@pytest.mark.mongo` and takes `real_env` (from
   `tests/e2e/mongo/conftest.py`) or `real_mongo_uri`. Without the mark `tests/conftest.py` removes the
   variable and a tripwire refuses to construct a real `pymongo.MongoClient`.
@@ -457,7 +475,11 @@ def test_a_remote_server_is_read_only(make_server: ServerFactory, open_page: Pag
 
 `make e2e` should finish in under 3 minutes on a development machine. The suite is waiting-bound (Chrome,
 HTTP round trips), so five shards share the machine without getting in each other's way; one process
-needs about 5 minutes (see the Makefile). What costs time:
+needs about 5 minutes (see the Makefile). The `pre-push` hook runs `make e2e` as the `e2e` check of
+every push without a stamp for the pushed tree, after `cov` and `memray`; it prints the time as
+`gate: e2e: ok in <seconds>s` and keeps it in the stamp, so the figure above is checked against real
+runs. `make e2e-mongo` has no documented budget yet; the first `main` or tag push measures it.
+What costs time:
 
 * The shard planner counts a browser test as eight HTTP tests. An image export on the server starts
   Chrome (about a second each, and the first one is slower), so keep image exports to the tests whose
@@ -491,6 +513,7 @@ Checklist for a test that fails now and then (run it five times in a row, alone 
 | A test file runs nothing: `N deselected` | The default `addopts` deselects `e2e`. Add `-m e2e` (`uv run pytest -m e2e <file>`) |
 | Every browser test is skipped: `no browser could be started (system Chrome: ...; bundled Chromium: ...)` | Neither browser starts. Install Chrome, or run `uv run playwright install chromium`; `-ra` (the project default) prints the reasons |
 | Export tests skip with `Chrome is not available: the server answers 501 export_unavailable` | kaleido finds no Chrome. Run `uv run plotly_get_chrome` or install Chrome |
+| A push is refused with `gate: e2e: junit: skipped test <id> (<reason>)` (or the same for `cov`) | The hook fails on any skipped test. Remove the reason in the parentheses (install Chrome, `uv run playwright install chromium`, `uv run plotly_get_chrome`) and push again; the log of the run is `hook-logs/e2e.log` in the git common directory ([quality.md](quality.md#reading-a-refusal)) |
 | A passing test ends in an error: `the browser reported problems:` | The browser logged a console error, page error, failed request, 4xx or 5xx, or a CSP violation. Read the lines and `problems-<n>.txt`; fix the app, or allow the expected noise per test with `allow_http` and a comment |
 | `port N still accepts connections after stop()` or `the server thread did not stop within 20s` | A request or connection of the test is still open, or the server thread is stuck. Close clients and pages before the server (the fixtures already order this), and check for a hung request |
 | `timed out after 20s waiting for the server on port N to start` | The app failed to start, or the machine is overloaded. Run `make e2e-serial` and look at the first error |
