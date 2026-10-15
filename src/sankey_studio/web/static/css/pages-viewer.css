@@ -94,10 +94,6 @@
   text-transform: uppercase;
 }
 
-/* The Sankey legend is a label, not a control (itemclick is off), but Plotly gives every legend entry an
-   inline pointer cursor; the donut legend does toggle slices, so only the Sankey surface resets it. */
-.static-legend .legendtoggle { cursor: default !important; }
-
 .legend-block .legend { gap: var(--space-2) var(--space-5); }
 .legend-label { min-width: 0; overflow-wrap: anywhere; }
 .legend-value { font-size: var(--text-xs); }

@@ -18,7 +18,7 @@
  * panel (`dispose()`).
  */
 
-import { createChartFrame, disposeChart, draw } from "../../core/chart.js";
+import { createChartFrame, disposeChart, draw, withoutLegend } from "../../core/chart.js";
 import { h, uid } from "../../core/dom.js";
 import { icon } from "../../core/icons.js";
 import { errorState } from "../../core/states.js";
@@ -238,7 +238,7 @@ class ChartPanel {
     this.syncOverlay(view);
     const { surface } = this.frames[view];
     const nodeEvents = view === "sankey" ? eventsFor(bundle, { edits: this.edits }) : undefined;
-    draw(surface, figure, { label: chartLabel(view, bundle), nodeEvents }).then(
+    draw(surface, withoutLegend(figure), { label: chartLabel(view, bundle), nodeEvents }).then(
       () => this.afterDraw(view, null, figure),
       (error) => this.afterDraw(view, error, figure),
     );
