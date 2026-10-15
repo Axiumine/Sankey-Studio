@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+export PATH="$HOME/.local/bin:$PATH"  # uv, also when git is started by a GUI; all logic: scripts/githook_gate.py
+cd "$(git rev-parse --show-toplevel)" && exec uv run --no-project --python 3.14 python -m scripts.githook_gate pre-push "$@"

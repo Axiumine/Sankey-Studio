@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 from scripts import check_code_caps as caps
+from scripts import githook_plan
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -252,11 +253,13 @@ def test_git_listing_honours_gitignore_and_includes_untracked(tmp_path: Path) ->
 # --------------------------------------------------------------------------- repo wiring
 
 
-def test_pre_commit_hook_runs_the_check() -> None:
+def test_pre_commit_hook_runs_the_check_through_the_gate() -> None:
+    """The hook is a shim for the gate, whose ``fast`` check runs ``make caps`` (this script)."""
     hook = REPO_ROOT / ".githooks" / "pre-commit"
     assert hook.is_file()
     assert os.access(hook, os.X_OK)
-    assert "scripts/check_code_caps.py" in hook.read_text(encoding="utf-8")
+    assert "-m scripts.githook_gate pre-commit" in hook.read_text(encoding="utf-8")
+    assert ("make", "caps") in [step.argv for step in githook_plan.CHECKS["fast"].steps]
 
 
 def test_caps_are_the_documented_ones() -> None:

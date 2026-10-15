@@ -1,9 +1,11 @@
 """Shared fixtures. Tests never touch a real MongoDB: they use mongomock.
 
 Autouse guards (every test): ``SANKEY_*`` environment variables are removed, so a developer's
-``SANKEY_MONGO_URI`` can never seed a real connection; and the pymongo client constructor is
-replaced by a tripwire, so no code path can open a socket to a real server. Tests marked
-``@pytest.mark.mongo`` (they run only with ``SANKEY_TEST_MONGO_URI``) are exempt from both.
+``SANKEY_MONGO_URI`` can never seed a real connection; git's repository-local variables
+(``GIT_DIR``, ``GIT_INDEX_FILE``...) are removed, so a run under a git hook never reaches the
+real repository; and the pymongo client constructor is replaced by a tripwire, so no code path
+can open a socket to a real server. Tests marked ``@pytest.mark.mongo`` (they run only with
+``SANKEY_TEST_MONGO_URI``) are exempt from the first and the last.
 
 Each agent may add a ``conftest.py`` only inside its own test sub-directory
 (``tests/sources``, ``tests/storage``, ``tests/render``, ``tests/web``).
@@ -18,6 +20,7 @@ import mongomock
 import pymongo.mongo_client
 import pytest
 from pydantic import SecretStr
+from scripts.githook_git import FALLBACK_LOCAL_ENV
 
 from sankey_studio.config import BootstrapConfig
 from sankey_studio.models import AppSettings, MongoConnection
@@ -43,6 +46,18 @@ def _scrub_sankey_env(monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRe
         if is_real and name == REAL_MONGO_ENV:
             continue
         monkeypatch.delenv(name)
+
+
+@pytest.fixture(autouse=True)
+def _scrub_git_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Remove git's repository-local variables (GIT_DIR, GIT_INDEX_FILE...).
+
+    A test that runs under a git hook inherits them, and a ``git init`` or ``git add`` in a
+    ``tmp_path`` would then act on the real repository. Variables such as ``GIT_CONFIG_GLOBAL``
+    are not repository-local and stay.
+    """
+    for name in FALLBACK_LOCAL_ENV:
+        monkeypatch.delenv(name, raising=False)
 
 
 @pytest.fixture(autouse=True)

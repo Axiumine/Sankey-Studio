@@ -23,6 +23,7 @@ itself in depth (see [Security model](#security-model)).
 * [Development](#development)
 * [Quality tooling](#quality-tooling)
 * [Commit policy](#commit-policy)
+* [Git hooks](#git-hooks)
 * [Project layout](#project-layout)
 * [Docs index](#docs-index)
 
@@ -62,6 +63,8 @@ itself in depth (see [Security model](#security-model)).
 Requirements: [uv](https://docs.astral.sh/uv/) and Python 3.14 (uv installs it from `.python-version`
 when it is missing). For SVG and PNG export, Chrome or Chromium must be installed; if it is not, run
 `uv run plotly_get_chrome`. Without it, the UI falls back to the browser's own image download.
+The git hooks fail on any skipped test, so a machine that pushes also needs Chrome or Chromium, `node`,
+`bash` and a Linux-style `/proc` (see [docs/quality.md](docs/quality.md#fail-closed-rules)).
 
 ```bash
 uv sync --all-extras      # install runtime and development dependencies
@@ -258,7 +261,7 @@ Details and the reasoning are in [docs/architecture.md](docs/architecture.md#sec
 
 ```bash
 make sync     # uv sync --all-extras
-make hooks    # enable the versioned git hooks (once per clone)
+make hooks    # enable the versioned git hooks (once per clone; make sync does it too)
 make check    # lint, typecheck, caps, cov, memray
 ```
 
@@ -271,7 +274,7 @@ make check    # lint, typecheck, caps, cov, memray
 | `make caps` | Code caps (file 500, function 50, class 300, params 4, nesting 4), ratcheted against `.code-caps-baseline.json`, run on Python 3.14 |
 | `make test` | Unit tests: `pytest -m "not memory and not e2e"` |
 | `make e2e` | End-to-end tests: the real app and real Chrome (`pytest -m "e2e and not mongo"`) |
-| `make e2e-mongo` | The same flows against a real MongoDB (needs `SANKEY_TEST_MONGO_URI`) |
+| `make e2e-mongo` | The same flows against a real MongoDB, then the mongo-marked unit tests (needs `SANKEY_TEST_MONGO_URI`) |
 | `make cov` | Unit tests with coverage; fails below 100% line and branch of `src/sankey_studio` |
 | `make memray` | Memory-budget tests (pytest-memray) |
 | `make profile` | Whole-pipeline memory profile and flamegraph in `.memray/` |
@@ -283,13 +286,19 @@ make check    # lint, typecheck, caps, cov, memray
 | `make qodana` | Qodana Ultimate Plus inspection (needs `QODANA_TOKEN`) |
 | `make security` | `semgrep-test`, `semgrep`, `trivy` |
 | `make gitnexus` | Refresh the GitNexus code-intelligence index (`gitnexus analyze --pdg`) |
-| `make hooks` | `git config core.hooksPath .githooks` |
+| `make hooks` | `git config core.hooksPath .githooks` (`make sync` runs it) |
+| `make hooks-check` | Verify `core.hooksPath` and the modes of the four hook files (`git ls-files -s`) |
+| `make gate-commit` | The `commit` tier by hand: `fast` (lint, typecheck, caps) on HEAD, with a stamp |
+| `make gate-push` | The `push` tier by hand: `fast`, `cov`, `memray`, `e2e` |
+| `make gate-main` | The `main` tier by hand: `push` plus `security` |
+| `make gate-release` | The `release` tier by hand: `main` plus `e2e-mongo`, `qodana`, `mutation` |
 | `make check` | `lint`, `typecheck`, `caps`, `cov`, `memray` |
-| `make ci` | `check` plus `security` |
+| `make ci` | `check` plus `security` and `e2e` |
 | `make full` | `ci` plus `mutate`, `mutate-gate`, `qodana` |
 | `make serve` | `uv run sankey-studio serve` |
 | `make mongo-up` | Start the project-local MongoDB (Docker) on `127.0.0.1:27117` |
 | `make mongo-down` | Stop it |
+| `make mongo-absent` | Exit 0 only when Docker answers and no project MongoDB container is running (the `e2e-mongo` hook check uses it) |
 | `make clean` | Remove caches and reports |
 
 There is also `make gitnexus-status`.
@@ -300,7 +309,10 @@ the baseline `.code-caps-baseline.json` is empty and is a ratchet that may only 
 violation instead of recording it. Unit tests use mongomock. Real-MongoDB tests (`@pytest.mark.mongo`)
 and `make e2e-mongo` run only when `SANKEY_TEST_MONGO_URI` is set, for example
 `SANKEY_TEST_MONGO_URI=mongodb://127.0.0.1:27117 make e2e-mongo` after `make mongo-up`. The compose
-MongoDB binds `127.0.0.1:27117` so it never collides with another local MongoDB.
+MongoDB binds `127.0.0.1:27117` so it never collides with another local MongoDB. The git hooks run
+all these gates for you (see [Commit policy](#commit-policy)); `test`, `cov`, `memray`, `e2e` and
+`e2e-mongo` accept `JUNIT=<path>` to also write a JUnit report, which the hooks use to refuse skipped
+tests.
 
 Python 3.14 syntax such as `except A, B:` (PEP 758) is used, so tools that parse the sources need a
 3.14 interpreter; `make caps` runs `uv run --no-project --python 3.14 python scripts/check_code_caps.py`
@@ -317,15 +329,20 @@ for that reason.
 * **Trivy** for dependencies, secrets, misconfigurations and licences, run in Docker.
 * **Qodana Ultimate Plus**: needs a `QODANA_TOKEN` in a local `.env`. Copy `.env.example` to `.env`
   and fill the value in yourself; the file is gitignored, and `scripts/qodana.sh` reads the token
-  into its own process without printing it.
+  into its own process without printing it. Pushing `main` or a tag runs it, so that push fails
+  without the token.
+* **Git hooks** that run every gate above before a commit or a push, with stamps so that a check
+  never runs twice on the same tree ([Commit policy](#commit-policy)).
 * **GitNexus** code-intelligence index (`make gitnexus`) for impact analysis before edits.
 
 More in [docs/quality.md](docs/quality.md).
 
 ## Commit policy
 
-Enable the hooks once per clone with `make hooks`. `pre-commit` runs the code caps. `commit-msg`
-enforces:
+Enable the hooks once per clone with `make hooks` (`make sync` does it too). The `commit-msg` hook
+enforces the format below, and `pre-push` applies it again to every new commit, so commits made by
+`rebase` or `cherry-pick` (which skip `commit-msg`) are checked too. What else the hooks run is in
+[Git hooks](#git-hooks).
 
 ```
 <type>(<scope>)!: <subject>
@@ -340,6 +357,52 @@ enforces:
 * commits authored by an AI assistant start with the robot emoji, for example
   `🤖 fix(sources): reject path traversal in text files`
 * no AI attribution in messages: no `Co-Authored-By` trailer and no assistant or vendor names
+
+## Git hooks
+
+The hooks in `.githooks` are the one place where the quality gates run. Enable them with `make hooks`
+(`make sync` does it too) and verify the setup with `make hooks-check`. Each hook is a three-line
+shim; the logic is `scripts/githook_gate.py` (standard library only), and every check runs through
+its `make` target, one at a time.
+
+| Hook | Fires on | Runs |
+|---|---|---|
+| `commit-msg` | every commit and merge commit | the message format above |
+| `pre-commit`, `pre-merge-commit` | commit, amend, clean `merge --no-ff` | `fast`: `make lint`, `make typecheck`, `make caps` on the tree about to be committed |
+| `pre-push` | push of any ref except `main` and tags | the messages of the new commits, then `fast`, `cov`, `memray`, `e2e` |
+| `pre-push` | push whose remote ref is `refs/heads/main` or `refs/tags/*` | the same, plus `security` (Semgrep, Trivy), `e2e-mongo`, `qodana` and `mutation` |
+
+* **Stamps.** A check that passed on a tree leaves `hook-stamps/<check>/<tree hash>` in the git common
+  directory (`.git/` in an ordinary clone). It is written only after every step exited 0, no test was
+  skipped and the working tree did not change while the check ran. A later commit or push of the same
+  tree finds the stamp and skips the check, so each check runs once per tree. `security` stamps also
+  carry the UTC date, because the scanner rules and the vulnerability database change daily. A failed
+  push keeps the stamps of the checks that passed, so the next push resumes where it stopped.
+* **A push runs the missing checks itself**, in the foreground, so it can take many minutes. Pushing
+  `main` or a tag also runs the mutation run (about 19 minutes in the last local run, unverified); the figures are in
+  [docs/quality.md](docs/quality.md#git-hooks). The push needs a clean working tree whose HEAD is
+  the pushed commit; otherwise the hook refuses before it runs anything and says what to do (check
+  the branch out, commit, or `git stash -u`). One gate runs at a time, so a commit made while a push
+  gate runs is refused with "another gate run holds ...".
+* **Reading a refusal.** Every line starts with `gate:`. `gate: FAILED <check> (exit N); log: <path>`
+  names the log of the last run of that check (`hook-logs/<check>.log` in the git common directory);
+  `gate: <check>: junit: skipped test ...` means a test was skipped, which fails the gate; the other
+  messages are listed in [docs/quality.md](docs/quality.md#reading-a-refusal).
+* **Fail closed.** A skipped test fails its check, a missing `QODANA_TOKEN` fails `qodana`, a push that
+  has to run `security` is refused while an `*_OFFLINE` variable is set (it weakens the scans), and a
+  busy lock or any error inside the gate refuses the commit or push. A push that only deletes a ref
+  checks nothing. A dry run (`SANKEY_GATE_DRY_RUN=1`, `git push --dry-run`) still judges the commit
+  messages and exits 0 only when the real hook would.
+* **By hand.** `make gate-commit`, `make gate-push`, `make gate-main` and `make gate-release` run the
+  same checks for the tree of HEAD (the tree must be clean to leave a stamp), so the later push finds
+  them. `uv run --no-project --python 3.14 python -m scripts.githook_gate plan release` prints which
+  checks of a tier have a stamp, without running anything.
+* **Not a security boundary.** The hooks are local: `git commit --no-verify`, `git push --no-verify`,
+  `git -c core.hooksPath=/dev/null ...` and a fresh clone without `make hooks` skip them, and the
+  project has no server-side check. They stop mistakes, not a determined person.
+* **Rollback.** `git config --unset core.hooksPath` disables every hook of the clone; `rm -rf
+  .git/hook-stamps .git/hook-logs` clears the stamps and logs (use `git rev-parse --git-common-dir`
+  for the path in a linked worktree).
 
 ## Project layout
 
@@ -364,11 +427,12 @@ src/sankey_studio/
   pipeline.py           draft -> graph -> bundle, with a small result cache
   edits/                where an edit goes (draft, file, collection, graph) and the write-back
   web/                  FastAPI app: middleware, security, routers/, schemas/, templates/, static/
-scripts/                code caps, mutation gate, memory profile, Semgrep/Trivy/Qodana runners
+scripts/                code caps, mutation gate, memory profile, Semgrep/Trivy/Qodana runners,
+                        the git-hook gate (githook_*.py) and mongo_wait.py
 tests/                  unit tests mirroring src/, contracts/, e2e/
 docs/                   project documentation and screenshots
 .semgrep/rules/         custom Semgrep rules and their tests
-.githooks/              pre-commit and commit-msg hooks
+.githooks/              commit-msg hook and the pre-commit, pre-merge-commit and pre-push shims
 ```
 
 ## Docs index

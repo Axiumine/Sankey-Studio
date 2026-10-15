@@ -1,9 +1,10 @@
-"""Tests for the versioned git hooks (.githooks/commit-msg, .githooks/pre-commit)."""
+"""Tests for the versioned git hooks (commit-msg and the three gate shims in .githooks)."""
 
 from __future__ import annotations
 
 import os
 import shutil
+import stat
 import subprocess
 from pathlib import Path
 
@@ -186,10 +187,22 @@ def test_body_width_limit_ignores_urls(tmp_path: Path) -> None:
 # --------------------------------------------------------------------------- wiring
 
 
-def test_hooks_are_executable_and_pre_commit_runs_the_caps_check() -> None:
-    for name in ("commit-msg", "pre-commit"):
-        assert os.access(HOOKS / name, os.X_OK), name
-    assert "scripts/check_code_caps.py" in (HOOKS / "pre-commit").read_text(encoding="utf-8")
+GATE_SHIMS = ("pre-commit", "pre-merge-commit", "pre-push")
+
+
+def test_hooks_are_executable_and_the_gate_shims_call_the_runner() -> None:
+    for name in ("commit-msg", *GATE_SHIMS):
+        path = HOOKS / name
+        assert path.stat().st_mode & stat.S_IXUSR, name
+        assert os.access(path, os.X_OK), name
+    for name in GATE_SHIMS:
+        text = (HOOKS / name).read_text(encoding="utf-8")
+        assert f"-m scripts.githook_gate {name}" in text, name
+
+
+def test_pre_commit_no_longer_hardwires_the_caps_script() -> None:
+    text = (HOOKS / "pre-commit").read_text(encoding="utf-8")
+    assert "check_code_caps" not in text
 
 
 def test_commit_msg_scopes_cover_the_package_layout() -> None:
