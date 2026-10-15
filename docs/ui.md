@@ -658,10 +658,10 @@ Behaviour:
   first N of M links. The editor lists them all." when the bundle holds fewer than the graph).
   The Donut tab holds `category-table` ("Totals by category", with a total row) and a note naming the
   donut basis.
-* The legend drawn inside the Sankey figure is a label, not a control (its entries do nothing when clicked),
-  so the cursor over its coloured squares is the standard arrow: the Sankey chart div carries the class
-  `static-legend`, which resets Plotly's inline pointer cursor on `.legendtoggle`. The donut legend hides
-  and shows slices, so it keeps the pointer.
+* The Sankey is drawn without its in-figure legend row (`withoutLegend` of `core/chart.js`: the legend traces go,
+  the plot takes the band back and the top margin loses it) because the `legend` list under the chart names the
+  same entries; the editor chart does the same. The server figure, the exports and the compare cards keep the
+  legend row. The donut legend hides and shows slices, so it stays in the donut figure.
 * `stats` is a `div[role=group]` of tiles: Total in, Total out, Categories. The graph size (nodes,
   links, layers) is not shown here; the editor chart summary and the compare cards still list it.
   Values carry the unit suffix of the style.

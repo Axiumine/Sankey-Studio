@@ -18,7 +18,7 @@
  */
 
 import { announce } from "../core/a11y.js";
-import { createChartFrame, disposeChart, draw } from "../core/chart.js";
+import { createChartFrame, disposeChart, draw, withoutLegend } from "../core/chart.js";
 import { h } from "../core/dom.js";
 import { icon } from "../core/icons.js";
 import { stripBidi } from "../core/text.js";
@@ -64,7 +64,6 @@ class Charts {
     this.theme = "light";
     this.onTab = onTab;
     this.sankey = slot("sankey-chart", figureHeight(bundle.figure));
-    this.sankey.surface.classList.add("static-legend");
     this.donut = bundle.donut_available ? slot("donut-chart", figureHeight(bundle.donut)) : null;
     this.legendHolder = h("div", { class: "legend-block" });
     this.categoryHolder = h("div", { class: "stack stack-sm" });
@@ -150,7 +149,7 @@ class Charts {
     const label = `Sankey diagram of ${this.graph.name}: ${stats.nodes} nodes and ${stats.links} links. The links table below has the same data.`;
     this.legendHolder.replaceChildren(...(bundle.legend.length > 0 ? [h("h3", { class: "legend-title" }, "Legend"), legendList(bundle.legend, { suffix })] : []));
     this.links.update(bundle, suffix);
-    const jobs = [this.drawSlot(this.sankey, bundle.figure, label)];
+    const jobs = [this.drawSlot(this.sankey, withoutLegend(bundle.figure), label)];
     if (this.donut) {
       this.categoryHolder.replaceChildren(...this.donutExtras(bundle, suffix));
       if (this.donut.drawn || this.active() === "donut") {

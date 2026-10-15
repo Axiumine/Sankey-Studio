@@ -141,7 +141,7 @@ def test_link_colours_by_category_recolour_the_sankey_and_extra_categories_fold_
     colours = charts.legend_colours()
     assert sorted(colours) == sorted(BUDGET_CATEGORISED.categories)
     assert len(set(colours.values())) == BUDGET_CATEGORISED.category_count
-    expect(charts.sankey_legend_labels).to_have_text(list(colours))
+    expect(charts.sankey_legend_labels).to_have_count(0)  # the legend list says it, once
     fills = Counter(charts.link_fills())
     assert fills != by_node
     for category, links in links_per_category(BUDGET_CATEGORISED.csv).items():

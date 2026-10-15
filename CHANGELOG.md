@@ -88,6 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Viewer and editor: the Sankey no longer shows its legend twice (a legend row above the plot and the legend list under the chart). The row above the plot is gone from both pages and the plot uses the space; the legend list stays. Exports, the compare cards and the donut keep their in-figure legend.
 - The 8 mongo-marked unit tests were never run (they skip in `make cov` without `SANKEY_TEST_MONGO_URI` and `make e2e-mongo` did not select them); `make e2e-mongo` now runs them and the release gate of the hooks runs `make e2e-mongo`.
 - The documentation said that `make ci` is `check` plus `security`; it also runs `e2e` (README, `CLAUDE.md`, `AGENTS.md`, `docs/quality.md`), and `CLAUDE.md` claimed that the hooks ran the full suite when only the code caps ran.
 - Editor: a bar dropped back into the order of the rows is stored when the automatic layout had drawn another order (the drag is compared with the order drawn when the press began, not with the row order); the Undo of an added entry or a node drag undoes only its own edit, and a new Undo toast replaces the older one instead of keeping its Undo.

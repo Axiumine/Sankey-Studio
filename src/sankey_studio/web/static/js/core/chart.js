@@ -15,6 +15,8 @@
  *   Plotly draws a title on one line and cuts it at the edge) and `layout.margin.t` grows with the
  *   extra lines. Only the copy that is drawn changes; a ResizeObserver wraps it again when the
  *   container changes width.
+ * - `withoutLegend(figure)` drops the in-figure legend row of a Sankey, for the pages (viewer, editor) that
+ *   list the same entries as HTML under the chart; the compare cards and the server exports keep it.
  * - A ResizeObserver keeps the chart fitted to its container (not only to the window).
  * - `draw(..., {nodeEvents})` (the editor only): `nodeEvents()` returns `{click, move}` and is asked at each
  *   event; see core/chart-nodes.js. The viewer, compare and export pass nothing.
@@ -165,6 +167,32 @@ export function scrubFigure(node) {
     }
   }
   return node;
+}
+
+/** `LEGEND_BAND` of render/layout.py: the top margin the server adds for the legend row. */
+const LEGEND_BAND = 40;
+
+/**
+ * A copy of a server Sankey figure without its legend row, for a page that lists the same entries
+ * as HTML under the chart. The legend traces go, the Sankey takes back the band they held and the
+ * top margin loses it. A figure with no legend row, or a donut, comes back as it is; the server
+ * exports and the compare cards keep the in-figure legend.
+ * @param {{data?: object[], layout?: object}} figure
+ * @returns {{data?: object[], layout?: object}}
+ */
+export function withoutLegend(figure) {
+  const [sankey] = figure.data ?? [];
+  const { layout } = figure;
+  if (sankey?.type !== "sankey" || !layout?.showlegend) {
+    return figure;
+  }
+  const domain = { ...sankey.domain, y: [sankey.domain?.y?.[0] ?? 0, 1] };
+  const top = Math.max((layout.margin?.t ?? LEGEND_BAND) - LEGEND_BAND, 0);
+  return {
+    ...figure,
+    data: [{ ...sankey, domain }],
+    layout: { ...layout, showlegend: false, margin: { ...layout.margin, t: top } },
+  };
 }
 
 function prepare(div, copy, options) {

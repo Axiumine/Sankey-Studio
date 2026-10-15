@@ -317,6 +317,10 @@ figure as annotations and legend traces. The donut uses the native legend.
 
 **Why.** Exports (SVG, PNG, HTML) must contain the legend.
 
+**Amendment.** The viewer and the editor list the same entries as HTML under the chart, so they draw the
+figure without the legend row (`withoutLegend` in `core/chart.js`); the figure, the exports and the
+compare cards keep it.
+
 ## ADR-24 Palette, patterns and streaming uploads
 
 **Decision.** The ordinal ramp for the `layer` mode is validated. `Other` gets a pattern fill so it

@@ -119,7 +119,8 @@ class ChartDom:
 
     @property
     def sankey_legend_labels(self) -> Locator:
-        """The legend drawn INSIDE the Sankey figure (it travels into SVG, PNG and HTML exports)."""
+        """The legend row of the Sankey figure: the server draws it (it travels into SVG, PNG and
+        HTML exports) but the viewer and the editor leave it out; the ``legend`` list says it."""
         return self.page.locator(f"{SANKEY} .legendtext")
 
     def link_fills(self) -> list[str]:
