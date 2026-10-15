@@ -225,3 +225,17 @@ def test_a_failed_redraw_puts_the_switch_back_and_the_next_try_works(
 
     expect(menu.switch(NODE_VALUES)).to_be_checked()
     expect_second_line(charts)
+
+
+# ------------------------------------------------------------------------------ the numbers strip
+
+
+def test_the_numbers_strip_shows_the_flow_and_the_categories_and_not_the_graph_size(
+    viewer: ViewerPage,
+) -> None:
+    stats = viewer.tid("stats")
+
+    expect(stats.locator(".stat-label")).to_have_text(["Total in", "Total out", "Categories"])
+    expect(stats).not_to_contain_text("Nodes")
+    expect(stats).not_to_contain_text("Links")
+    expect(stats).not_to_contain_text("Layers")

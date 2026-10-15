@@ -1,4 +1,4 @@
-/* Viewer page: header, stats, warnings, chart card (tabs, legend, tables), export panel.
+/* Viewer page: header, stats, warnings, chart card (tabs, legend, tables, export popover).
    Only token variables here; chart colours come from the server figure. */
 
 .viewer-header { margin-top: calc(var(--space-2) * -1); }
@@ -26,8 +26,6 @@
 .viewer-stats:empty,
 .viewer-warnings-slot:empty { display: none; }
 
-.stat-note { margin-top: calc(var(--space-1) * -1); }
-
 /* ------------------------------------------------------------------ warnings */
 
 .warning-list {
@@ -37,28 +35,18 @@
 
 .warning-list li + li { margin-top: var(--space-1); }
 
-/* ------------------------------------------------------------------ layout */
-
-.viewer-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-4);
-  align-items: start;
-}
-
-@media (min-width: 1100px) {
-  .viewer-layout { grid-template-columns: minmax(0, 1fr) 19rem; }
-  .viewer-aside { position: sticky; top: calc(var(--header-h) + var(--space-4)); }
-}
-
 /* ------------------------------------------------------------------ chart card */
 
 .chart-card > .card-body { padding: var(--space-3) var(--space-4) var(--space-4); }
 .chart-panel { display: flex; flex-direction: column; gap: var(--space-4); }
 
-/* display menu: the icon at the right of the tab row and its panel of switches */
+/* chart tools: the icons at the right of the tab row, each with its own popover panel */
+.chart-tools { display: flex; flex: none; gap: var(--space-1); align-items: center; }
+
+/* display menu: the sliders icon and its panel of switches */
 .display-menu { position: relative; flex: none; }
-.display-menu .btn-icon { min-height: 2.25rem; }
+.display-menu .btn-icon,
+.export-menu .btn-icon { min-height: 2.25rem; }
 .display-menu .btn-icon[aria-expanded="true"] { background: var(--wash-strong); }
 
 .display-panel {
@@ -106,6 +94,10 @@
   text-transform: uppercase;
 }
 
+/* The Sankey legend is a label, not a control (itemclick is off), but Plotly gives every legend entry an
+   inline pointer cursor; the donut legend does toggle slices, so only the Sankey surface resets it. */
+.static-legend .legendtoggle { cursor: default !important; }
+
 .legend-block .legend { gap: var(--space-2) var(--space-5); }
 .legend-label { min-width: 0; overflow-wrap: anywhere; }
 .legend-value { font-size: var(--text-xs); }
@@ -128,14 +120,22 @@
 
 /* ------------------------------------------------------------------ export panel */
 
+/* the popover of the download icon (js/viewer/export-menu.js); the panel scrolls when the window is short */
+.export-menu { flex: none; }
+
+/* z-sticky, not the dropdown level of .pop-panel: the panel scrolls with the page and must pass under the sticky header */
+.export-menu-panel {
+  z-index: var(--z-sticky);
+  width: min(24rem, calc(100vw - 4 * var(--space-4)));
+  max-height: calc(100vh - var(--header-h) - 2 * var(--space-4));
+  padding: var(--space-4);
+  overflow-y: auto;
+}
+
 .export-options {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
-}
-
-@media (min-width: 640px) and (max-width: 1099px) {
-  .export-options { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 
 .export-size { display: flex; flex-direction: column; gap: var(--space-1); }
@@ -145,7 +145,7 @@
 .export-note { font-size: var(--text-sm); }
 
 @media (max-width: 480px) {
-  .viewer-layout .card-body { padding: var(--space-3); }
+  .chart-card > .card-body { padding: var(--space-3); }
 }
 
 .export-buttons {
@@ -162,5 +162,4 @@
 
 /* loading skeleton: the same boxes as the finished page, so nothing moves when the data arrives */
 .viewer-stats-skeleton { height: 4.5rem; border-radius: var(--radius-md); }
-.viewer-aside-skeleton { height: 24rem; border-radius: var(--radius-lg); }
 .tabs-skeleton { height: 2.25rem; margin-bottom: var(--space-4); border-bottom: 1px solid var(--border); }

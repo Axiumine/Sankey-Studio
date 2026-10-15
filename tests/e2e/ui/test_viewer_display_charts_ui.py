@@ -183,6 +183,7 @@ def test_every_download_of_the_sankey_carries_the_switches(viewer: ViewerPage) -
     menu.open()
     for testid, on in ((NODE_VALUES, True), (DONUT_PERCENT, False), (DONUT_VALUE, True)):
         menu.set(testid, on)
+    viewer.open_export_menu()  # opening it closes the display menu; the switches stay as set
     files = {}
 
     for button in ("export-json", "export-csv", "export-html", "export-sankey-svg"):
@@ -202,6 +203,7 @@ def test_every_download_of_the_donut_carries_the_switches(viewer: ViewerPage) ->
     menu.open()
     for testid, on in ((DONUT_PERCENT, False), (DONUT_VALUE, True)):
         menu.set(testid, on)
+    viewer.open_export_menu()
 
     json_file = download(page, viewer.tid("export-json"))
     assert log.last("export")["chart"] == "donut"

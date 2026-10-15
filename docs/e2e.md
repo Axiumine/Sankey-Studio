@@ -76,6 +76,7 @@ Browser flows (`tests/e2e/ui/`):
 | `test_write_back_*` | The consent dialog and its four answers, the status line of the Source panel, MongoDB, aggregate and read-only remote servers |
 | `test_sources_headerless_ui`, `test_sources_paste_clear_ui` | The fourth column as category without a header; the Clear icon and its Undo |
 | `test_export_*` | Every download of the viewer and the editor, and the browser-drawn fallback when the server answers 501 |
+| `test_viewer_export_menu_*` | The viewer's export icon: icon and ARIA state, panel hidden until opened, its ways to close, hand-over with the display menu, the Sankey/Donut buttons, a download that keeps it open, the 390 px window |
 | `test_viewer_display_*` | The viewer's display menu: icon, panel and its three ways to close, the tab strip, the Sankey and donut switches, the downloads that carry them, the saved style, a failed redraw |
 | `test_sources_*` | Text file and upload tabs, column mapping, the manual table, the MongoDB tab with and without a connection |
 | `test_library_*`, `test_compare_*` | Browsing, actions, bundles, the 409 conflict; the compare cards and the 12-graph limit |
@@ -365,7 +366,7 @@ lists every non-GET) and the toast, never the cursor. `data-dragging` is set one
 | Modules | Provide |
 |---|---|
 | `ui_a_editor`, `ui_a_entries`, `ui_a_sources`, `ui_a_manual`, `ui_a_mongo` | The editor, the entries table and the source tabs |
-| `ui_a_viewer`, `ui_a_charts`, `ui_a_downloads`, `ui_a_display` | The viewer, `ChartDom` (Sankey, donut and legend read from the Plotly DOM; `bar`, `click_bar`, `drag_bar`, `drawn_order`, `expect_stack`, `watch_restyles`, `flow_dialog` for the node click), real downloads and PNG info, the viewer's display menu and a log of its `/render` and `/export` requests |
+| `ui_a_viewer`, `ui_a_charts`, `ui_a_downloads`, `ui_a_display` | The viewer, `ChartDom` (Sankey, donut and legend read from the Plotly DOM; `bar`, `click_bar`, `drag_bar`, `drawn_order`, `expect_stack`, `watch_restyles`, `flow_dialog` for the node click), real downloads and PNG info, the viewer's display menu and a log of its `/render` and `/export` requests (`ui_a_viewer` also has `open_export_menu()`, `export_button`, `export_panel`) |
 | `ui_a_wizard`, `ui_a_chrome` | `NewGraphWizard` and `WizardInput`, `finish_wizard`; `GraphMenu`, `DetailsDialog`, `ChangeSourceDialog`, `ChartSettings` and `EditorChrome` (the dual-mode helpers, see below) |
 | `ui_a_edits` | `ConsentDialog` (accept, decline, never, cancel), `WriteBackStatus` (the status line and "Ask me again"), `file_graph` and `mongo_graph` (save a graph on a managed file or a mongomock collection), `write_file`, `commit_three_at_once` |
 | `ui_a_keyboard`, `ui_a_seed` | `tab_until` and `focus_ring`; seeding a graph through the API |

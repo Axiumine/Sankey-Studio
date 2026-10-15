@@ -58,6 +58,7 @@ def step_sizes_outside_the_limits_stop_a_download(viewer: ViewerPage) -> None:
         "request",
         lambda request: requests.append(request.url) if "/export" in request.url else None,
     )
+    viewer.open_export_menu()
     viewer.tid("export-width").fill("100")
     viewer.tid("export-sankey-svg").click()
     expect(viewer.page.get_by_text("Enter a width from 200 to 4000.")).to_be_visible()
@@ -76,6 +77,7 @@ def step_sizes_outside_the_limits_stop_a_download(viewer: ViewerPage) -> None:
 
 
 def step_svg_png_and_data_of_the_sankey(viewer: ViewerPage, saved: SavedGraph) -> None:
+    viewer.open_export_menu()
     expect_image_size(viewer.page, 2400, 1120)
     width, height = image_size_hint(viewer.page)
 
@@ -127,8 +129,10 @@ def step_png_size_follows_the_inputs_and_transparent_has_no_paint(viewer: Viewer
 
 
 def step_donut_images_and_data(viewer: ViewerPage, saved: SavedGraph) -> None:
-    viewer.open_donut()
+    viewer.open_donut()  # a press on the tab closed the popover: the icon opens it again
+    viewer.open_export_menu()
     expect(viewer.tid("export-sankey-svg")).to_be_hidden()
+    expect(viewer.tid("export-donut-svg")).to_be_visible()
     viewer.tid("export-transparent").uncheck()
     viewer.tid("export-height").fill("")
     viewer.set_export_size(width="800", scale="1.5")

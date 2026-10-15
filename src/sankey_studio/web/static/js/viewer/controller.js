@@ -1,6 +1,6 @@
 /**
- * The viewer page: header, numbers, warnings, the chart card and the export panel of one saved
- * graph.
+ * The viewer page: header, numbers, warnings and the chart card of one saved graph. The export
+ * panel lives in a popover that a download icon in the chart card opens (export-menu.js).
  *
  * Load: `GET /graphs/{id}/render?theme=<shown theme>`. A switch of the colour theme asks again with
  * the other `?theme=` and redraws in place; the previous drawing stays until the new one arrives,
@@ -31,7 +31,7 @@ import { onRestored, reachedByHistory } from "../library/freshness.js";
 import { displayName, withDisplayName } from "../library/names.js";
 import { createCharts } from "./charts.js";
 import { DEFAULT_VIEW, fetchGraph, fetchRender, fetchViewStyle } from "./data.js";
-import { createExportPanel } from "./export.js";
+import { createExportMenu } from "./export-menu.js";
 import { graphHeader } from "./header.js";
 import { statsStrip, valueSuffix, warningsList } from "./parts.js";
 
@@ -102,19 +102,14 @@ class ViewerPage {
 
   /** Shows the loading frame and asks for the bundle in the colours now on screen. */
   retry() {
-    this.parts?.charts.dispose(); // a restored page redraws: free the old Plotly instance, its observer and window listener
+    this.disposeParts(); // a restored page redraws: free the old Plotly instance, its observer and window listener
     this.parts = null;
     const { frame } = createChartFrame({ height: 560 });
     frame.append(h("div", { class: "chart-overlay" }, loadingState({ label: "Loading the graph", block: true })));
-    // same grid as the finished page (numbers strip, chart card, export column): nothing moves when the data arrives
+    // same boxes as the finished page (numbers strip, chart card): nothing moves when the data arrives
     this.body.replaceChildren(
       h("div", { class: "skeleton viewer-stats-skeleton", "aria-hidden": "true" }),
-      h(
-        "div",
-        { class: "viewer-layout" },
-        h("div", { class: "card chart-card" }, h("div", { class: "card-body" }, h("div", { class: "tabs-skeleton" }), frame)),
-        h("aside", { class: "viewer-aside", "aria-hidden": "true" }, h("div", { class: "skeleton viewer-aside-skeleton" })),
-      ),
+      h("div", { class: "card chart-card" }, h("div", { class: "card-body" }, h("div", { class: "tabs-skeleton" }), frame)),
     );
     return this.load(effectiveTheme());
   }
@@ -191,15 +186,22 @@ class ViewerPage {
     await charts.update(bundle, theme);
   }
 
-  build(bundle) {
+  /** Frees what the current parts hold (the Plotly instances, the open popovers). */
+  disposeParts() {
     this.parts?.charts.dispose();
+    this.parts?.exporter.dispose();
+  }
+
+  build(bundle) {
+    this.disposeParts();
     const stats = h("div", { class: "viewer-stats" });
     const warnings = h("div", { class: "viewer-warnings-slot" });
     const display = { values: this.shownValues(), onChange: (key, on) => this.choose(key, on) };
     const charts = createCharts({ bundle, graph: this.graph, display, onTab: (id) => this.parts?.exporter.setActive(id) });
-    const exporter = createExportPanel({ graph: this.graph, charts, display: () => this.chosen });
+    const exporter = createExportMenu({ graph: this.graph, charts, display: () => this.chosen });
+    charts.addTool(exporter.el);
     this.parts = { charts, exporter, stats, warnings, hasDonut: bundle.donut_available };
-    this.body.replaceChildren(stats, warnings, h("div", { class: "viewer-layout" }, charts.el, h("aside", { class: "viewer-aside", "aria-label": "Export" }, exporter.el)));
+    this.body.replaceChildren(stats, warnings, charts.el);
   }
 }
 

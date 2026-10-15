@@ -53,6 +53,7 @@ def viewer(live_server: LiveServer, page: WatchedPage, saved: SavedGraph) -> Vie
 def test_the_viewer_draws_every_image_in_the_browser_and_still_exports_data_from_the_server(
     viewer: ViewerPage, saved: SavedGraph
 ) -> None:
+    viewer.open_export_menu()
     note = viewer.tid("export-fallback-note")
     expect(note).to_be_hidden()
 
@@ -72,7 +73,7 @@ def test_the_viewer_draws_every_image_in_the_browser_and_still_exports_data_from
     info = png_info(png.data)
     assert (info.width, info.height) == (800, 560)
 
-    viewer.open_donut()
+    viewer.open_donut()  # closes the popover; set_export_size opens it again
     viewer.set_export_size(width="700", scale="1")
     viewer.tid("export-transparent").check()
     donut_svg = download(viewer.page, viewer.tid("export-donut-svg"))

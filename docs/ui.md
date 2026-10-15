@@ -615,7 +615,8 @@ Details by panel:
 ## Viewer
 
 `/graphs/<id>` shows one saved graph: header (description, tag links to `/?tag=...`, source badge,
-"Updated ..." and "Revision N"), the stats strip, warnings, the chart card and the export panel. The
+"Updated ..." and "Revision N"), the stats strip, warnings and the chart card, which spans the full
+width of the page and holds the export popover behind the download icon. The
 page actions hold `graph-edit` (link to `/graphs/<id>/edit`) and `graph-duplicate`.
 
 States:
@@ -623,7 +624,7 @@ States:
 | State | What is on screen |
 |---|---|
 | Loading | a chart frame with `state-loading` ("Loading the graph") and skeletons in the layout of the finished page |
-| Ready | `stats`, optional `warnings`, tabs and charts, `links-table`, export panel; the Sankey is drawn at once |
+| Ready | `stats`, optional `warnings`, tabs and charts, `links-table`, the download icon `export-menu-button` (its panel stays closed); the Sankey is drawn at once |
 | Render failed | `state-error` "The graph could not be drawn" with the server's message, `state-retry` and a link "Open in the editor" |
 | Deleted after the page opened | `state-empty` `viewer-missing` "This graph no longer exists" with "Back to the library" (reproduce by answering `GET /api/v1/graphs/<id>/render` with a 404 envelope; a URL of a graph that is already gone is the HTML not-found page) |
 | Theme reload failed | an error toast; the chart on screen stays |
@@ -642,7 +643,7 @@ Behaviour:
   every `GET /graphs/<id>/export`, so a download looks like the screen. The saved graph is never changed (a reload
   starts from the saved style again). If the redraw fails the switch goes back and a toast says "The chart could not
   be redrawn." The panel closes on Escape (focus returns to the icon), on a press outside it and when focus
-  leaves it; a press on a tab or an export control counts as outside.
+  leaves it; a press on a tab counts as outside, and opening the export menu closes it.
 * The Sankey shows the value under the name of each node (two text lines) when its switch is on. A donut slice shows
   the percentage and/or the value on every slice: with four slices or fewer the name stays on the slice as well, with
   more the legend and the category table carry the names; with neither switch on the slices are bare. The tab strip
@@ -657,10 +658,24 @@ Behaviour:
   first N of M links. The editor lists them all." when the bundle holds fewer than the graph).
   The Donut tab holds `category-table` ("Totals by category", with a total row) and a note naming the
   donut basis.
-* `stats` is a `div[role=group]` of tiles: Nodes, Links (with "N drawn" when the chart shows fewer),
-  Total in, Total out, Layers, Categories. Values carry the unit suffix of the style.
-* Export panel: width, height, scale, transparent, file colours (`export-theme`: Light or Dark,
-  default Light), Sankey SVG and PNG (shown on the Sankey tab), Donut SVG and PNG (shown on the Donut
+* The legend drawn inside the Sankey figure is a label, not a control (its entries do nothing when clicked),
+  so the cursor over its coloured squares is the standard arrow: the Sankey chart div carries the class
+  `static-legend`, which resets Plotly's inline pointer cursor on `.legendtoggle`. The donut legend hides
+  and shows slices, so it keeps the pointer.
+* `stats` is a `div[role=group]` of tiles: Total in, Total out, Categories. The graph size (nodes,
+  links, layers) is not shown here; the editor chart summary and the compare cards still list it.
+  Values carry the unit suffix of the style.
+* The download icon `export-menu-button` ("Export settings", `aria-expanded`, `aria-controls` the panel) sits
+  at the right of the tab row, after the sliders icon `display-menu-button`. It opens `export-menu-panel`, a
+  non-modal `role=dialog` popover under the icon (`hidden` while closed, headed "Export"), so the chart uses
+  the full width of the page and there is no export column or card beside it. Every other `export-*` control
+  lives in that panel, so none is visible until the icon is clicked. Escape closes it and puts the focus back on the
+  icon; a pointer press outside it closes it; so does focus moving outside it; opening another popover (the
+  display menu) closes it. A download does not close it, so the status line, the size line and the fallback
+  note stay in view. Switching between the Sankey and Donut tabs while it is open changes which image buttons
+  it shows. It stays inside the window at 390 px and scrolls when the window is short.
+* Export panel (inside that popover): width, height, scale, transparent, file colours (`export-theme`: Light
+  or Dark, default Light), Sankey SVG and PNG (shown on the Sankey tab), Donut SVG and PNG (shown on the Donut
   tab), and HTML, JSON and CSV for the active tab. Each button asks `GET /graphs/<id>/export` (with the
   display switches the person changed) and shows `Saved <file>.` The line "Image size: 2,400 × 1,120 px." follows the inputs.
 * Fallback: when the server cannot draw an image (422 `export_too_large`, or 501, 502, 503, 504) the
@@ -1135,7 +1150,7 @@ The editor also uses the shell ids `dialog-close`, `toast`, `confirm-dialog`, `c
 |---|---|---|
 | `graph-edit` | `a` | page action, link to `/graphs/<id>/edit` |
 | `graph-duplicate` | `button` | page action, `data-writes`; toast "Created ... copy" with "Open copy"; stays on the page |
-| `stats` | `div[role=group]` | tiles: Nodes, Links, Total in, Total out, Layers, Categories |
+| `stats` | `div[role=group]` | tiles: Total in, Total out, Categories |
 | `warnings` | `section` | absent when the render has no warnings |
 | `warning-item` | `li` (repeated) | |
 | `chart-tab-sankey` | `button[role=tab]` | |
@@ -1145,6 +1160,8 @@ The editor also uses the shell ids `dialog-close`, `toast`, `confirm-dialog`, `c
 | `donut-hint` | `p` | "Want a donut? ..." when there is no donut; inside the Donut tab when the basis selects nothing |
 | `display-menu-button` | `button` | the icon at the right of the tab row; `aria-label` "Chart display options", `aria-expanded`, `aria-controls` the panel |
 | `display-menu-panel` | `div[role=group]` | the panel of switches; `hidden` while closed; closes on Escape, a press outside and focus leaving |
+| `export-menu-button` | `button` | the download icon at the right of the tab row, after `display-menu-button`; `aria-label` "Export settings", `aria-expanded`, `aria-controls` the panel |
+| `export-menu-panel` | `div[role=dialog]` | the popover that holds every `export-*` control; `hidden` while closed; closes on Escape (focus returns to the icon), a press outside and focus leaving; stays open after a download |
 | `display-node-values` | `input[type=checkbox]` | "Show values under the node names"; sends `node_values`; view-only |
 | `display-donut-percent` | `input[type=checkbox]` | "Show percentages" (Donut group, hidden without a donut); sends `donut_percent` |
 | `display-donut-value` | `input[type=checkbox]` | "Show values" (Donut group, hidden without a donut); sends `donut_value` |
@@ -1169,6 +1186,8 @@ The editor also uses the shell ids `dialog-close`, `toast`, `confirm-dialog`, `c
 | `viewer-missing` | `div` | the graph was deleted after the page opened |
 
 The viewer also uses `state-loading`, `state-error`, `state-retry`, `state-empty` and `toast`.
+
+In the viewer every `export-*` control except `export-menu-button` sits inside `export-menu-panel`: click `export-menu-button` before using one.
 
 ### Compare
 
@@ -1278,7 +1297,8 @@ Recipes (these are the waits the e2e helpers in `tests/e2e/support/uiwait.py` im
 * **Style and Export controls.** Open the popover first (`chart-settings-button`, then the tab), and open it
   again right before using a control after touching the page: it closes on any press or focus outside it.
 * **Viewer.** `sankey-chart[data-ready=true]`. For the donut click `chart-tab-donut`, then wait for
-  `donut-chart[data-ready=true]` (the Sankey div is hidden then).
+  `donut-chart[data-ready=true]` (the Sankey div is hidden then). Export controls: click `export-menu-button`
+  first; a press on a tab closes the popover, so open it again afterwards.
 * **Compare.** The number of `compare-card` elements equals the ids, then every
   `[data-testid=compare-card] [data-ready=true]`. Cards draw when they near the viewport, so use a tall
   viewport or scroll.
@@ -1313,7 +1333,7 @@ Recipes (these are the waits the e2e helpers in `tests/e2e/support/uiwait.py` im
   "Preview colours" (Match page, Light, Dark); exported files use their own `export-theme` choice
   (default Light), independent of both.
 * Breakpoints: 480, 640 (header goes to one row), 900 (Source and Transform side by side) and 1280 px (settings rail);
-  the viewer puts the export panel beside the chart from 1100 px. `prefers-reduced-motion: reduce`
+  the viewer chart card is always full width (the export popover opens under its icon at every width). `prefers-reduced-motion: reduce`
   cuts animations and transitions to 0.01 ms; the `html` toast clearance padding never transitions.
   `forced-colors: active` is handled for buttons and inputs and for the drop marks of the library
   (a solid `Highlight` outline accepts, a dashed `GrayText` outline refuses).

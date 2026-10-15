@@ -1,6 +1,7 @@
 /**
  * The export panel of the viewer: image size options, SVG / PNG of the chart that is showing,
- * and the HTML / JSON / CSV downloads.
+ * and the HTML / JSON / CSV downloads. Its `el` is the bare content; export-menu.js puts it into
+ * the popover that the download icon of the chart card opens.
  *
  * Every button asks `GET /graphs/{id}/export` (core/download.js saves the attachment). When the
  * server cannot draw an image - 422 `export_too_large`, or 501 / 502 / 503 / 504 - the panel says
@@ -60,18 +61,14 @@ class ExportPanel {
     this.buildButtons();
     this.note = h("p", { class: "notice export-note", "data-kind": "info", role: "status", hidden: true, "data-testid": "export-fallback-note" });
     this.el = h(
-      "section",
-      { class: "card export-panel", "aria-labelledby": "export-title" },
-      h(
-        "div",
-        { class: "card-body stack" },
-        h("h2", { class: "section-title", id: "export-title" }, "Export"),
-        this.optionsRow,
-        this.size,
-        this.imageGroup,
-        this.dataGroup,
-        this.note,
-      ),
+      "div",
+      { class: "stack" },
+      h("h2", { class: "section-title", id: "export-title" }, "Export"),
+      this.optionsRow,
+      this.size,
+      this.imageGroup,
+      this.dataGroup,
+      this.note,
     );
     this.setActive("sankey");
   }

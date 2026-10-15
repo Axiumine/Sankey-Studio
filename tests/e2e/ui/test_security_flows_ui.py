@@ -15,6 +15,7 @@ from playwright.sync_api import expect
 
 from tests.e2e.support import ui_b_hostile as hostile
 from tests.e2e.support.clients import json_of, make_client
+from tests.e2e.support.ui_a_viewer import open_export_menu
 from tests.e2e.support.ui_b_common import download_text
 from tests.e2e.support.ui_b_editor import EditorPage
 from tests.e2e.support.ui_b_viewer import ViewerPage
@@ -82,6 +83,7 @@ def test_the_downloads_have_safe_names_and_the_svg_has_no_live_markup(
         created = json_of(api.post("/api/v1/graphs", json=hostile.hostile_body()), 201)
     viewer = ViewerPage(page, live_server, created["id"])
     viewer.goto()
+    open_export_menu(viewer)
     name, text = download_text(page, viewer.tid("export-csv").click)
     assert name.endswith(".csv")
     assert not set(name) & set(UNSAFE_IN_FILE_NAMES), f"unsafe file name {name!r}"
