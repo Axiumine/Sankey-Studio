@@ -7,7 +7,8 @@
  * actions (edit, duplicate, move, delete). Duplicate, move and delete carry `data-writes`, so a
  * read-only server disables them (core/boot.js `lockWriteControls`). "Move" (asks for a collection)
  * is only there once a collection exists. In search results, where graphs of every collection are
- * mixed, a chip names the collection a graph sits in and links to it.
+ * mixed, a chip names the collection a graph sits in and links to it. With `ctx.draggable` the card
+ * is `draggable="true"` (dnd.js moves it, or all picked graphs, into a collection when dropped).
  *
  * Test ids: graph-card (data-graph-id), compare-select, graph-open, graph-edit, graph-duplicate,
  * graph-move, graph-delete, graph-folder.
@@ -102,13 +103,13 @@ function meta(graph) {
 /**
  * Builds a graph card.
  * @param {{id: string, name: string, description: string, tags: string[], source_type: string, revision: number, updated_at: string, folder_id?: string | null}} graph  a GraphSummary
- * @param {{selection: object, onSelect: Function, onTag: Function, onDuplicate: Function, onDelete: Function, onMove?: Function, canMove?: boolean, pathOf?: ((id: string) => string | null) | null}} ctx
+ * @param {{selection: object, onSelect: Function, onTag: Function, onDuplicate: Function, onDelete: Function, onMove?: Function, canMove?: boolean, draggable?: boolean, pathOf?: ((id: string) => string | null) | null}} ctx
  * @returns {HTMLElement}
  */
 export function graphCard(graph, ctx) {
   return h(
     "article",
-    { class: "card graph-card", "data-testid": "graph-card", "data-graph-id": graph.id },
+    { class: "card graph-card", "data-testid": "graph-card", "data-graph-id": graph.id, draggable: ctx.draggable ? "true" : null },
     h(
       "div",
       { class: "graph-card-head" },

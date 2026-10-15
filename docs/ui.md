@@ -185,7 +185,7 @@ States:
 | Loading | `state-loading` "Loading graphs", only when the first paint cannot use the boot data (a filter in the address, or arrival by Back or Forward) |
 | Ready | `graph-card` elements and `library-count` ("Showing 1-12 of 32 graphs" with an en dash; "5 graphs" when everything fits one page; filters are appended, for example `matching "rent"` or `tagged "demo"`) |
 | Empty library | `library-empty` ("No graphs yet"; "Create your first graph" and "Import a bundle" actions when writes are allowed, a read-only sentence otherwise). Shown only when there is no graph and no collection at all |
-| Empty collection | `library-folder-empty` (an open collection with no graph and no sub-collection: "New graph here" and "New collection"; on a read-only server a sentence and no buttons). A level that has collections but no graphs shows a plain hint ("There are no graphs outside the collections." or "...directly in this collection."), never "No graphs yet" |
+| Empty collection | `library-folder-empty` (an open collection with no graph and no sub-collection: "New graph here" and "New collection", and the sentence "Create a graph here, or move graphs in with the Move button on their cards or by dragging them onto this collection one level up."; on a read-only server the sentence "This server is read-only, so graphs cannot be created or moved here." and no buttons). A level that has collections but no graphs shows a plain hint ("There are no graphs outside the collections." or "...directly in this collection."), never "No graphs yet" |
 | Missing collection | `library-folder-missing` ("This collection no longer exists", a link "Back to the library"): a well-formed id in the address that names no collection. No list request is made and there is no "New collection" |
 | No match | `library-no-results` ("No graphs match", with a "Clear filters" button) |
 | Error | `state-error` "The library could not be loaded" with `state-retry` |
@@ -240,10 +240,47 @@ Behaviour:
   in `folder-name-error`, which is the error line of this dialog too. `folder-delete-dialog` starts on
   Cancel, says how many graphs and collections move up to the library and that no graph is deleted, and
   `folder-delete-confirm` deletes.
+* **Drag and drop** does the same two moves as the Move dialog (graphs into a collection, a collection into
+  another one) with the pointer and without a dialog. The Move buttons stay: they are the keyboard,
+  screen reader and touch way to the same moves, and the empty-collection text points at both.
+  * *Sources.* A `graph-card` and a `folder-card` carry `draggable="true"` only while writes are allowed
+    and the list follows the open collection (no search, no tag); a `graph-card` also needs at least one
+    collection to exist. On a read-only server and in search results no card has the attribute and nothing
+    reacts. The attribute is set when the cards are drawn and flips to `"false"` while the pointer is over a
+    button, the compare checkbox, the description, the meta line or the tags (`dnd-grip.js`), so the mouse
+    still selects that text and a click that wobbles still counts; the card padding, the head and the name
+    link are the handles. A picked graph (compare checkbox) carries every picked graph in selection order
+    (at most 12) and the selection is cleared by the move; an unpicked graph carries only itself and leaves
+    the picks alone.
+  * *Targets.* The `folder-card`s and the `folder-crumb`s (`data-folder-id`; `root` is "Library", the top
+    level). Graph cards are no targets: there is no reordering and no drop on the list. Anything that did
+    not start on the page (a file, text, a link from another page or tab) is ignored completely: no mark,
+    no `preventDefault`, no request.
+  * *Refusals.* The sentences of the Move dialog, from one source (`folder-rules.js`): "already here" (a
+    graph on the open collection, a collection on its own parent; both are the last crumb), "inside the
+    collection being moved" (a collection on itself or on one of its own sub-collections) and "too deep (at
+    most 8 levels)". Graphs picked in a search can sit anywhere, so no place is "already here" for them.
+    "that collection no longer exists" is new: the dragged collection or the target is no longer in the
+    list the page holds. A refusing target gets `data-drop="denied"` with the sentence in
+    `data-drop-reason` (there is no tooltip), a dashed outline, and the polite live region says "Not
+    possible: <reason>" once when the pointer enters it; the pointer shows the no-drop cursor and a drop
+    there sends nothing. A target that accepts gets `data-drop="ok"` and a solid accent outline.
+  * *Marks.* The carried cards have `data-dragging="true"` (half opacity), set one animation frame after
+    the drag starts. All marks go away when the drag ends: a drop, Esc, a drop outside every target or the
+    window losing focus. In forced-colors mode the outlines are Highlight (accept) and GrayText (refuse).
+  * *A drop* runs at once, after the rules were checked again against the live list, and says so in the
+    toast of the dialog: `Moved "<name>" to "<collection>".`, `Moved 2 graphs to "<collection>".` or
+    `... to the library.` (the quotes in the toast are curly), with the dialog's note when some graphs no
+    longer existed. A second drop (or drag) while the request and the reload run is ignored. The focus goes
+    where the dialog leaves it: the results summary after graphs, the moved collection's card (else the
+    block of cards) after a collection. A collection that is gone (404) or changed elsewhere (stale
+    revision) is an info toast and a reload; any other failure (a taken name, a rule of the server, the
+    network) is an error toast with the dialog's sentence, then a reload. Nothing is retried.
 * When a collection was changed elsewhere, a 404 or a stale revision (409 `conflict`) from a collection
   write shows a toast ("That collection no longer exists..." or "...was changed elsewhere..."), reloads the
   list and closes the dialog; any other failure stays in the dialog under the field. After a create, rename
-  or move the card's link takes the focus; after a graph move the summary line does.
+  or move the card's link takes the focus; after a graph move the summary line does (a drop leaves the
+  focus in the same places).
 * Duplicate creates `<name> (copy)` (in the collection of the original) and shows the toast `Created "<name> (copy)".` with an "Open
   copy" button; the list reloads and the copy comes first in "Recently updated".
 * Delete opens `delete-dialog` (`Delete "<name>"?`, focus on Cancel, confirm button `delete-confirm`
@@ -853,7 +890,7 @@ and so on), the upload button `label.btn` "Choose a file" inside `.ed-dropzone-p
 | `library-count` | `p` | "Showing 1-12 of 32 graphs" (en dash) or "5 graphs" |
 | `library-empty` | `div` | empty library |
 | `library-no-results` | `div` | search or tag matched nothing |
-| `graph-card` | `article` (repeated) | `data-graph-id`; 12 per page |
+| `graph-card` | `article` (repeated) | `data-graph-id`; 12 per page; `draggable="true"` ("false" while the pointer is over a control or text) when drag and drop is on; `data-dragging` while carried |
 | `compare-select` | `input[type=checkbox]` (repeated) | in the card header; at most 12 ticked |
 | `graph-open` | `a` (repeated) | name link to `/graphs/<id>` |
 | `graph-edit` | `a` (repeated) | link to `/graphs/<id>/edit` |
@@ -875,9 +912,9 @@ and so on), the upload button `label.btn` "Choose a file" inside `.ed-dropzone-p
 | `folder-new` | `button` | "New collection", in the page actions; `data-writes`; hidden while searching and inside a collection 8 levels deep |
 | `folder-new-graph` | `a` | "New graph here" (`/graphs/new?folder=<id>`), in the page actions; only inside a collection; `data-writes` |
 | `folder-breadcrumb` | `nav` | `Library / A / B`; hidden at the top level, while searching and for a missing collection |
-| `folder-crumb` | `a` (repeated) | every link of the breadcrumb, "Library" included; the last has `aria-current=page` |
+| `folder-crumb` | `a` (repeated) | every link of the breadcrumb, "Library" included; the last has `aria-current=page`; `data-folder-id` (`root` is the top level); a drop target |
 | `folder-grid` | `ul` | the "Collections (N)" block of cards of the open level |
-| `folder-card` | `article` (repeated) | `data-folder-id`; "N graphs, M collections" |
+| `folder-card` | `article` (repeated) | `data-folder-id`; "N graphs, M collections"; `draggable` and `data-dragging` as on `graph-card`; a drop target (`data-drop`, `data-drop-reason`) |
 | `folder-open` | `a` (repeated) | name link to `/?folder=<id>` |
 | `folder-rename` | `button` (repeated) | opens `folder-dialog` with the name selected; `data-writes` |
 | `folder-move` | `button` (repeated) | opens `move-dialog`; `data-writes` |
@@ -1210,6 +1247,8 @@ preview). Wait for these signals instead.
 | `chart-settings-panel[hidden]`, `chart-settings-button[aria-expanded]` | editor | the chart settings popover is closed or open |
 | `graph-settings-menu[hidden]`, `graph-settings-button[aria-expanded]` | editor | the title menu is closed or open |
 | `sankey-chart[data-node-order]` | editor | the node names in figure order joined by `\|`, set after every successful Sankey draw and removed when nothing is drawn; it changes after a drag or an `order-up`/`order-down` press (the chart then animates for about half a second: poll the bar positions, never a clock) |
+| `graph-card[data-dragging]`, `folder-card[data-dragging]` | library | `true` on the carried cards from one animation frame after `dragstart` (use an `expect` that retries) until the drag ends |
+| `folder-card[data-drop]`, `folder-crumb[data-drop]`, `[data-drop-reason]` | library | on the target under the pointer during a drag: `ok` (it accepts) or `denied` (with the reason sentence in `data-drop-reason`, for example "already here"); removed when the pointer leaves or the drag ends |
 | `details-dialog`, `change-source-dialog`, `add-entry-dialog`, `overlays-dialog`, `order-dialog`, `write-back-dialog`, `folder-dialog`, `move-dialog` | editor and library | attached while open, detached when closed |
 | `[data-testid=sankey-chart][data-ready]`, `donut-chart` | wherever a chart is drawn | `false` from the moment drawing starts, `true` after `Plotly.react` resolved, `error` when plotly.js could not load or drawing threw; set on the same div that carries the id |
 | `[data-chart-theme=light\|dark]` | the same chart divs | the theme the figure was drawn in |
@@ -1276,7 +1315,8 @@ Recipes (these are the waits the e2e helpers in `tests/e2e/support/uiwait.py` im
 * Breakpoints: 480, 640 (header goes to one row), 900 (Source and Transform side by side) and 1280 px (settings rail);
   the viewer puts the export panel beside the chart from 1100 px. `prefers-reduced-motion: reduce`
   cuts animations and transitions to 0.01 ms; the `html` toast clearance padding never transitions.
-  `forced-colors: active` is handled for buttons and inputs.
+  `forced-colors: active` is handled for buttons and inputs and for the drop marks of the library
+  (a solid `Highlight` outline accepts, a dashed `GrayText` outline refuses).
 
 ## Accessibility
 
@@ -1290,6 +1330,9 @@ Recipes (these are the waits the e2e helpers in `tests/e2e/support/uiwait.py` im
   `chart-order-open` (reorder, with `order-up` and `order-down`) are the keyboard and single-pointer ways
   to the same edits (WCAG 2.1.1 and 2.5.7). Every dialog traps the focus, returns it to the opener and
   closes on Esc, the newest first.
+* Library drag and drop is a pointer shortcut only: "Move" on a card, "Move to collection" in the selection
+  bar and the Move dialog do every move from the keyboard or with a single pointer (WCAG 2.1.1 and 2.5.7).
+  A target that refuses is dashed (shape, not only colour) and the live region says why.
 * Live regions: `#a11y-polite` and `#a11y-assertive` announce results without a focus change (graph
   counts, chart tab switches, save results, import and upload outcomes); toasts live in a polite
   region and errors are `role=alert`.

@@ -23,7 +23,8 @@ Contents
 ## Product
 
 * **Library.** Many saved graphs with create, read, update, delete, duplicate, search, tags and JSON
-  bundle import and export, grouped in a tree of "collections" (identifier word: `folder`). A compare
+  bundle import and export, grouped in a tree of "collections" (identifier word: `folder`; a graph or a
+  collection moves through a dialog or by drag and drop, both on the same rules). A compare
   page shows up to 12 graphs side by side.
 * **Sources.** `text` (pasted or uploaded text, or a file in the managed sources directory; CSV, TSV,
   SankeyMATIC lines, JSON array or NDJSON), `mongo` (a named connection, `find` or `aggregate`; read

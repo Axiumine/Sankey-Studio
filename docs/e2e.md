@@ -78,6 +78,7 @@ Browser flows (`tests/e2e/ui/`):
 | `test_sources_*` | Text file and upload tabs, column mapping, the manual table, the MongoDB tab with and without a connection |
 | `test_library_*`, `test_compare_*` | Browsing, actions, bundles, the 409 conflict; the compare cards and the 12-graph limit |
 | `test_library_folder*` | Collections in the library: the scope in the address, breadcrumb, create, rename, move and delete, impossible places, search across collections, a read-only server, hostile names |
+| `test_library_drag_drop*` | Dragging graphs and collections onto collection cards and breadcrumb links: the moves, a picked set in one request, the refusals and their reasons, foreign drags, search mode, no collection, a collection gone or a name taken at drop time, text selection and a wobbling click on a card |
 | `test_settings_*`, `test_readonly_ui` | Limits, MongoDB connections, storage backend, theme; the read-only remote server |
 | `test_theme_dark_ui`, `test_responsive_ui` | Tokens and chart surfaces in both themes, phone-width layout |
 | `test_resilience_*` | Error sentences instead of JSON, not-found pages, a slow server |
@@ -313,6 +314,28 @@ expression with `page.evaluate`. `Hold` (`support/ui_b_hold.py`) makes chosen re
 deterministically from inside the page: it wraps `window.fetch`, holds matching requests until the test
 releases them and reports whether the app aborted one.
 
+### Dragging in the library
+
+`DragLibrary` (`support/ui_b_dnd.py`) has two ways to drag, and neither waits on a clock.
+
+* **Real mouse** (`drag`). Press on the card padding (`GRAB`), move in steps onto the target, wait for
+  `data-drop=ok` on it, then release. The press must not be on a button, the checkbox, the description,
+  the meta line or the tags: while the pointer is over those, the card has `draggable="false"` so the
+  text can be selected and a click can wobble. A dropped graph or collection is checked by its toast
+  and by the cards after the reload.
+* **Synthetic events** (`begin`, `over`, `drop`, `finish`). One `new DataTransfer()` handle goes from
+  `dragstart` through `dragend`, the way a browser shares it. The page counts a drag as its own only when
+  that transfer carries `application/x-sankey-studio-move` (set by `dragstart`), so a fresh transfer
+  for `dragover` or `drop` is a drag from outside the page, which is what `foreign()` is for. `begin`
+  moves the pointer off the card first, because a card that is under the pointer over a control would
+  have `draggable="false"` and the browser would keep the `dragstart`. `over` and `drop` return whether
+  the page cancelled the event, which is how an accepted target shows.
+
+Chromium ignores `effectAllowed` and `dropEffect` on a constructed `DataTransfer` (they read back as
+`none`), so a test asserts the marks (`data-drop`, `data-drop-reason`), the requests (`record_writes`
+lists every non-GET) and the toast, never the cursor. `data-dragging` is set one animation frame after
+`dragstart`: read it through `expect` (it retries), not with an immediate read.
+
 ### Page objects
 
 `AppPage` (`support/pages.py`) is the base: a subclass sets `path` and `name` (the value of
@@ -330,6 +353,7 @@ releases them and reports whether the app aborted one.
 | `ui_a_keyboard`, `ui_a_seed` | `tab_until` and `focus_ring`; seeding a graph through the API |
 | `ui_b_library`, `ui_b_compare`, `ui_b_settings`, `ui_b_editor`, `ui_b_viewer` | The library, compare, settings, a slim editor and the viewer with the figure readers |
 | `ui_b_folders` | `FolderLibrary` (the library with its collections: breadcrumb, cards, name and move dialogs, `new_folder`, `open_folder`, `rename_folder`, `move_folder`, `delete_folder`, `move_graph`, `move_picked`), `seed_folder` and `seed_filed_graph` |
+| `ui_b_dnd` | `DragLibrary` (`FolderLibrary` plus drag and drop): `drag` with the real mouse, `begin`, `over`, `drop` and `finish` with one synthetic `DataTransfer`, `foreign` (a drag from outside the page), `crumb`, `record_writes` |
 | `ui_b_common`, `ui_b_hold`, `ui_b_hostile` | Viewports, CSS and download helpers, `Hold`, `HostileGraph` and `Inert` |
 | `http_a_*` | Helpers of the first HTTP suites: settings, categories, exports, library, exact request targets, PNG and SVG readers (no imaging library), HTML export parsing, a response recorder, Chrome process counting |
 | `http_b_*` | Limits, security expectations (routes, headers, internals scan), `Tape`, and the Mongo, storage, write-back (`http_b_edit_flows`) and collection (`http_b_folder_flows`) scenarios with `MongoWorld` and `FlowEnv` |

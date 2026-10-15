@@ -30,7 +30,8 @@ itself in depth (see [Security model](#security-model)).
 
 * **Library** of saved graphs: create, edit, duplicate, delete, search, tag, sort, page, and import
   or export as a JSON bundle. Graphs can be grouped in a tree of **collections** (nested up to 8
-  levels), moved between them one by one or as a selection, and a search covers all of them.
+  levels), moved between them one by one or as a selection (with a button or by dragging), and a search
+  covers all of them.
 * **Live editor**: every change redraws the preview; unsaved-changes guard and optimistic
   concurrency (a stale save offers reload or save as copy). A two-step wizard starts a new graph;
   a gear next to the title edits name, description, tags and the data source kind; a gear in the
@@ -173,7 +174,10 @@ rows never move). "Reset order" returns to the order of the data.
 
 The library groups graphs in collections. "New collection" creates one (inside the open one);
 a collection card has Rename, Move and Delete; "Move" on a graph card, or "Move to collection" for a
-selection, opens a tree of places; "New graph here" saves the next graph inside the open collection.
+selection, opens a tree of places. You can also drag a graph (or the graphs you ticked) or a collection
+onto a collection card or onto a link of the breadcrumb; the same places are refused as in the dialog, and
+nothing is draggable on a read-only server or in a search. "New graph here" saves the next graph inside the
+open collection.
 Deleting a collection moves its graphs and sub-collections up and deletes nothing. A search looks in
 every collection and shows where each result is. A bundle export carries the collections of the
 exported graphs (bundle version 2).

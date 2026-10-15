@@ -85,7 +85,9 @@ def test_collections_nest_and_the_breadcrumb_walks_back_up(library: FolderLibrar
     library.open_folder(top)
     expect(library.crumbs).to_have_text(["Library", top])
     expect(library.crumbs.last).to_have_attribute("aria-current", "page")
-    expect(library.tid("library-folder-empty")).to_contain_text("This collection has no graphs")
+    empty = library.tid("library-folder-empty")
+    expect(empty).to_contain_text("This collection has no graphs")
+    expect(empty).to_contain_text("by dragging them onto this collection one level up")
     expect(library.page.locator(".folders")).to_have_text("")  # no cards, and no stray text
     new_graph = library.tid("folder-new-graph")
     expect(new_graph).to_have_attribute("href", f"/graphs/new?folder={top_id}")

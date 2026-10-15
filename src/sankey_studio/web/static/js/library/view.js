@@ -11,6 +11,8 @@
  * - `showError(error, retry)`: error state with a retry button.
  * - `setStale(bool)`: dims the current content while a new page loads (no skeleton flash).
  * - the card checkboxes follow the selection (cap: the rest are disabled with an explanation).
+ * - while the list follows a collection (no search, no tag), writes are allowed and a collection
+ *   exists, the cards are `draggable="true"` (card.js); dnd.js does the dragging.
  *
  * Test ids: library-empty, library-folder-empty, library-no-results, library-scope-note,
  * library-count, graph-card (see card.js).
@@ -55,7 +57,7 @@ function emptyFolder(scope, state) {
   return emptyState({
     title: "This collection has no graphs",
     message: writable
-      ? "Create a graph here, or move graphs in with the Move button on their cards."
+      ? "Create a graph here, or move graphs in with the Move button on their cards or by dragging them onto this collection one level up."
       : "This server is read-only, so graphs cannot be created or moved here.",
     icon: "folder",
     actions,
@@ -165,7 +167,8 @@ class ResultsView {
       return;
     }
     this.summary.textContent = stripBidi(summaryText(result, state));
-    const context = { selection: this.selection, ...this.handlers, canMove: scope.folders > 0, pathOf: filtered ? scope.pathOf : null };
+    const draggable = canWrite() && !filtered && scope.folders > 0; // search results mix collections: nothing to drop on
+    const context = { selection: this.selection, ...this.handlers, canMove: scope.folders > 0, draggable, pathOf: filtered ? scope.pathOf : null };
     const cards = result.items.filter((item) => isGraphId(item.id)).map((item) => h("li", null, graphCard(item, context)));
     this.body.replaceChildren(h("ul", { class: "library-grid", role: "list" }, cards));
     lockWriteControls(this.body);

@@ -570,8 +570,11 @@ fixed name of the Mongo collection `sankey_studio_collections`.
   server renders the boot data of the scope; a breadcrumb, the cards of the open level above the
   graphs, dialogs to create, rename, move and delete, "Move" on a graph card and "Move to collection"
   on the selection (cap 12, shared with compare). Moving uses a dialog with a radio tree whose
-  impossible places stay visible and say why; drag and drop is not built (a follow-up; the dialog is
-  the accessible baseline).
+  impossible places stay visible and say why; the dialog is the accessible baseline. Drag and drop
+  (graph cards and collection cards onto collection cards and breadcrumb links) was added on top of
+  it as a pointer shortcut, frontend only: `js/library/folder-rules.js` is the one place that decides
+  which places are refused, for the dialog and for a drop, and a drop uses the same requests and
+  toasts as the dialog.
 
 **Why.** Libraries with dozens of graphs need structure, and a tree with membership on the graph is
 the smallest model that both backends can enforce (a unique index on Mongo, one lock on disk) without
