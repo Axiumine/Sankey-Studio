@@ -17,6 +17,7 @@ from playwright.sync_api import expect
 from sankey_studio.models import FolderCreate, GraphCreate
 from tests.e2e.support.builders import graph_create, unique_name
 from tests.e2e.support.clients import fetch_json
+from tests.e2e.support.ui_b_dnd import DragLibrary
 from tests.e2e.support.ui_b_folders import FolderLibrary
 
 if TYPE_CHECKING:
@@ -104,6 +105,22 @@ def test_an_empty_collection_does_not_offer_to_create_anything_here(
     expect(empty).to_contain_text("This server is read-only, so graphs cannot be created or moved")
     expect(empty.get_by_role("link")).to_have_count(0)
     expect(empty.get_by_role("button")).to_have_count(0)
+
+
+def test_nothing_is_draggable_and_a_drag_started_by_hand_does_nothing(
+    page: WatchedPage, live_server: LiveServer, seeded: Seeded
+) -> None:
+    library = DragLibrary(page, live_server)
+    library.goto()
+    writes = library.record_writes()
+    folder, graph = library.folder_card(seeded.top), library.card(seeded.loose)
+    for card in (folder, graph):
+        assert card.get_attribute("draggable") is None
+    transfer = library.begin(graph)
+    assert not library.has_private_data(transfer)
+    assert library.over(folder, transfer) is False
+    expect(page.locator("[data-dragging], [data-drop]")).to_have_count(0)
+    assert writes == []
 
 
 def test_a_browser_that_bypasses_the_buttons_is_refused_by_the_server(

@@ -21,6 +21,9 @@
  * Every change that the server refuses because the collection moved on (404, stale revision) says
  * so, reloads and closes the dialog; any other failure stays in the dialog under the field.
  *
+ * Collection cards are draggable while writes are allowed (dnd.js moves them; dnd-moves.js runs the
+ * request through `guard` and the same toasts as the dialog).
+ *
  * Test ids: folder-new, folder-new-graph, library-folder-missing (the rest: breadcrumb.js,
  * folder-cards.js, folder-dialogs.js).
  */
@@ -40,7 +43,8 @@ import { displayName, folderLabel } from "./names.js";
 import { isFolderId, isScoped } from "./state.js";
 
 const STALE = "That collection was changed elsewhere, so the list was reloaded. Try again.";
-const GONE = "That collection no longer exists, so the list was reloaded.";
+/** Also the toast of a drop onto a collection that is gone (dnd-moves.js). */
+export const GONE = "That collection no longer exists, so the list was reloaded.";
 
 class FolderBrowser {
   constructor({ state, selection, onChange }) {
@@ -96,7 +100,7 @@ class FolderBrowser {
         testid: "library-folder-missing",
       })];
     }
-    const section = browsing ? folderSection({ folders: this.index.childrenOf(open), handlers: this.handlers }) : null;
+    const section = browsing ? folderSection({ folders: this.index.childrenOf(open), handlers: this.handlers, draggable: canWrite() }) : null;
     return section ? [section] : [];
   }
 

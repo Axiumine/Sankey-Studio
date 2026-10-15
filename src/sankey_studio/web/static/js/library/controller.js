@@ -9,6 +9,9 @@
  * the list of collections), so a plain visit makes no list request at all. A visit by the Back or Forward button (or a page restored from the
  * browser's back/forward cache) never trusts it: the person may have duplicated, edited or deleted a
  * graph since the HTML was made, so the list is asked again.
+ *
+ * Drag and drop (dnd.js, dnd-moves.js) is attached to the page root once; the cards are redrawn
+ * freely because the listeners are delegated.
  */
 
 import { announce } from "../core/a11y.js";
@@ -21,6 +24,8 @@ import { toast } from "../core/toast.js";
 import { createActions } from "./actions.js";
 import { exportGraphs, startImport } from "./bundle.js";
 import { fetchExportIds, fetchPage, fetchTags } from "./data.js";
+import { createDnd } from "./dnd.js";
+import { createMoves } from "./dnd-moves.js";
 import { onRestored, reachedByHistory } from "./freshness.js";
 import { createFolders } from "./folders.js";
 import { fetchFolders } from "./folders-data.js";
@@ -75,6 +80,8 @@ class LibraryPage {
       : h("p", { class: "hint readonly-note" }, icon("lock", { size: 14 }), "Read-only server: duplicating, deleting, moving and importing are turned off. You can still open, preview and export graphs.");
     this.bar = createSelectionBar({ selection: this.selection, canMove: () => this.folders.scope().folders > 0, onMove: () => this.moveSelected() });
     mount(pageRoot(), readOnly, this.folders.pathEl, this.toolbar.el, this.folders.el, this.view.el, this.pager.el, this.bar.el);
+    // drag and drop: graph cards and collection cards onto collection cards and crumbs (one set of listeners on the root)
+    this.dnd = createDnd({ root: pageRoot(), selection: this.selection, host: createMoves({ folders: this.folders, view: this.view }) });
   }
 
   start() {

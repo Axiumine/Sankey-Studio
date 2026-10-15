@@ -8,6 +8,9 @@
  * are text nodes with control and direction characters removed ("Untitled collection" when nothing
  * is left); the full name is the tooltip.
  *
+ * With `draggable` (writes allowed) each card is `draggable="true"`: dnd.js moves it into another
+ * collection when it is dropped on a card or a crumb. The Move button stays the way without a mouse.
+ *
  * Test ids: folder-grid, folder-card (data-folder-id), folder-open, folder-rename, folder-move,
  * folder-delete.
  */
@@ -25,12 +28,12 @@ function action(label, name, testid, onClick, extra = null) {
   );
 }
 
-function folderCard(folder, handlers) {
+function folderCard(folder, handlers, draggable) {
   const name = folderLabel(folder.name);
   const counts = `${formatCount(folder.graph_count, "graph")}, ${formatCount(folder.child_count, "collection")}`;
   return h(
     "article",
-    { class: "card folder-card", "data-testid": "folder-card", "data-folder-id": folder.id },
+    { class: "card folder-card", "data-testid": "folder-card", "data-folder-id": folder.id, draggable: draggable ? "true" : null },
     h(
       "h3",
       { class: "folder-card-title" },
@@ -49,10 +52,10 @@ function folderCard(folder, handlers) {
 }
 
 /**
- * @param {{folders: object[], handlers: {onRename: Function, onMove: Function, onDelete: Function}}} options
+ * @param {{folders: object[], handlers: {onRename: Function, onMove: Function, onDelete: Function}, draggable?: boolean}} options
  * @returns {HTMLElement | null}
  */
-export function folderSection({ folders, handlers }) {
+export function folderSection({ folders, handlers, draggable = false }) {
   if (folders.length === 0) {
     return null;
   }
@@ -60,6 +63,6 @@ export function folderSection({ folders, handlers }) {
     "section",
     { class: "folder-section", "aria-label": "Collections", tabindex: "-1" },
     h("h2", { class: "folder-section-title" }, "Collections ", h("span", { class: "text-muted folder-section-count" }, `(${folders.length})`)),
-    h("ul", { class: "folder-grid", role: "list", "data-testid": "folder-grid" }, folders.map((folder) => h("li", null, folderCard(folder, handlers)))),
+    h("ul", { class: "folder-grid", role: "list", "data-testid": "folder-grid" }, folders.map((folder) => h("li", null, folderCard(folder, handlers, draggable)))),
   );
 }

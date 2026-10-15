@@ -423,9 +423,39 @@
 .move-option[data-depth="7"] { --indent: 7; }
 .move-option[data-depth="8"] { --indent: 8; }
 
+/* ------------------------------------------------------------------ drag and drop (dnd.js)
+   data-dragging marks the card(s) being carried; data-drop marks the target under the pointer:
+   "ok" takes the drop (solid accent outline + wash), "denied" refuses it (dashed muted outline, dimmed;
+   data-drop-reason holds the sentence). The two differ in line style, not only in colour. */
+
+.graph-card[draggable="true"],
+.folder-card[draggable="true"] { -webkit-user-drag: element; }
+
+.graph-card[data-dragging="true"],
+.folder-card[data-dragging="true"] { opacity: 0.5; }
+
+.folder-card[data-drop] { outline-offset: 2px; }
+.breadcrumb-link[data-drop] { border-radius: var(--radius-sm); outline-offset: 2px; }
+
+.folder-card[data-drop="ok"],
+.breadcrumb-link[data-drop="ok"] {
+  background-image: linear-gradient(var(--accent-wash), var(--accent-wash));
+  outline: 2px solid var(--accent);
+}
+
+.folder-card[data-drop="denied"],
+.breadcrumb-link[data-drop="denied"] {
+  outline: 2px dashed var(--muted);
+  opacity: 0.6;
+}
+
 @media (forced-colors: active) {
   .chip[aria-pressed="true"],
   .graph-card:has(input:checked),
   .move-option:has(input:checked) { outline: 2px solid Highlight; }
   .import-button:focus-within { outline-color: Highlight; }
+  .folder-card[data-drop="ok"],
+  .breadcrumb-link[data-drop="ok"] { outline: 2px solid Highlight; }
+  .folder-card[data-drop="denied"],
+  .breadcrumb-link[data-drop="denied"] { outline: 2px dashed GrayText; }
 }

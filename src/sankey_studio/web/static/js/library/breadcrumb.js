@@ -9,17 +9,21 @@
  * `createBreadcrumb()` returns `{el, update(path)}`; `path` is the list of folders from the top down
  * to the open one (`[]` at the top level hides the whole bar).
  *
+ * Every crumb carries `data-folder-id` (the collection's id, "root" for Library, the same convention
+ * as the Move dialog's options): the crumbs are drop targets for drag and drop (dnd.js), and the
+ * last one is the open collection, where nothing can be dropped ("already here").
+ *
  * Test ids: folder-breadcrumb (the nav), folder-crumb (each link, the Library link included).
  */
 
 import { h } from "../core/dom.js";
 import { folderLabel } from "./names.js";
 
-function crumb(label, href, current) {
+function crumb(label, href, { id, current }) {
   return h(
     "li",
     null,
-    h("a", { class: "breadcrumb-link", href, title: label, "aria-current": current ? "page" : null, "data-testid": "folder-crumb" }, label),
+    h("a", { class: "breadcrumb-link", href, title: label, "aria-current": current ? "page" : null, "data-testid": "folder-crumb", "data-folder-id": id }, label),
   );
 }
 
@@ -35,8 +39,8 @@ export function createBreadcrumb() {
       el.hidden = path.length === 0;
       const last = path.length - 1;
       list.replaceChildren(
-        crumb("Library", "/", false),
-        ...path.map((folder, index) => crumb(folderLabel(folder.name), `/?folder=${folder.id}`, index === last)),
+        crumb("Library", "/", { id: "root", current: false }),
+        ...path.map((folder, index) => crumb(folderLabel(folder.name), `/?folder=${folder.id}`, { id: folder.id, current: index === last })),
       );
     },
   };

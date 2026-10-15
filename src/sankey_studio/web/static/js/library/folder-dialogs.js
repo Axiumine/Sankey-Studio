@@ -10,7 +10,9 @@
  * `askTarget` shows the collections as a radio list in tree order ("Library" first, children
  * indented by `data-depth`). An option that cannot be chosen stays visible and disabled with the
  * reason next to it: where the thing already is, inside the collection that is being moved, or too
- * deep for the tree. Names are text nodes with control and direction characters removed.
+ * deep for the tree (the rules are folder-rules.js, shared with drag and drop). Names are text nodes
+ * with control and direction characters removed. `describe(error)` is exported so a drop says the
+ * same sentence as the dialog when the server refuses a move.
  *
  * `confirmDeleteFolder(folder, where)` resolves true after the person confirms; it says how many
  * graphs and collections move up (a delete never removes a graph).
@@ -24,7 +26,8 @@ import { reportError } from "../core/api.js";
 import { confirmDialog, openDialog } from "../core/dialog.js";
 import { h, setBusy, uid } from "../core/dom.js";
 import { formatCount } from "../core/format.js";
-import { DEPTH_MAX, LABEL_MAX } from "./folders-data.js";
+import { createRules } from "./folder-rules.js";
+import { LABEL_MAX } from "./folders-data.js";
 import { folderLabel } from "./names.js";
 
 const SENTENCES = {
@@ -32,8 +35,12 @@ const SENTENCES = {
   folder_rule: null, // the server's own sentence says which rule (depth, count, cycle)
 };
 
-/** The sentence under the field for a failed request. */
-function describe(error) {
+/**
+ * The sentence for a failed request: under the field of a dialog, or in the toast of a drop.
+ * @param {unknown} error
+ * @returns {string}
+ */
+export function describe(error) {
   const known = SENTENCES[error?.code];
   return known ?? reportError(error)?.friendly ?? "That did not work. Try again.";
 }
@@ -102,21 +109,12 @@ export function askName({ title, initial = "", parentLabel = null, confirmLabel 
 
 /** The options of the radio list, in tree order: `{id, label, depth, reason}`; `reason` disables one. */
 function targetOptions({ index, current, moving }) {
-  const blocked = new Set(moving ? [moving.id, ...index.descendantsOf(moving.id).map((item) => item.id)] : []);
-  const reasonFor = (id, depth) => {
-    if (blocked.has(id)) {
-      return "inside the collection being moved";
-    }
-    if (id === current) {
-      return "already here";
-    }
-    return moving && depth + index.heightOf(moving.id) > DEPTH_MAX ? `too deep (at most ${DEPTH_MAX} levels)` : null;
-  };
+  const reasonFor = createRules({ index, current, moving });
   const walk = (parent, depth) => index.childrenOf(parent).flatMap((folder) => [
     { id: folder.id, label: folderLabel(folder.name), depth, reason: reasonFor(folder.id, depth) },
     ...walk(folder.id, depth + 1),
   ]);
-  const top = { id: null, label: "Library (top level)", depth: 0, reason: current === null ? "already here" : null };
+  const top = { id: null, label: "Library (top level)", depth: 0, reason: reasonFor(null, 0) };
   return [top, ...walk(null, 1)];
 }
 
