@@ -761,6 +761,9 @@ Behaviour:
   read-only."; when the save fails "Applied, but not saved." plus one info toast). The System card
   reads "Follows your device (now light)." or "(now dark)" for what the device does now.
 * **Storage.** `settings-storage-backend` (`file` "Files on this computer" or `mongo`).
+  While the backend is `file`, `settings-storage-folder` (a `code` element, read-only) names the folder
+  that holds the graph files, after "Graphs folder:"; it is hidden for `mongo` and follows the select
+  before saving.
   `settings-storage-connection` and `settings-storage-database` show only for `mongo`, with the hint "The
   graphs go into the MongoDB collection sankey_studio_graphs of this database, and the library's own
   collections (groups of graphs) into sankey_studio_collections."; the connection needs write permission on
@@ -1216,6 +1219,7 @@ The compare page also uses `state-loading`, `state-empty`, `state-error`, `state
 |---|---|---|
 | `settings-theme-option` | `input[type=radio]` (repeated) | three cards in the order system, light, dark |
 | `settings-storage-backend` | `select` | `file` or `mongo` |
+| `settings-storage-folder` | `code` | read-only path of the graphs folder; only for the `file` backend |
 | `settings-storage-connection` | `select` | only for the `mongo` backend |
 | `settings-storage-database` | `input[type=text]` | only for the `mongo` backend |
 | `settings-migrate` | `input[type=checkbox]` | "Copy my N existing graphs to the new location" |

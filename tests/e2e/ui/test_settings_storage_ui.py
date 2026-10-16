@@ -93,6 +93,23 @@ def test_the_mongo_fields_appear_only_for_mongo_and_a_bad_target_is_refused_inli
     assert settings.stored()["storage_backend"] == "file"  # nothing was saved
 
 
+def test_the_graphs_folder_is_printed_while_the_storage_is_files_on_this_computer(
+    settings: SettingsPage, live_server: LiveServer
+) -> None:
+    settings.goto()
+    folder = settings.tid("settings-storage-folder")
+    expect(folder).to_be_visible()
+    expect(folder).to_have_text(str(live_server.graphs_dir))
+    assert folder.evaluate("element => element.tagName") == "CODE"
+    expect(settings.page.locator("#settings-storage")).to_contain_text("Graphs folder:")
+    settings.tid("settings-storage-backend").select_option("mongo")
+    expect(folder).to_be_hidden()  # follows the select, before anything is saved
+    settings.tid("settings-storage-backend").select_option("file")
+    expect(folder).to_be_visible()
+    expect(folder).to_have_text(str(live_server.graphs_dir))
+    assert settings.stored()["bootstrap"]["graphs_dir"] == str(live_server.graphs_dir)
+
+
 # ------------------------------------------------------------------------------ switching
 
 

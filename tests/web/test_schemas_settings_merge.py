@@ -262,7 +262,12 @@ def test_the_read_only_echo_of_a_get_is_accepted_and_ignored() -> None:
     echo = {"uri_masked": "mongodb://evil.invalid", "has_secret": False}
     body = {
         "mongo_connections": [connection("alpha", **echo)],
-        "bootstrap": {"sources_dir": "/x", "remote_mode": True, "writes_allowed": False},
+        "bootstrap": {
+            "sources_dir": "/x",
+            "graphs_dir": "/y",
+            "remote_mode": True,
+            "writes_allowed": False,
+        },
     }
     merged = merge_settings(stored(), SettingsIn.model_validate(body))
     assert uris(merged) == {"alpha": ALPHA}

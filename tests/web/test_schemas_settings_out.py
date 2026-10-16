@@ -156,10 +156,16 @@ def test_the_bootstrap_block_reports_the_mode(
     block = bootstrap_out(config)
     assert block.model_dump() == {
         "sources_dir": str(config.effective_sources_dir),
+        "graphs_dir": str(config.graphs_dir),
         "remote_mode": remote,
         "writes_allowed": writes,
     }
     assert settings_out(AppSettings(), config).bootstrap == block
+
+
+def test_the_graphs_dir_shown_is_the_graphs_folder_of_the_data_dir(tmp_path: Path) -> None:
+    config = BootstrapConfig(data_dir=tmp_path / "data", sources_dir=tmp_path / "elsewhere")
+    assert bootstrap_out(config).graphs_dir == str(tmp_path / "data" / "graphs")
 
 
 def test_the_sources_dir_shown_is_the_effective_one(tmp_path: Path) -> None:

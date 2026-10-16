@@ -55,6 +55,7 @@ class BootstrapOut(_Wire):
     """The operator-level settings, read-only in the UI (they come from the environment/CLI)."""
 
     sources_dir: str
+    graphs_dir: str
     remote_mode: bool
     writes_allowed: bool
 
@@ -181,6 +182,7 @@ class SettingsSaved(_Wire):
 def bootstrap_out(config: BootstrapConfig) -> BootstrapOut:
     return BootstrapOut(
         sources_dir=str(config.effective_sources_dir),
+        graphs_dir=str(config.graphs_dir),
         remote_mode=config.remote_mode,
         writes_allowed=config.privileged_writes_allowed,
     )
