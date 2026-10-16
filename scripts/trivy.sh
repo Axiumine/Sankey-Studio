@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 # Trivy filesystem scan: vulnerable dependencies (uv.lock), secrets, IaC misconfigurations,
 # forbidden licences. Config: trivy.yaml; accepted findings: .trivyignore.
 #

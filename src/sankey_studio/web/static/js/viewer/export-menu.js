@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The export menu of the viewer's chart card: a download icon at the right of the tab row that
  * opens a non-modal popover (core/popover.js) holding the export panel (export.js).

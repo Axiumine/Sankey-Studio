@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Where the replica-set suite finds its URI: the process environment, else the repo-root ``.env``.
 
 Only ``SANKEY_TEST_MONGO_RS_URI`` is ever taken from ``.env``: the file also holds the Qodana token,

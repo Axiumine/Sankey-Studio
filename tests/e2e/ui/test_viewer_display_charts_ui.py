@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The display menu of the viewer, part 2: the donut switches, the exports, the saved graph.
 
 The percentage and value switches change the text on every slice (the name stays only with four

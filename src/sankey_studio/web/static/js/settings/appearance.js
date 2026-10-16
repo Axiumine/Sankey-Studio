@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Appearance section: the colour theme as three choice cards (System, Light, Dark).
  *

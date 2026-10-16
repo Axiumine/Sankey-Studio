@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E: ``/preview`` lists the drawn nodes; a stored node order and extra links reach every view.
 
 The order is part of the saved graph (``style.node_order``) and the extra links are part of its

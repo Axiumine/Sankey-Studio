@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``suggest_fields``: every alias of every field is recognised by NAME, not by the fallback.
 
 A decoy field that comes first makes the text/number fallback pick the wrong path, so a name

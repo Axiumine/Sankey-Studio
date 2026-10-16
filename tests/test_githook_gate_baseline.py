@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """A run vouches for one tree: every check must start on the state that was verified for it."""
 
 from __future__ import annotations

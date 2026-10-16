@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Small pure helpers shared by the editor panels (meta, source, transform, style).
  *

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Hostile node, category and title text reaches a Plotly figure only as literal, visible text.
 
 The names hold Plotly markup, a bell, an escape, DEL, a C1 control and bidi overrides. After

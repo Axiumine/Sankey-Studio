@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``core/title-wrap.js`` (long chart titles) run with node on the shipped file.
 
 A title longer than the chart is cut at the figure's edge because Plotly draws it on one line, so

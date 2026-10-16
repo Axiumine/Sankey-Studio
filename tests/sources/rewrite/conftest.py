@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The ``rewrite`` fixture: run ``rewrite_text`` on a text with spec fields."""
 
 from __future__ import annotations

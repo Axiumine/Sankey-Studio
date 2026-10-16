@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``chrome_descendants``: the Chrome processes started (directly or not) by this very process.
 
 The image exports start Chrome through kaleido from the test process (the server runs in a

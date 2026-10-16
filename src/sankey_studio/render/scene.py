@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """What is drawn and in which colour: the shared base of the Sankey figure and its legend.
 
 A ``Scene`` is built once per figure. The legend items shown on the page and the legend traces

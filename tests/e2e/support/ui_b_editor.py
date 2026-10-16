@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``EditorPage``: the part of the editor (``/graphs/<id>/edit``) that the UI-B suites drive.
 
 Only what the library, resilience and security suites need: name, save, the save status line, the

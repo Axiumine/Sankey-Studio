@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.6, the library collections: drag and drop of graphs and collections.
 
 The same two moves as the Move dialog, with the pointer: a graph (or the picked graphs) onto a

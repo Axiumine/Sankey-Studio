@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The real 32 MiB cap at full scale: a model-valid graph can never be saved and then be unreadable.
 
 Before the write side shared the read cap, 20000 entry choices with 200-character CJK names

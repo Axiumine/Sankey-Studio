@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The size cap of a stored graph file: exactly the cap is readable and writable, one more is not.
 
 The write side uses the read cap (``MAX_GRAPH_BYTES``), so a graph that was saved can always be

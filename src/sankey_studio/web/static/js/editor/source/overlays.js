@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Graph-level edits that only make sense for the data they were made on: the "overlays".
  *

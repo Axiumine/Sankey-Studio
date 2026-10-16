@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """API timestamps as instants.
 
 The API prints ``updated_at`` as ``2026-10-11T10:00:46Z`` when the millisecond part is zero and as

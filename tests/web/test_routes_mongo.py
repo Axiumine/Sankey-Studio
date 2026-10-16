@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``GET /mongo/{name}/databases | collections | sample`` against a recording fake driver."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Settings routes (prefix ``/api/v1/settings``).
 
 * ``GET ""`` -> ``SettingsOut``: masked connection URIs and ``has_secret``, never a field called

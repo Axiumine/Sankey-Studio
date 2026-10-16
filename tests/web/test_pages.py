@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The six HTML pages: status, template, boot data, links, 404/422 answers, remote mode."""
 
 from __future__ import annotations

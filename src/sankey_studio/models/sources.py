@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Source specs: manual links, text documents and MongoDB collections."""
 
 from __future__ import annotations

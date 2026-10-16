@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Compare-view donut (GAPS-V2 item 2): hue and fold agree because both ask ``has_hue``."""
 
 from __future__ import annotations

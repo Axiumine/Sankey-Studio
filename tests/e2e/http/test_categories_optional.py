@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E A.3 (categories are optional): no category means no donut, and nothing else is affected."""
 
 from __future__ import annotations

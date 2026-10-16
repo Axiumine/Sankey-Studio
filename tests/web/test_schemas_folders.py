@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Wire models of the folder routes: ``MoveGraphsIn`` and ``FolderList``."""
 
 from __future__ import annotations

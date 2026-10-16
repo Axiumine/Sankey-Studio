@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``TextDataSource``: format dispatch, inline text, categories and the category tolerance rule."""
 
 from __future__ import annotations

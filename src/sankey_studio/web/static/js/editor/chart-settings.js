@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Chart settings: a gear in the chart header that opens a non-modal popover with two tabs,
  * "Style" and "Export". The popover does not dim or block the page, so the chart keeps redrawing

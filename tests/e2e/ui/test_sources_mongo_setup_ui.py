@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """B5, part 5: the MongoDB tab before and without a working connection.
 
 No connection yet (a pointer to Settings, "Check again" finds one added meanwhile) and a MongoDB

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Helpers of ``test_routes_exports*.py``: the Chrome seam as a recorder (no tests here)."""
 
 from __future__ import annotations

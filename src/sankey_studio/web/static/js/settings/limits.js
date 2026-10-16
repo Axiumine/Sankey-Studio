@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Limits section: the four number settings (links per graph, links drawn, upload size, MongoDB
  * timeout), each with its allowed range as a hint and an inline error from the early checks or

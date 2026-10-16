@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Routers of the web API.
 
 ``ALL_ROUTERS`` is what ``create_app`` serves when it is not given ``routers=``: one router per

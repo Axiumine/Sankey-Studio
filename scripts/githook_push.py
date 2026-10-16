@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The pre-push flow: messages of new commits, stamps per pushed tree, inline runs of the rest.
 
 For every pushed ref that is not a deletion the required checks come from the REMOTE ref name

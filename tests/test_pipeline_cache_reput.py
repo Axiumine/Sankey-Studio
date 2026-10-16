@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``ResultCache.put`` on a key that is already held: the entry becomes the most recent one."""
 
 from __future__ import annotations

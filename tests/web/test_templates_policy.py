@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """SPEC section 5: no banned construct in ``templates/`` and ``static/`` (a grep over every file).
 
 The wave-3 frontend replaces both directories and this test keeps passing or fails the build.

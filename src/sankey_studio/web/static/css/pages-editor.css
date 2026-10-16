@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Giovanni Manzoni */
 /* Editor page: the row layout, the chart settings popover and the INPUT panels (meta, source, transform, style).
    The output panels (chart, entries, export, save bar) have their own sheet, pages-editor-output.css.
    Loaded by js/pages/editor.js before the page draws. Tokens only: no colour literals here, the

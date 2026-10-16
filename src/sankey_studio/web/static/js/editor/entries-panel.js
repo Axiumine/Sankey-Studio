@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Registers the "entries" panel (the categorising table). Import this module from the editor
  * composer; it mounts into the container `data-panel="entries"`. Implementation: ./entries/.

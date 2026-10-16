@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``mongo_extract``: which values are usable names and values, and the exact reasons."""
 
 from __future__ import annotations

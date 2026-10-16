@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The sticky save bar: what state the form is in ("All changes saved", "Unsaved changes",
  * "Saving...", "Read-only"), a "Discard changes" button (only while there is something to

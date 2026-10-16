@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Helpers of ``tests/test_edits_*.py`` (no tests here).
 
 ``make_edit_env`` builds ``Services`` over an isolated data dir and an in-memory MongoDB (the

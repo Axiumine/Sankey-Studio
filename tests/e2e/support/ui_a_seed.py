@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Seeding for the UI-A suites: save a graph through the API, never through the page under test."""
 
 from __future__ import annotations

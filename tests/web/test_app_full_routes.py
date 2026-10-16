@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The route table of the FULL app: every route of SPEC section 4, nothing else, static first."""
 
 from __future__ import annotations

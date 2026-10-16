@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``plan_edit`` for a MongoDB source: counts only, never a write."""
 
 from __future__ import annotations

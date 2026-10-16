@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Shared, cached ``MongoClient`` registry used by the Mongo source and the Mongo storage.
 
 Clients are keyed by (connection name, URI) so editing a connection in the settings page

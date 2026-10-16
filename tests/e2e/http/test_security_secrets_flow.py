@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md A.8, part 5: a stored Mongo password is in no response, no log line and no graph file.
 
 One server holds a connection whose URI has a password. The test drives everything that touches

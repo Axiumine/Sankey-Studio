@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Pure rules of the entries table: what a category edit does to a draft, and what is allowed.
  * No DOM and no network, so every rule here can be exercised on plain objects.

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Honest empty, error and loading states, so every page looks the same when there is nothing to
  * show. Each returns an element to mount (core/dom.js `mount`); text always goes through

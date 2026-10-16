@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``PageWatch`` / ``WatchedPage``: nothing may go wrong in the browser, unless a test says so.
 
 A ``PageWatch`` belongs to one browser context and listens on every page that is adopted into it:

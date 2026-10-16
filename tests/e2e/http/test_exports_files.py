@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E A.4 (exports without Chrome): file names, headers, formats and refusals of the routes."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Special checks and the check loop: Mongo lifecycle, release wrapper order, offline, lock."""
 
 from __future__ import annotations

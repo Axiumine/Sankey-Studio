@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 // Scenarios of test_static_node_flow.py: F2 (click a node to add a flow), the parts that need no DOM.
 // argv[2] is the js/ directory of the shipped files; the result is printed as JSON.
 const dir = process.argv[2];

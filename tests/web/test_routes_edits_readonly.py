@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The edits routes in remote mode: ``plan`` is pure and stays open, ``write`` persists.
 
 Read-only remote server: plan answers 200 (``read_only_mode`` for a file or MongoDB source),

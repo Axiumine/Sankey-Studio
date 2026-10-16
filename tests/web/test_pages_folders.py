@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The library and new-graph pages with ``?folder=``: boot data, fallback links, lenient value."""
 
 from __future__ import annotations

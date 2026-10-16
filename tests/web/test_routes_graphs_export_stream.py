@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """GET /graphs/export builds the bundle one graph at a time and counts UTF-8 bytes.
 
 * Same bytes as ``json.dumps(bundle, indent=2)`` for text that is ASCII; other text stays as it is

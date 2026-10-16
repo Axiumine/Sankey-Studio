@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The stamp of a file source: what moves the cache key, and when a file is too fresh to cache."""
 
 from __future__ import annotations

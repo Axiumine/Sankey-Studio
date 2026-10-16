@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The ONE fetch wrapper of the app (API.md section 1). Nothing else calls fetch().
  *

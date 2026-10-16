@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``set_category`` stores only the category: a node name that starts like a formula still passes.
 
 The source and target of a ``set_category`` select the pair; they are never written, so the

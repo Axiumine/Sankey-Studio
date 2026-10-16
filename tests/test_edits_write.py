@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``write_edit`` to a managed text file: consent, the atomic rewrite, the answers."""
 
 from __future__ import annotations

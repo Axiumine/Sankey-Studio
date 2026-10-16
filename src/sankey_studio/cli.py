@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Command line: ``sankey-studio serve [--host] [--port] [--data-dir] [--sources-dir] ...``.
 
 argparse fills ``ServeArgs``; ``build_config`` turns it into a ``BootstrapConfig`` (whose

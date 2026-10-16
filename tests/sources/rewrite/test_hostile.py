@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Hostile names and categories survive every format (the self-check is the judge)."""
 
 from __future__ import annotations

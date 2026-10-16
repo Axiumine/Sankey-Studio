@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``merge_settings``: when an incoming URI replaces the stored secret and when it never does."""
 
 from __future__ import annotations

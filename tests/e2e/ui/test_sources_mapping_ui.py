@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """B5, part 2: reading pasted text: format detection, column mapping, the category column, bad rows.
 
 The "How to read the data" block: automatic format detection (CSV with another delimiter, TSV,

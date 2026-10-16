@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.10, responsive layout: a phone never scrolls sideways and charts follow the window.
 
 One server for the module (nothing here writes); the graphs are seeded once.

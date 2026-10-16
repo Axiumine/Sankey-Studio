@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Bootstrap configuration: what the process needs *before* it can read ``settings.json``.
 
 Everything user-editable at runtime lives in ``models.AppSettings`` instead. Anything that

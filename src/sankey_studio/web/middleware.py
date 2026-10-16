@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Pure ASGI middleware: host check, body-size limiter, security headers and the CSRF guard.
 
 Pure ASGI on purpose: ``BaseHTTPMiddleware`` buffers or re-reads bodies and would defeat the

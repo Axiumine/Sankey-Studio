@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Contract tests: ``SankeyGraph`` column validation and category rules."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``Services.update_settings`` / ``test_storage``: storage switches that never lose data."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.8, the library collections on a remote read-only server.
 
 ``remote_mode=True`` is ``--allow-remote`` without ``--allow-remote-writes``. The collections and

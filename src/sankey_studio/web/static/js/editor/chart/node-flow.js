@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * F2: a click on a bar of the Sankey opens the "Add a flow" dialog for that node.
  *

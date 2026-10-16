@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Exact messages of the field and model validators that carry their own text.
 
 The UI shows these strings, and a validator whose message nobody compares can be rewritten (or

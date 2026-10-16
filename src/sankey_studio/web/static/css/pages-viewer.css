@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Giovanni Manzoni */
 /* Viewer page: header, stats, warnings, chart card (tabs, legend, tables, export popover).
    Only token variables here; chart colours come from the server figure. */
 

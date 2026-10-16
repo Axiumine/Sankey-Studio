@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The project Mongo of the ``e2e-mongo`` check: the gate stops only a Mongo it started itself."""
 
 from __future__ import annotations

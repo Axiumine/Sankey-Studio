@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """csv/tsv adapter: records become items, a touched record is re-emitted with ``csv.writer``.
 
 Record boundaries, overlong-line skipping and the record budget come from the REAL reader

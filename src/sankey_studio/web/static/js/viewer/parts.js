@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Read-only building blocks that show a RenderBundle as HTML: the legend list, the category table
  * (the accessible twin of the donut), the stats strip, the warnings list and the "Table view"

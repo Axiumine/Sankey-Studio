@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``Hold``: make chosen API requests of a page slow, deterministically, from inside the page.
 
 ``page.route`` handlers only run while the test calls into Playwright, so a request "held" there

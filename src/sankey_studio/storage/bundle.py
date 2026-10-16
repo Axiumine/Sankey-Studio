@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Graph bundles: export saved graphs to one JSON document and import them back.
 
 Format ``{"format": "sankey-studio/graphs", "version": 2, "graphs": [<GraphDefinition dump>],

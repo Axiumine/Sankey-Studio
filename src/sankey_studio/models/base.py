@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Constants and the ``_Model`` base class shared by every spec model."""
 
 from __future__ import annotations

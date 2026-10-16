@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Column mapping for delimited text (csv / tsv): which column is the source, target, value and
  * the optional category, whether the first row is a header, the delimiter and the encoding.

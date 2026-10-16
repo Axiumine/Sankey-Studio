@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The first line of an empty text: ``add_entry`` on nothing writes a complete small document."""
 
 from __future__ import annotations

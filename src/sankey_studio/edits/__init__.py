@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Edits to the data of a graph: where each one goes and, when allowed, writing it back.
 
 ``plan_edit`` and ``write_edit`` are the whole surface; the web layer calls them with the app's

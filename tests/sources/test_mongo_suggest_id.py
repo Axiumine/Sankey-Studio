@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``suggest_fields``: the ``_id`` key is never a fallback (a sampled ObjectId is an opaque key)."""
 
 from __future__ import annotations

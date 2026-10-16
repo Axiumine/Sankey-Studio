@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * "N other entries have no category": the follow-up of the FIRST category written into data that
  * had no category at all.

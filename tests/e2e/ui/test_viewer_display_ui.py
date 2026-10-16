@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The display menu of the viewer, part 1: the icon, its panel, the tab strip and the Sankey switch.
 
 An icon button at the right of the chart card's tab row opens a panel of view-only switches. This

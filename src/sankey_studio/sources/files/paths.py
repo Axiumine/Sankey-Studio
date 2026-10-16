@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Safe access to files under the managed sources directory.
 
 Every operation (read, preview, delete, list) goes through here. The rules:

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The MongoDB source against a REAL server (what mongomock cannot do).
 
 Skipped unless ``SANKEY_TEST_MONGO_URI`` is set. The test creates a uniquely named database,

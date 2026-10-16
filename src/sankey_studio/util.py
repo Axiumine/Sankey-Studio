@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Small helpers shared across layers: URI masking and category identity.
 
 Dependency-free on purpose (``models`` and ``mongo`` import this module).

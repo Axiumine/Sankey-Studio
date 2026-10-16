@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """B5, part 1: the five source tabs, the Text file tab and the Upload tab (UI.md flow F8).
 
 Switching tabs, choosing a file that lives in the sources folder, uploading a CSV and a SankeyMATIC

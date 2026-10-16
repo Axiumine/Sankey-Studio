@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """B1: smoke test of the app shell and navigation, then the keyboard-only paths.
 
 Library empty state, the header links to New / Settings / Library and the compare page, the

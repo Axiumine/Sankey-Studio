@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Helpers of the category flows: transform payloads, a preview call and the donut as numbers."""
 
 from __future__ import annotations

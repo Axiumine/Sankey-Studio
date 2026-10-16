@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Helpers of ``test_pages*.py`` and ``test_static*.py``: read a page like a browser would.
 
 No tests here. ``parse(response)`` runs the standard HTML parser over a page and keeps what a

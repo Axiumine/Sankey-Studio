@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """JSON entries: one array of ``{source, target, value[, category]}`` objects, or NDJSON.
 
 Never ``json.load``: objects are decoded one at a time with ``JSONDecoder.raw_decode`` from a

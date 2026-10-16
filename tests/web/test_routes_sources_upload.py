@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``POST /sources/files``: the multipart upload, its form field, names, caps and refusals."""
 
 from __future__ import annotations

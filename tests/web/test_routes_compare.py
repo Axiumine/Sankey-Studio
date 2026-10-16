@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """GET /api/v1/compare/render: several saved graphs, one shared category colour map."""
 
 from __future__ import annotations

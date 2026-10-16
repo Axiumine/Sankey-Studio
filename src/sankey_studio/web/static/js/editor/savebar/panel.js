@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The sticky save bar of the editor: a `.savebar` element inside the container (the container is
  * set to `display: contents`, so `position: sticky` works against the page, not a wrapper).

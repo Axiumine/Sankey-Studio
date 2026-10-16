@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``edits.target``: the consent key is built by the server from resolved values (rule 29)."""
 
 from __future__ import annotations

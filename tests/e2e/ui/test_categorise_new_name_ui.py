@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """F6: a NEW category name typed on one entry shows up on that entry and in the data (rule 26).
 
 The first test of the write-through work. The edited entry shows the new name, the chart agrees

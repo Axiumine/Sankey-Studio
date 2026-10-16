@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """F4: drag a bar of the Sankey to reorder the nodes; the order is stored with the graph.
 
 A drag (snap, perpendicular and freeform, horizontal and vertical) puts the dropped bar where it

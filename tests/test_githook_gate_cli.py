@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The command line of the gate (scripts/githook_gate.py): parser, dispatch, exit codes, wiring."""
 
 from __future__ import annotations

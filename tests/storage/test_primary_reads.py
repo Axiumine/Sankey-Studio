@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The library stores read from the primary, whatever ``readPreference`` the saved URI carries.
 
 A save then a load, a delete then an import: on a replica set a secondary may not have replicated

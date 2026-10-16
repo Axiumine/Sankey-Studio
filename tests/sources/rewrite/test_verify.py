@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The self-check: every way an edit is accepted or turned into ``cannot_verify``."""
 
 from __future__ import annotations

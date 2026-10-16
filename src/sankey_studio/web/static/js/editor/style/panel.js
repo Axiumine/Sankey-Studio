@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Panel "style": how the chart looks (title, direction, colours, sizes, number format, donut).
  *

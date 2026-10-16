@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``ExportUnavailable``: an ASGI wrapper that makes image exports answer 501 on ONE server.
 
 This is the seam behind ``make_server(export_unavailable=True)``. The browser UI falls back to

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Helpers of ``test_routes_{preview,graphs,compare,exports}*.py`` (no tests here)."""
 
 from __future__ import annotations

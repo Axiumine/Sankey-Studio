@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Process side of the hook gate: the environment of a check, the runner seam, signals.
 
 ``Runner`` is the seam the tests replace; ``SubprocessRunner`` is the real one. A child gets its

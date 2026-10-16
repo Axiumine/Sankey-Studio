@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Overlay links: entries that live in the graph (``transform.extra_links``), not in the data.
 
 They are appended AFTER the rows of the source, as raw (pre-merge) names, so ``merge_nodes``,

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The managed sources directory: safe paths, upload names, and the list/save/delete/preview API.
 
 ``sankey_studio.sources.files`` is the import path the web layer uses.

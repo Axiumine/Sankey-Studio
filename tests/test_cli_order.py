@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The operator reads the banner BEFORE the server starts: the server call blocks until shutdown."""
 
 from __future__ import annotations

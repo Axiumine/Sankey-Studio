@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``main``: the banner, configuration errors, the uvicorn seam and ``python -m sankey_studio``."""
 
 from __future__ import annotations

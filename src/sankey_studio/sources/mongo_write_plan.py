@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Plan the write-back of one edit to a MongoDB source (pure: no driver, no settings, no I/O).
 
 ``plan_pair_update`` turns a ``SetCategory`` into a selection filter and a one-field update,

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E A.5 (library): 25 saved graphs listed, searched, filtered by tag and paged in a stable order.
 
 The module's server is filled once and these tests only read it.

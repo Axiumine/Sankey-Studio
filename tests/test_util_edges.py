@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``util``: split points, boundaries and messages of the URI masker and the category helpers."""
 
 from __future__ import annotations

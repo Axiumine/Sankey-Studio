@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Page object of the source tabs of the editor, except Manual and MongoDB (UI-A suites).
 
 ``SourcePanel(page)`` knows the tab strip (Text file, Paste, Upload, Manual, MongoDB), the upload

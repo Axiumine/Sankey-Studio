@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """POST/GET/PUT/DELETE /api/v1/graphs: create, read, optimistic update and delete."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``mongo_extract``: dotted paths, the server-side projection, and whole-document extraction."""
 
 from __future__ import annotations

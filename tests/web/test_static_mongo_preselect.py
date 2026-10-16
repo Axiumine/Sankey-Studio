@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Which connection the Mongo tab pre-selects after "Check again": ``editor/source/model.js``.
 
 ``connectionToPreselect`` is a pure function, so it runs under ``node`` on the shipped file

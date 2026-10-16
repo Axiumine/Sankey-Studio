@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 const cat = (category, extra = {}) => ({ source: "a", target: "b", category, ...extra });
 {
   const f = fakes({ "/edits/plan": () => ok({ where: "draft", source: { type: "text", origin: "inline", content: "NEW" }, override: "drop", changed: 1 }) },

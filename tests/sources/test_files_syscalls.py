@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The exact arguments the managed-files store hands to the standard library.
 
 These flags (no symlink following, lenient UTF-8 for previews) are indistinguishable from

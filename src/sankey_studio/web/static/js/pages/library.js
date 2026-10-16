@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Library page: search, tag filter, sort and paging over the saved graphs, cards with open / edit /
  * duplicate / delete, bundle import and export, and a selection for the compare page.

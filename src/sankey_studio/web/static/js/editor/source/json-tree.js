@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * A collapsed, lazily built JSON tree for the sample documents of a MongoDB collection.
  *

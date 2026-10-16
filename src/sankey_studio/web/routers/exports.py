@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Downloads of one chart: ``GET /graphs/{id}/export`` (saved) and ``POST /export`` (a draft).
 
 ``chart`` is ``sankey`` or ``donut``, ``format`` is ``svg``, ``png``, ``html``, ``json`` or ``csv``.

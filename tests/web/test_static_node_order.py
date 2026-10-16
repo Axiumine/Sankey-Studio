@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The node order of the chart (F4), run with node on the shipped files (no browser).
 
 Pure functions of ``editor/chart/node-order.js`` (a drag becomes an order: swap in a column, other

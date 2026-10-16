@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Compare page: up to 12 saved graphs side by side with one shared category colour map, a Sankey /
  * donut switch per card, summary tables, and lazy chart drawing. Everything lives in js/compare/.

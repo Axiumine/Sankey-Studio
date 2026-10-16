@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * MongoDB connections section: the list of connection rows, "Add connection" and the undo toast
  * after a delete.

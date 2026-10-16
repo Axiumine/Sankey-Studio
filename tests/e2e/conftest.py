@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Fixtures of the end-to-end suites: a real server, HTTP clients and a real browser.
 
 Every test under ``tests/e2e`` is marked ``e2e`` automatically (``make test`` and ``make cov``

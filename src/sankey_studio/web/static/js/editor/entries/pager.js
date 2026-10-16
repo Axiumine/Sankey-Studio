@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The pager under the entries table: "Rows 1-100 of 1,234", Previous, "Page 1 of 13", Next.
  *

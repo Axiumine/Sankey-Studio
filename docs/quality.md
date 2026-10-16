@@ -224,6 +224,13 @@ Suppression comments are rationed and checked by `tests/test_policy.py`:
 * mongomock gaps (`$unionWith`, `$sortByCount`, `$bucketAuto`, Decimal128 comparison, `serverStatus`)
   are covered by pure `check_pipeline` unit tests or under the `mongo` marker.
 * No sleeps. Use barriers, events or an injectable clock.
+* License header: every `.py`, `.sh`, `.js`, `.mjs`, `.css` and template `.html` under `src`,
+  `tests` and `scripts` starts with `SPDX-License-Identifier: GPL-3.0-only` and
+  `Copyright (C) 2026 Giovanni Manzoni` (comment syntax of the file type; a Jinja comment in
+  templates, so the page output is unchanged). `uv run python scripts/license_header.py` lists
+  the files without it and `--apply` writes it; `tests/test_license_header.py` runs the same
+  check, so a new file without the header fails the unit suite. Data and config files, docs,
+  the hook shims and the Semgrep fixtures carry no header; `LICENSE` and `pyproject.toml` cover them.
 * Hypothesis is not installed; use parametrised tables.
 * Build a `go.Figure` from a figure dict only in tests, as a schema check.
 

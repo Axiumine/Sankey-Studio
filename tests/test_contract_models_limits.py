@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Boundary tables for every numeric / length limit of the spec and settings models.
 
 Each row names a model, the minimal valid input, one field, the values at and just inside the

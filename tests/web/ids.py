@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Stable pytest ids for parametrised text that holds escapes or non-ASCII characters.
 
 pytest escapes a string id again each time the same module is collected twice in one process

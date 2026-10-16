@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.11, failures: the error envelope reaches the person as a sentence, never as JSON.
 
 Some failures are real (a stopped server, an unreachable MongoDB), the rest are answers the server

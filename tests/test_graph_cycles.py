@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``build_graph``: cycles on pairs (error with a named cycle, or break the back-edges)."""
 
 from __future__ import annotations

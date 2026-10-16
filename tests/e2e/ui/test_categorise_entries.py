@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """B3, part 1: categorise entries in the editor (UI.md flow F2 and its negatives).
 
 The entries table (one row per source -> target pair), the category input with its datalist, the

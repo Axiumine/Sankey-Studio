@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Layout pieces shared by the Sankey and the donut: fonts, surfaces, hover, modebar, title.
 
 Everything is set explicitly (no plotly template): the browser and the kaleido export must look

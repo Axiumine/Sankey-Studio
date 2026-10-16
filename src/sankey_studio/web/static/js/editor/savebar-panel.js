@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Registers the "savebar" panel (sticky Save / Save as copy, revision, dirty indicator, conflict
  * banner). Import this module from the editor composer; it mounts into the container

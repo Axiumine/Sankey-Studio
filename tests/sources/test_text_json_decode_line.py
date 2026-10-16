@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """JSON decode errors name the line where the failing block starts (an exact lower bound)."""
 
 from __future__ import annotations

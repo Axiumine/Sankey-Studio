@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Data of the library collections (the API and the code call them folders): the five calls and the
  * index the page builds from the list.

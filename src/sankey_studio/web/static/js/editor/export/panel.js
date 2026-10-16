@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The export panel: download the chart as SVG/PNG (Sankey and donut) or the data as HTML/JSON/CSV.
  *

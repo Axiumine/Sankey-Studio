@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Giovanni Manzoni */
 /* Layout: app shell (header, nav, banners, main), spacing helpers, responsive grids and the sticky
    save bar (the editor's own rows are in pages-editor.css). Works from 360px up without horizontal page scroll.
 

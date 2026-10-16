@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The display menu of the viewer (``/graphs/<id>``) and the requests it sends (UI-A suites).
 
 ``DisplayMenu(viewer)``    - the icon at the right of the tab row and its panel of view-only

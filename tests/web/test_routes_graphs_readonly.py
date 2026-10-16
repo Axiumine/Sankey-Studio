@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Remote mode without --allow-remote-writes: graph writes answer 403, everything else works."""
 
 from __future__ import annotations

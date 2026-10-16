@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The HTML pages, the vendored plotly.js and the health probe.
 
 Pages (``GET``, always HTML):

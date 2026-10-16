@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Every name ``GET /sources/files`` lists can be previewed and deleted (newline, space, UTF-8)."""
 
 from __future__ import annotations

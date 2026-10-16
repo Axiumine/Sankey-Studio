@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Data builders of the e2e suites: CSV text, sample graphs, request payloads, Mongo seeds.
 
 ``csv_text(rows, header=None)``

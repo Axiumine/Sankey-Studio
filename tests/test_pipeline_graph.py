@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``build_graph_from_draft``: sources, strictness, limits, errors, and the result cache."""
 
 from __future__ import annotations

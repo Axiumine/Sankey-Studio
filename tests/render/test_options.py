@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Option types (SPEC section 2.1): the defaults later waves rely on, spelled out."""
 
 from __future__ import annotations

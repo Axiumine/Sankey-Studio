@@ -82,6 +82,7 @@ Package `src/sankey_studio/`. Dependencies point downwards only; never import up
 * Comments and docstrings are ASCII; all user-facing and code strings are English. No `print` in library code; log with `logging.getLogger(__name__)`.
 * Use `datetime.now(UTC)`, numeric HTTP status codes, `TemplateResponse(request, "name.html", context)`, a `lifespan` (no `on_event`). Do not hand-parenthesise `except A, B:`.
 * Do not add or bump dependencies without asking (Trivy gate).
+* GPL-3.0-only, copyright Giovanni Manzoni (`LICENSE`). Every `.py`, `.sh`, `.js`, `.mjs`, `.css` and template `.html` under `src`, `tests` and `scripts` starts with the two-line SPDX header (a shebang or `@charset` stays on line 1). A new file gets it with `uv run python scripts/license_header.py --apply`; `tests/test_license_header.py` fails without it. Config, docs, hook shims and `.semgrep/` carry none.
 
 ## Testing rules
 

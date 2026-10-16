@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``build_graph``: the category precedence (entry choice > data > rules) and rule matching."""
 
 from __future__ import annotations

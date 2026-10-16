@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The storage-backend flows of E2E.md A.7, written once for mongomock (A) and a real server (C).
 
 File store -> Mongo store with ``migrate``, back again, a switch without ``migrate`` that loses

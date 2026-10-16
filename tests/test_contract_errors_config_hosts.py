@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``config``: which bind addresses are wildcards and how a bound address is allowed as a Host."""
 
 from __future__ import annotations

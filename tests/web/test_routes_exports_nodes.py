@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Image exports refuse a figure of more than 2000 nodes, on both export routes (SPEC section 6)."""
 
 from __future__ import annotations

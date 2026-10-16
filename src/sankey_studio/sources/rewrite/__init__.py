@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Rewrite a text source for an edit (add an entry, set a category, reorder rows).
 
 ``rewrite_text`` is pure: it takes the text and the spec and returns the new text, never touching

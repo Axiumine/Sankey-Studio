@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Transform spec: clean-up and categorisation applied to loaded links."""
 
 from __future__ import annotations

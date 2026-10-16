@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Page objects of the entries table, its category tools and its additions (UI-A suites).
 
 ``EntriesPanel(page)`` wraps the part of the editor below the chart: the table with one row per

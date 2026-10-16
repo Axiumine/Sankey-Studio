@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Helpers of the limits suites (E2E.md A.9): live settings and bundle readers."""
 
 from __future__ import annotations

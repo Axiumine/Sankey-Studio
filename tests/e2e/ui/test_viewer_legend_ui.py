@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The viewer's legends: the Sankey shows one, the list under the chart; the donut keeps its own.
 
 The legend list under the Sankey names the same entries as the legend row the server draws in the

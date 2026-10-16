@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``ids=`` parsing: comma separated, trimmed, de-duplicated, bounded and pattern-checked."""
 
 from __future__ import annotations

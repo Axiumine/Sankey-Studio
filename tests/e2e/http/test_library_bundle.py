@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E A.5 (library): export a bundle, import it into a second storage directory, bad bundles."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * What the chart frame shows when there is no chart (or a chart that failed): a calm overlay for
  * loading, empty and error. The frame keeps its reserved height, so nothing jumps.

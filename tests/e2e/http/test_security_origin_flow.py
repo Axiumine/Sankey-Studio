@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md A.8, part 1: who may talk to the live server (Host, Origin, Fetch-Metadata, content type).
 
 Every refusal is checked twice: the status and error envelope, and the proof that nothing changed

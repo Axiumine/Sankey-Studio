@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """MongoDB data source: streams ``find`` / ``aggregate`` results as ``RawLink`` tuples.
 
 Read-only by construction: the filter, the pipeline and the namespace go through

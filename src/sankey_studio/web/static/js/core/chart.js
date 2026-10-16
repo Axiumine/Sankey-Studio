@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Plotly glue: lazy loading, drawing, resizing, cleanup, client-side image download.
  *

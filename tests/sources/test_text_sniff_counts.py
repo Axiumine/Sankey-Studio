@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``sniff_delimiter``: only lines with EXACTLY the first line's delimiter count agree."""
 
 from __future__ import annotations

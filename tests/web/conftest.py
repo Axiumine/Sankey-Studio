@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Fixtures shared by every ``tests/web`` module (router agents import from here).
 
 * ``make_app(routers=None, *, mode="local", settings=None) -> WebApp``: a real ``create_app``

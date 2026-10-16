@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``mongo_inspect``: database/collection listings and document samples."""
 
 from __future__ import annotations

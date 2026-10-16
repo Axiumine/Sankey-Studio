@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``write_edit`` to a MongoDB source: scoped updates, inserts, refusals and the cache."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Giovanni Manzoni */
 /* Styles of the editor page. Overwritten by the agent that owns the page; tokens come from
    tokens.css, shared components from base.css, components.css and layout.css. Only token
    variables here, no colour literals. */

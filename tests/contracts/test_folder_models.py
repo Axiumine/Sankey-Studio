@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Folder models: labels, ids, revision, strictness, persisted shape and the shared limits."""
 
 from __future__ import annotations

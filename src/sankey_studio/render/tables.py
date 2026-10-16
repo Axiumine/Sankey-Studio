@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Table views: entries (one row per source/target PAIR), nodes, and the category table.
 
 Frozen dataclasses of JSON primitives (lists, never tuples or arrays), so the web layer can use

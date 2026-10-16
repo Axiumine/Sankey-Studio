@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """POST /api/v1/preview: the drawn nodes, a stored node order and graph-only extra links."""
 
 from __future__ import annotations

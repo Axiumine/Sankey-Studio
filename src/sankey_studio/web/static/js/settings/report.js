@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The "copy existing graphs" report shown after a storage switch with `migrate=true`
  * (`copy_report` of PUT /settings): how many graphs were copied, skipped (already at the target)

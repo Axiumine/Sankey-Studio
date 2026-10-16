@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.12, hostile text on every page that shows it, at desktop and phone width.
 
 One graph carries markup (``<img onerror>``, ``</script>``, ``<b>``), a direction override, a

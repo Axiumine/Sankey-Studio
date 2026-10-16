@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``--allow-source-writes`` / ``SANKEY_SOURCE_WRITES``: field, validator, property, CLI, banner."""
 
 from __future__ import annotations

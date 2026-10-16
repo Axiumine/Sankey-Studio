@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Lazy drawing: a callback runs once when an element comes near the viewport
  * (IntersectionObserver), so a grid of 12 charts draws what is on screen first. Without

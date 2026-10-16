@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The d3-format subset used for labels and the donut total."""
 
 from __future__ import annotations

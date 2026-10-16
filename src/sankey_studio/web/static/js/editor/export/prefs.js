@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The export options (size, scale, transparency, file colours) remembered between visits, in the
  * browser's own storage only (never sent anywhere). Blocked or broken storage just means the options

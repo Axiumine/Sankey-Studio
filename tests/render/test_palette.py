@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Colour tokens: every hex is asserted (the values are the validated data-viz palette)."""
 
 from __future__ import annotations

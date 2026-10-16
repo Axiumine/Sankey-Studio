@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """SankeyMATIC-style text: ``Source [12.5] Target`` and ``Source [12.5] Target | category``.
 
 Blank lines and ``//`` comment lines are ignored. A name that contains ``[``, ``]`` or ``|`` is

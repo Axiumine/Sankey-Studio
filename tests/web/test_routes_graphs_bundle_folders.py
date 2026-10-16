@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Bundles over HTTP carry the folders of the exported graphs and rebuild them on import."""
 
 from __future__ import annotations

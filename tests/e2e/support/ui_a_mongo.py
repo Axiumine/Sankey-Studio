@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Page object of the MongoDB source tab (UI-A suites), for servers with a mongomock connection.
 
 Connection, database and collection pickers (the last two are text inputs with ``<datalist>``

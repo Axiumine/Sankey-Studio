@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The Mongo flows of E2E.md A.6, written once for mongomock (A) and a real server (C).
 
 Each ``check_*`` function is one scenario over a ``FlowEnv`` (``http_b_world``): it seeds the

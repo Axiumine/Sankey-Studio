@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """B5, part 3: the Manual tab: links typed, pasted, added, removed and categorised in a table.
 
 Rows are drawn only when source, target and a value above 0 are filled, cells explain what is

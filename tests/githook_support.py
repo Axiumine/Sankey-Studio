@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Helpers of the git-hook gate tests: throw-away git repos, a scripted Runner, a ready Gate.
 
 Nothing here runs a hook, docker or a real check: the Runner is a fake that records the commands

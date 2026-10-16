@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``save_stream``: the publish step is serialised per directory (case variants cannot race)."""
 
 from __future__ import annotations

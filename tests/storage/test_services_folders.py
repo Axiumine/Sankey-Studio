@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``Services.folders()``, the ``Stores`` pair, the storage probe and the migration of folders."""
 
 from __future__ import annotations

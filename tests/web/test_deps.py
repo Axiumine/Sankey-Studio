@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The typed accessors over ``app.state`` and the read-only guard (``require_writes``)."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The MongoDB write-back flows of ``/edits/plan`` and ``/edits/write``, written once for
 mongomock (``tests/e2e/http``) and a real server (``tests/e2e/mongo``).
 

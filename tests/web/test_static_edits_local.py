@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The pure parts of the edit engine, run with node on the shipped files (``editor/edits/``).
 
 Covered here: the draft rewrites of ``local.js`` (override drop/set, added entries, snapshot and

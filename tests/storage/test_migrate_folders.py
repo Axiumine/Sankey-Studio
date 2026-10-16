@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``copy_folders`` and ``copy_library``: moving a whole library between stores."""
 
 from __future__ import annotations

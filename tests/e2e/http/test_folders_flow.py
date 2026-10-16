@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E: library folders ("collections") over the live API, on the file store and on Mongo.
 
 The scenarios live in ``tests.e2e.support.http_b_folder_flows`` and are shared with the real-Mongo

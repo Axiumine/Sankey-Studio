@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Inline SVG icons (24x24 stroke set), built with createElementNS: no icon font, no image files.
  *

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The bar that appears while graphs are picked for a comparison: how many, the Compare link, a
  * Clear button, and the cap message.

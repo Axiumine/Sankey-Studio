@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E A.3 (categories): chosen entries, glob rules, precedence, clearing and the donut sums."""
 
 from __future__ import annotations

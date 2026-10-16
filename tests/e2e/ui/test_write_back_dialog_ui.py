@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """D1: the consent dialog and the per-graph preference for a managed FILE source.
 
 A category typed for an entry of a graph that reads a file of the sources folder asks first

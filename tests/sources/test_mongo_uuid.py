@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """UUIDs as a real driver returns them: ``Binary`` subtype 4 (no ``uuidRepresentation`` set).
 
 mongomock hands back ``uuid.UUID`` objects, so these tests decode with the real ``bson`` codec.

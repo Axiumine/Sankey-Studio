@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``mongo_safety`` hardening added after contract v2 (bypass tables: the contract tests).
 
 * Database and collection names refuse control (Cc), format/bidi (Cf) and surrogate (Cs)

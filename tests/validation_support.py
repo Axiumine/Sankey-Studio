@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Helpers shared by the tests that pin exact pydantic validation messages."""
 
 from __future__ import annotations

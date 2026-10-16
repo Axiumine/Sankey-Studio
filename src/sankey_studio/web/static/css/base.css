@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Giovanni Manzoni */
 /* Base styles: reset, typography, links, forms, buttons, tables. Colours come from tokens.css only.
 
    Components that sit on top of these (cards, badges, tabs, dialog, toast, banners, skeletons,

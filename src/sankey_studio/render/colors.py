@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``ColorMap``: which colour an entity gets. Pure: no plotly, no theme inside the map.
 
 The map stores SLOTS (stable per entity, see ``SankeyGraph.node_color_slot`` and

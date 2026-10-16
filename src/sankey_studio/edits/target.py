@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The consent key of a source and the effective write-back preference.
 
 The SERVER builds the key from RESOLVED values (rule 29): the browser cannot know the default

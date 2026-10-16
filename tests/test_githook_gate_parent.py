@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``git push --dry-run`` detection (scripts/githook_parent.py) and what pre-push does with it."""
 
 from __future__ import annotations

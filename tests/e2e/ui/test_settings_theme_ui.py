@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.8, the colour theme: instant, stored on the server, and restored by the next page load.
 
 Settings are server-wide, so every test starts on its own server (a fresh ``settings.json``).

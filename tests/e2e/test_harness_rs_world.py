@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``support.rs_world`` and ``MongoWorld.drop``: the throwaway database of a shared replica set.
 
 The URI names the database; it must be empty when a test starts and only its collections go at

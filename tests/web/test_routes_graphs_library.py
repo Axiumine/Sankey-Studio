@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """GET /api/v1/graphs (search, paging) and GET /api/v1/tags."""
 
 from __future__ import annotations

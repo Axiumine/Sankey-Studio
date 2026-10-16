@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Git access of the hook gate: the repository, trees, porcelain status, new commits."""
 
 from __future__ import annotations

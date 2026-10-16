@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Drag and drop on the library page: a second, pointer way to do the two moves the Move dialog does
  * (graphs into a collection, a collection into another one). The Move buttons stay the way without a

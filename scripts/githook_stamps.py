@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Stamps (proof that a check passed on a tree) and the one-gate-at-a-time lock.
 
 A stamp is a small JSON file at ``<git-common-dir>/hook-stamps/<check>/<key>`` where ``key`` is

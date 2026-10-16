@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E A.1 (settings): the ranges of every field, edges accepted, outside refused, nothing changed.
 
 One server for the whole module: every test starts from the settings it reads and sets only the

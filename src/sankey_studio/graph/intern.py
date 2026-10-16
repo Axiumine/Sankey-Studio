@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Step 1: stream the links once, intern names and category values, aggregate entries.
 
 Node ids are POST-merge and follow first appearance in the stream: this order is the stable

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The shell script every page loads (templates/page.html), independent of the page module:
  * wires the header theme switch and the global loading bar.

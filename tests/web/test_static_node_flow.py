@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """F2 (click a node to add a flow), run with node on the shipped files (no browser).
 
 Covered: which end of the new flow the clicked node becomes (``prefillFor``), when the dialog is not

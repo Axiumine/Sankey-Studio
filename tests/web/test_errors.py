@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The error envelope: domain errors, validation 422, routing errors, unexpected 500."""
 
 from __future__ import annotations

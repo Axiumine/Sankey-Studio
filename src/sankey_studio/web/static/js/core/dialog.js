@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Modal dialogs: `role="dialog"` + `aria-modal`, a focus trap, Esc to close, click on the
  * backdrop to close, the rest of the app made inert, body scroll locked, focus restored to the

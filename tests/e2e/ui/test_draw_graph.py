@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """B2: draw a graph from pasted CSV without categories (UI.md flows F1 and F3).
 
 Live preview, stats that match the drawn chart, the optional donut (a hint, never an error),

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``all_tags`` of the Mongo store only reports text tags, whatever a foreign document holds."""
 
 from __future__ import annotations

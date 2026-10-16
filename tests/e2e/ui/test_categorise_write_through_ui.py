@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """F6: a category edit is written into the data of pasted text and manual links (write-through).
 
 The Paste box and the Manual table hold the category afterwards, a stale per-entry override of the

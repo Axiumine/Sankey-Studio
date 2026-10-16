@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Library folders (shown as "collections"): a tree that groups saved graphs.
 
 The identifier noun is ``folder`` everywhere in code; the UI says "collection".

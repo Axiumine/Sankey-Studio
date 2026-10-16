@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``FileFolderRepository``: shared state with the graph repository, locking, damaged files."""
 
 from __future__ import annotations

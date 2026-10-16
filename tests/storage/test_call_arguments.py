@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The exact arguments the storage code hands to pydantic and to its own helpers.
 
 Each stand-in answers differently for a wrong argument, so a changed literal (``mode="json"``, a

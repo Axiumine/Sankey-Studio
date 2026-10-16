@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Which graph files sit in which library folder, and moving them (file backend).
 
 Plain functions over a ``DirState``. The listings take its lock for one consistent look; the

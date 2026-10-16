@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Secret hygiene of the draw routes: a Mongo failure never leaks the connection string.
 
 Every route that reads a Mongo-backed graph (preview, entries, export, the saved render, the saved

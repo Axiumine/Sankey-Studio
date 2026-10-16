@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Hostile text for the browser security suite, and the checks that prove a page stayed inert.
 
 ``HostileGraph`` holds one saved graph whose name, tag, description, node names, categories and

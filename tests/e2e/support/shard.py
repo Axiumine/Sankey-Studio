@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Shards of the e2e suite: ``E2E_SHARD=<n>/<count> pytest ...`` runs one slice of it.
 
 ``make e2e`` starts ``count`` pytest processes, one per shard, at the same time. The suite spends

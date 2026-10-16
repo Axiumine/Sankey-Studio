@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Tab "Manual": the links typed into an editable table and stored inside the graph
  * (`{type: "manual", links: [{source, target, value, category?}]}`, up to 5000 links).

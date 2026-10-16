@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The query models behind real FastAPI routes: parsing, bounds and unknown parameters.
 
 No ``from __future__ import annotations`` here: FastAPI reads the route annotations at runtime.

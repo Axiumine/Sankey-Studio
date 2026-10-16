@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Giovanni Manzoni */
 /* Components shared by every page: card, badge, tabs, dialog, toast, banner, skeleton, empty
    state, chart frame, legend, stat tiles, loading bar. Markup is built by the js/core helpers
    (dom.js h(), dialog.js, toast.js, states.js, tabs.js); the class names are the contract.

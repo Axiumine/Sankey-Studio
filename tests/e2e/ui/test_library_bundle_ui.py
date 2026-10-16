@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.6, bundles: export the library to a file and import a file back, through the browser.
 
 Export is a real download (``sankey-studio-graphs.json``). Import goes through the real file

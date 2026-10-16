@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``GET /mongo/{name}/sample``: the suggested mapping is drawn from EVERY sampled document."""
 
 from __future__ import annotations

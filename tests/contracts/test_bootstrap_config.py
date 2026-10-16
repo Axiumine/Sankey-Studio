@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Contract tests: ``BootstrapConfig`` (environment, hosts, data dirs, secret hygiene)."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * "Add a flow": the dialog behind the Entries card's "Add entry" button (F7). F2 (a click on a node
  * of the chart, chart/node-flow.js) opens the same dialog with a prefilled end, the direction choice

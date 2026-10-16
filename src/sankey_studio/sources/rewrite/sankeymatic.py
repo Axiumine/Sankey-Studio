@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """SankeyMATIC adapter: ``Source [value] Target[ | category]`` lines.
 
 Lines are scanned with the parser's own ``split_entry``. Comments, blank lines, overlong lines and

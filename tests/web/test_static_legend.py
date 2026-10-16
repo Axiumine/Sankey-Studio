@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``withoutLegend`` of ``core/chart.js`` on real server figures, run with node on the shipped file.
 
 The viewer and the editor list the legend entries as HTML under the chart, so they draw the Sankey

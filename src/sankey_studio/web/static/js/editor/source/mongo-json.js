@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * JSON editors for the Mongo filter (an object) and the aggregation pipeline (a list of stages).
  *

@@ -1,7 +1,7 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
- * DOM helpers: the only way pages build markup.
- *
- * Contract
+ * DOM helpers: the only way pages build markup. Contract
  * - `h(tag, props, ...children)` builds elements with createElement/setAttribute/createTextNode
  *   only. Every string child is a text node, so user text (graph names, categories, node names,
  *   file names, error messages) can never become markup.
@@ -14,8 +14,7 @@
  *   are skipped, so `cond && h(...)` works.
  * - `createScope()` collects listeners and cleanups so a page or panel can dispose them at once.
  * - Text and attribute strings lose bidirectional override/embedding/isolate characters (text.js
- *   `stripBidi`): U+202E in a graph name must not reverse nearby words. An input's `value` is
- *   not touched: it is what the user is editing.
+ *   `stripBidi`): U+202E in a graph name must not reverse nearby words. An input's `value` is kept.
  * - Focus helpers (`focusable`, `focusFirst`, `trapFocus`) live in focus.js and are re-exported.
  */
 

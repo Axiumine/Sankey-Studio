@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Image exports: size options, the pixel cap, the Chrome seam and its failures."""
 
 from __future__ import annotations

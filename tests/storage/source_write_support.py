@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Shared by the source write-back tests: the made-up target, a secret and the refusal helper."""
 
 from __future__ import annotations

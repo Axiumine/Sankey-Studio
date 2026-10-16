@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``GET /compare/render``: several saved graphs drawn with ONE shared category colour map.
 
 The ids come from ``CompareQuery`` (1..12 distinct, comma separated, each a well-formed graph id);

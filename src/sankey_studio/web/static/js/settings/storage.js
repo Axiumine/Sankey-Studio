@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Storage section: where graphs are kept (files on this computer, or a MongoDB connection), the
  * "copy existing graphs" box, the "Test storage" probe and the report of the last copy.

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``FolderFile``: the folders file, its format, its cache and its failure modes."""
 
 from __future__ import annotations

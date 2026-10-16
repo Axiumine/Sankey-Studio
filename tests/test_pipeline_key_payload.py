@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``cache_key``: the exact bytes that are hashed (field names, compact JSON, stamps, no style)."""
 
 from __future__ import annotations

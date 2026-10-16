@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Fixtures for the MongoDB source tests (``mongo_`` prefix; the TEXT tests use ``text_``).
 
 Everything runs on mongomock or on the fakes of ``test_mongo_fakes``: no real server, no network.

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The pure helpers of the library, viewer and compare pages, run with node on the shipped files.
 
 Covered here: names that are empty once control characters are gone (``library/names.js``), the

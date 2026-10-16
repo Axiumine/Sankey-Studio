@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``BodyRecorder``: keep everything a client received, to prove a secret never shows up in it.
 
 ``record(client)`` hooks the client so that the status line, headers and body of every response

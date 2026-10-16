@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Upload filename validation: allow-list, Unicode, lengths and every refusal message."""
 
 from __future__ import annotations

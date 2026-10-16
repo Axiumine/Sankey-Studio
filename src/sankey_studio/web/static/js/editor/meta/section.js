@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * A collapsible editor section: a native `<details>` (keyboard and screen reader support for
  * free) with a header that shows an icon, a title, a one-line summary of the current settings

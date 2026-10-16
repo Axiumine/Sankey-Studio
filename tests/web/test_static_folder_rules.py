@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``library/folder-rules.js``: why a place cannot take a graph or a collection.
 
 The Move dialog and the drag and drop both ask this pure module, so the sentences and the order of

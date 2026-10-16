@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The five source tabs wired to a store, without the section chrome, the reading options or the
  * error notice. `mountSource` (the editor's Data source section) and the new-graph wizard (step 2)

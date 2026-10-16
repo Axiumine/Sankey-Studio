@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """F10 and F5 around the wizard: collections, the default style, a read-only server, the tab strip.
 
 * ``/graphs/new?folder=<id>``: Cancel returns to that collection and the graph is saved inside it

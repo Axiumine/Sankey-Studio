@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Smoke tests of the e2e harness itself: one HTTP and one browser pass per fixture family.
 
 If these fail, the problem is the harness (or the app does not start), not a suite built on it.

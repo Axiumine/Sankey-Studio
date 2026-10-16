@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Draft -> graph -> bundle: the one place that strings sources, graph building and rendering.
 
 ``build_graph_from_draft`` loads a source and builds the ``SankeyGraph``; ``assemble_bundle`` turns

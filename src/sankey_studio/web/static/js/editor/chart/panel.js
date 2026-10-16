@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The chart panel: Sankey | Donut views of `store.bundle`, with the states of `store.status`.
  *

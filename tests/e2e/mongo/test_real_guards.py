@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md section C, safety net: the real-Mongo suite refuses the MongoDBs of other projects.
 
 These tests need no MongoDB (they judge a string) and always run. The project-local compose Mongo

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Page objects of the graph editor for the UI-A suites (``/graphs/new`` and ``/graphs/<id>/edit``).
 
 ``EditorPage``   - the new-graph editor: name / tags / description, the pasted source, the chart,

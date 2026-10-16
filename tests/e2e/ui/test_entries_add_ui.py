@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """F7: add an entry from the Entries card ("Add entry" opens the "Add a flow" dialog).
 
 The dialog collects source, target, value and an optional category, checks them like the server

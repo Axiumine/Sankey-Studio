@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """HTML and JSON exports of a figure dict.
 
 Both go through ``plotly.io`` with ``validate=False``: it escapes ``</script>`` and adds no

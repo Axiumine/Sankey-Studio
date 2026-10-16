@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``editor/source/columns.js roleIndexes`` mirrors ``sources/formats/csv_rows.py`` (F3).
 
 The table is the JS twin of ``CATEGORIES`` in ``tests/sources/test_text_csv_columns.py``: without

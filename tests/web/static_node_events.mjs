@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 // Scenarios of test_static_node_events.py: the pointer logic of core/chart-nodes.js with a fake div and window.
 const windowListeners = new Map();
 globalThis.window = {

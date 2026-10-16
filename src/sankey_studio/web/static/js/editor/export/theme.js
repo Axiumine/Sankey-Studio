@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The "File colours" choice of the export panel: which colour theme the downloaded files wear.
  *

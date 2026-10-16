@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The MongoDB branch of an edit: count the documents (plan) or change them (write).
 
 Only ``find`` sources are written (an inserted document needs a plain-equality filter, so that

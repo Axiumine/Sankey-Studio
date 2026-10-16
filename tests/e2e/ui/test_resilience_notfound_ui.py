@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.11, the HTML not-found pages: browsers get a calm page, everyone else JSON.
 
 One server for the module. The document 404 of each visit is the one expected problem: it is

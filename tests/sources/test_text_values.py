@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Number and name cleaning of the text formats: boundaries and exact messages."""
 
 from __future__ import annotations

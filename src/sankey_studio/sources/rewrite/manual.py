@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Manual source: the same three edits over ``ManualSource.links``.
 
 ``set_category`` goes by the canonical pair (names after ``merge_nodes``), which is what fixes the

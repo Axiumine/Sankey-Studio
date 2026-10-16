@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Defaults, literal value sets and shared constants of the models (what the UI sends and reads)."""
 
 from __future__ import annotations

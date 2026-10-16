@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """What an exported HTML page is made of, read the way a browser reads it (``html.parser``)."""
 
 from __future__ import annotations

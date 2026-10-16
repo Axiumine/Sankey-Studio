@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``resolve_source_path`` and the fd-based walk: traversal, symlinks, FIFOs, swaps, OS errors."""
 
 from __future__ import annotations

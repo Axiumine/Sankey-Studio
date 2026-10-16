@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The failure behaviour of the ``page`` fixture, proved by running real (nested) test sessions.
 
 A nested ``pytest`` process loads ``tests.e2e.conftest`` as a plugin and runs three tests of its

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Step 2: resolve one category per aggregated entry (never per raw row).
 
 Precedence, highest first: (1) ``TransformSpec.entry_categories`` (``None`` forces

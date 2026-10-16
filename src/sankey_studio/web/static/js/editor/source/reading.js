@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * "Reading the data": the block under the text tabs (Text file, Paste, Upload) that tells the
  * server how to read the text: format (detected or chosen), column mapping for csv/tsv, and a

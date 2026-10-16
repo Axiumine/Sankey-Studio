@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 // Scenarios of test_static_node_order.py: the pure order functions (editor/chart/node-order.js).
 const order = await import(`${dir}/editor/chart/node-order.js`);
 const rows = (...items) => items.map(([name, layer]) => ({ name, layer }));

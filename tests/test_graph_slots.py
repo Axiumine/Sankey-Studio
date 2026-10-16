@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Colour slots follow the entity: filters, basis and top-N never repaint survivors."""
 
 from __future__ import annotations

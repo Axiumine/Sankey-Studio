@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Page objects of the editor chrome: graph menu, dialogs and the chart settings popover.
 
 Dual mode. Today's editor has the name / description / tags fields and the Style and Export

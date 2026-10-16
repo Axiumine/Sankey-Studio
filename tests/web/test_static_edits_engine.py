@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The edit engine (``editor/edits/engine.js``) run with node on the shipped files.
 
 The engine talks to the real editor store; the API is a scripted fake and the toast a recorder, so

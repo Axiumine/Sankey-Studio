@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """B4, part 3: a server that cannot draw images (501 ``export_unavailable``).
 
 ``make_server(export_unavailable=True)`` answers the production 501 for svg and png only. The UI

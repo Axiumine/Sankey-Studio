@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """F10: the new-graph wizard (``/graphs/new``): two steps before the editor starts.
 
 Step 1 names the graph (a name is required), step 2 picks the data. Back keeps what was typed,

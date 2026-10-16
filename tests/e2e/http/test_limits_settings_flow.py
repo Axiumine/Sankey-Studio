@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md A.9, part 3: the limits themselves are validated, and a refused value changes nothing.
 
 ``max_links``, ``max_drawn_links``, ``max_upload_mb`` and ``mongo_timeout_ms`` accept exactly their

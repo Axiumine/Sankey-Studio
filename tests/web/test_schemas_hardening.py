@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Wire models never echo their input; the form dependency forwards no context; no secret flag."""
 
 from __future__ import annotations

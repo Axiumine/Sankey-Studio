@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The state of the settings form: the last settings the server sent, the draft being edited, which
  * errors are visible and the registry that lets the error summary focus a field.

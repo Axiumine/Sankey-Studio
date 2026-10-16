@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Fixed facts of the settings page: the limits table (bounds mirror the server models, API.md
  * section 2.4) and the name rules the form checks before it asks the server.

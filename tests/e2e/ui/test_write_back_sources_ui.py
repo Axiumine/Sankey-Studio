@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """D1: the write-back dialog for a MongoDB collection (mongomock), an aggregate source and a
 read-only remote server.
 

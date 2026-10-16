@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Git access of the gate (scripts/githook_git.py), against real throw-away repositories."""
 
 from __future__ import annotations

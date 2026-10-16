@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``POST /settings/storage/test`` is bounded: at most 4 probes run at once, the next is a 503."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Contract tests: ``TextSource`` fields (delimiter, content, encoding, columns, origin)."""
 
 from __future__ import annotations

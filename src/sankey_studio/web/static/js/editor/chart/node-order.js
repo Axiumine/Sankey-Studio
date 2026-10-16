@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The order of the nodes of a drawn Sankey, as pure functions on `bundle.nodes`.
  *

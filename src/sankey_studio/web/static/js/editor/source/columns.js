@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Looking at delimited text in the browser: just enough to fill the column pickers and show the
  * first rows. The server does the real parsing; these helpers mirror its rules closely

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``ComparePage``: the page object of ``/compare?ids=...`` (UI.md section 4.5).
 
 Cards are found by the graph name in their heading. ``donut_colours(name)`` reads the colour of

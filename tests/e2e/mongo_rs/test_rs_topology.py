@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """What only a cluster proves: the URI really reaches a replica set, through the production factory.
 
 The flows in ``test_rs_flows.py`` pass on a standalone node too, so these tests pin the topology

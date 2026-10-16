@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``mongo``: exact driver-error messages, the slot wait and the client-creation failure text.
 
 The messages reach the UI and the logs, so they are compared whole: they must name the

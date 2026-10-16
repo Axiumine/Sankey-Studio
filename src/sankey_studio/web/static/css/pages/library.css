@@ -1,2 +1,4 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Giovanni Manzoni */
 /* Styles of the library page: the real sheet is css/pages-library.css, loaded by js/pages/library.js before the page
    draws (js/library/styles.js). This stub stays empty on purpose. Tokens come from tokens.css; no colour literals. */

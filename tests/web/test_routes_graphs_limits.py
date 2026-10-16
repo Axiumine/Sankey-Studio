@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The body caps and the CSRF guard in front of the real graph, preview and export routes."""
 
 from __future__ import annotations

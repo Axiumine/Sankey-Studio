@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Read-only guard for user-supplied MongoDB filters, pipelines, names and connection URIs.
 
 Contract (v2): pure functions; imports only ``errors`` and ``util`` from this package (``models``

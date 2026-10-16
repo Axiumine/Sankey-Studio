@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Export helpers of the HTTP flows: read a ``Content-Disposition`` and call the export routes."""
 
 from __future__ import annotations

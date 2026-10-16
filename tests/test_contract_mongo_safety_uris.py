@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``mongo_safety``: the connection-string checks (option scanner, SRV hosts, driver call)."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Fake MongoDB pieces for the Mongo store tests (a broken driver, a recording slot)."""
 
 from __future__ import annotations

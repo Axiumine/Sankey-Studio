@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /* Theme bootstrap: a classic (non-module) script loaded synchronously in <head>, before the first
  * paint, so the right theme never flashes. The server renders <html data-theme="system|light|dark">
  * from the stored settings, so a browser that never visited before already starts right; this

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``build_donut_figure``: slices, colours, labels, centre total and the empty state."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.6, the library collections: move, delete, search, paging and changes made elsewhere.
 
 Every test has a server of its own (a clean library). The browse and create flows are in

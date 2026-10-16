@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The managed sources directory: list, upload, delete and preview.
 
 Uploads are written to a hidden ``.<random>.part`` file created ``O_EXCL`` (mode 0600), fsynced,

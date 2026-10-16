@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Accessible tabs (WAI-ARIA tabs pattern): `role=tablist`, roving tabindex, arrow keys / Home /
  * End move AND activate, `aria-controls`/`aria-labelledby` wired, all panels stay in the DOM

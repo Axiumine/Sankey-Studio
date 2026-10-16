@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """SPEC section 4: response bodies AND log records never contain a Mongo password.
 
 ``test_schemas_settings_out.py`` and ``test_matrix_secrets.py`` cover the bodies. This module

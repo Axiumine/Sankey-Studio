@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``cache_key``: what makes two drafts the same load, and when a load is not cacheable."""
 
 from __future__ import annotations

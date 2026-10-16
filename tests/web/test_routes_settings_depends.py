@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Every persisting route of the settings and sources routers refuses by itself.
 
 The body-size middleware already closes the upload route in read-only remote mode; these tests

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Image export without Chrome: clamps, caps, the slot, the seam and the error table."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Helpers of the security suites (E2E.md A.8): routes, header expectations, internals scan.
 
 * ``WRITE_ROUTES`` - every route that persists something (a read-only remote server refuses all of

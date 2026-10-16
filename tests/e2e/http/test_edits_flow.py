@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E: the edits API (``/edits/plan``, ``/edits/write``) on a live server.
 
 The MongoDB scenarios live in ``tests.e2e.support.http_b_edit_flows`` and are shared with the

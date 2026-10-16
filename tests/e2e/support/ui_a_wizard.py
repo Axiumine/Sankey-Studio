@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Page object of the new-graph wizard (``/graphs/new`` before the editor starts).
 
 The wizard is a two-step inline card: step 1 "details" (name, description, tags), step 2 "source"

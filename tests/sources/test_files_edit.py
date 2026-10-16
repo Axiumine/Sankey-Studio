@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``edit_file`` / ``read_text``: replace the content of an existing managed file atomically."""
 
 from __future__ import annotations

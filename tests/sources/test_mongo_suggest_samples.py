@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``suggest_fields``: one unusable sample never hides a field, and the target name order."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``FileFolderRepository``: library folders in ``<graphs dir>/folders.json``.
 
 Shares the lock, the listing index and the directory of the ``FileGraphRepository`` of the same

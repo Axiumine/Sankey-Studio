@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``build_graph``: categories from the data (identity, display, tolerance, slots)."""
 
 from __future__ import annotations

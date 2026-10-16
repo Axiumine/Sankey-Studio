@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Two regressions found in the last real-browser pass, pinned in the shipped files.
 
 * ``html { padding-bottom: var(--toast-clearance) }`` must not transition: with reduced motion the

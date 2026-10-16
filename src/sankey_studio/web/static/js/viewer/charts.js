@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The chart card of the viewer: tabs Sankey | Donut, the Plotly charts, and everything that is
  * their HTML twin (legend list, category table, links table, donut hint).

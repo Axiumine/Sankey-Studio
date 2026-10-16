@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The library page: wires the toolbar, the result grid, the pager, the selection bar and the
  * bundle actions around one query state.

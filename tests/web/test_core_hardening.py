@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Pins found by the mutation pass: name/extension sanitising, host pattern, error handlers."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Whole-pipeline memory profile: a synthetic 200k-link graph through the render layer.
 
 ``make profile`` runs it under ``memray run`` (then ``memray stats`` / ``memray flamegraph``

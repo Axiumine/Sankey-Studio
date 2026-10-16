@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Stamps (proof that a check passed on a tree) and the gate lock (scripts/githook_stamps.py)."""
 
 from __future__ import annotations

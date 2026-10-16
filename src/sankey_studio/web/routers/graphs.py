@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The library of saved graphs: CRUD, duplicate, JSON bundle import/export, tags and the render.
 
 Order matters: ``/graphs/export``, ``/graphs/import`` and ``/graphs/move`` are declared BEFORE

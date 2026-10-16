@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """csv column selection (name or index) and the optional category column."""
 
 from __future__ import annotations

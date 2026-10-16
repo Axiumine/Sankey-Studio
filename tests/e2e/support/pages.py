@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``AppPage``: the base of the suites' page objects. The suites add their own subclasses.
 
 A page object wraps one ``WatchedPage`` and one ``LiveServer`` and knows the shell that every page

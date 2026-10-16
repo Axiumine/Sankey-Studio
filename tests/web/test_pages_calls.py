@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """What the pages ask the repository for, and the navigation of the pages that have no graph.
 
 A library page lists the folders once, asks the FOLDER repository for the newest 200 graphs of

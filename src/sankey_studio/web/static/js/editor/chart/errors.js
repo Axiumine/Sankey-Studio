@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Plain-English wording for a failed preview (`store.status.error` is `{status, code, message,
  * details}` from the API envelope). The chart panel shows it where the chart would be.

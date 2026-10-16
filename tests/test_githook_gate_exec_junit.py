@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Junit verification, the child environment and the real runner of a check run (githook_exec)."""
 
 from __future__ import annotations

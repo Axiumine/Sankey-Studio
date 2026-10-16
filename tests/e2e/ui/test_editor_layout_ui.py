@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """F9, the editor layout: a full-width chart row, then Source and Transform, then the entries.
 
 The chart is no longer in a sticky side pane: it is a row of its own on top of the page, Source

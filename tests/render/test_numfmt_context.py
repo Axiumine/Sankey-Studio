@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``format_value`` rounds with its own decimal context, whatever the caller left installed.
 
 Rounding, scaling and exponents are exact only under the module's context (400 digits, half up).

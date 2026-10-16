@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Stopping a child group (scripts/githook_runner.py): the whole group gets the grace period."""
 
 from __future__ import annotations

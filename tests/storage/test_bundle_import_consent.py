@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """A bundle never brings a saved write-back consent with it, in either import mode.
 
 A consent names a file of the exporting machine or a connection by name: a stranger's bundle must

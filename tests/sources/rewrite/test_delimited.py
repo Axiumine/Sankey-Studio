@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """csv/tsv rewriting: set_category, add_entry and reorder over many shapes of text."""
 
 from __future__ import annotations

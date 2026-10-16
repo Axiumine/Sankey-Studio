@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Query caps through the FULL app: the last value that passes and the first one that does not."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """POST /api/v1/edits/plan and /edits/write over the HTTP surface."""
 
 from __future__ import annotations

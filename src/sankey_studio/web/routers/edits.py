@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Edits to the data of a graph: ``POST /edits/plan`` and ``POST /edits/write``.
 
 ``plan`` is a pure computation (it reads a file or counts documents, writes nothing), so like

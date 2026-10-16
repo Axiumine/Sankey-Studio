@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``folders.json``: every library folder in ONE file next to the graph files.
 
 The name never matches the graph file pattern (``<32 hex>.json``), so the graph index ignores it

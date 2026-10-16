@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """JSON buffer accounting: the object budget counts what is left AFTER the cursor."""
 
 from __future__ import annotations

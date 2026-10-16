@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md A.7: switching the graph store between files and MongoDB (mongomock behind the server).
 
 The scenarios live in ``tests.e2e.support.http_b_storage_flows`` and are shared with the real-Mongo

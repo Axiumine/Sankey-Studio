@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``LibraryPage``: the page object of the library (``/``, UI.md section 4.2).
 
 Locators: ``cards``, ``card(name)``, ``names`` (the card title links), ``count`` (the

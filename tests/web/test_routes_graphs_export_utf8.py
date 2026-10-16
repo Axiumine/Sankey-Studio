@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """GET /graphs/export measures and serves UTF-8, like POST /graphs/import measures it.
 
 A character outside the BMP is four bytes of UTF-8 but twelve of ``json.dumps`` with its default

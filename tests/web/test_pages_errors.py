@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The HTML error pages: a browser never gets the JSON envelope for a page that failed.
 
 A browser navigation (``GET`` with ``Accept: text/html`` outside ``/api/`` and ``/static/``) gets

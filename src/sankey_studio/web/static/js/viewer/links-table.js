@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * "Table view of the links": the accessible twin of the Sankey. A `<details>` block that builds a
  * sortable, paged table (core/table.js) of the bundle's entries the first time it is opened, and

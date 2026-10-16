@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The draft-held branch: manual links and pasted text live in the graph, so they need no consent.
 
 ``plan`` rewrites the data and answers the whole new source (``where="draft"``); the browser

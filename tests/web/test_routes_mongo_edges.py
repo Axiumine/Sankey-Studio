@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The Mongo routes under failure and policy: unknown connections, slots, driver errors, modes."""
 
 from __future__ import annotations

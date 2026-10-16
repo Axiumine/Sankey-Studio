@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The viewer's header under the page title: description, tags (each opens the library filtered by
  * that tag), and a meta line with the source badge, the update time and the revision.

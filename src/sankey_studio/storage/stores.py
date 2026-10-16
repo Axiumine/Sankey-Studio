@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``Stores``: the two repositories of one library, handled as a pair.
 
 A library is the graphs AND the folders that group them. They always sit on the same backend (the

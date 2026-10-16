@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The ``sankey_studio.web.schemas`` package keeps its public import path."""
 
 from __future__ import annotations

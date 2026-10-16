@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``suggest_fields``: name heuristics, fallbacks and the guarantees about the result."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """On a phone the chart header (tabs plus tools) wraps instead of squeezing the tabs or the gear."""
 
 from __future__ import annotations

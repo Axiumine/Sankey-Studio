@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The library page boots the scope ``?folder=`` names (the folder UI itself comes later).
 
 The server embeds the graphs directly in the folder (or at the top level) and the page paints them

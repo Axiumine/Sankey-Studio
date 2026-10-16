@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The HTML not-found page: who gets it, what it says, what it never contains.
 
 A browser navigation (``GET`` with ``Accept: text/html`` outside ``/api/`` and ``/static/``) to an

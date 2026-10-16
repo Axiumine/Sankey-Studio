@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.6, the library collections: create, walk, deep-link, rename and the empty states.
 
 The user-visible word is "collection"; the code and the test ids say ``folder``. Every test has a

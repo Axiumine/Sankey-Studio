@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``settings_store``: the only code that handles real Mongo URIs, and the cached file store."""
 
 from __future__ import annotations

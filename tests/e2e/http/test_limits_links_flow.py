@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md A.9, part 1: ``max_links`` (413) and cycles (422, ``on_cycle=break`` -> 200 + warning).
 
 The cap counts the links of the SOURCE (rows or documents that give a link), before merging; it is

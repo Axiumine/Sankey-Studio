@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The library folders ("collections" in the UI): a tree that groups saved graphs.
 
 Every route here is under ``/api/v1``. The reads (``GET /folders``, ``GET /folders/{id}``) are

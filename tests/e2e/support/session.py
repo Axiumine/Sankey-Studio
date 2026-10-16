@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``PageFactory``: the pages of ONE test, their failure artefacts and the clean-browser check.
 
 ``open(server, color_scheme=..., viewport=...)`` creates a fresh browser context for the test

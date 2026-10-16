@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Settings helpers for the HTTP flows: the PUT body of a connection, JSON walkers, disk reads."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The ``e2e-mongo-rs`` check: the user's replica set. No Docker; the URI is the tests' business.
 
 The check runs ``make e2e-mongo-rs`` like any pytest check (JUnit report, a skipped test fails
