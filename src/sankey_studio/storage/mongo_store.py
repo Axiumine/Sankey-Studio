@@ -9,7 +9,9 @@ Documents are keyed by ``_id`` = the graph id. Field names that come from user t
 tables, colour overrides) and operator keys of a Mongo source are rewritten by
 ``encode_mongo_doc`` before every write, and ``find_unsafe_key`` fails closed if anything else
 still carries a key MongoDB < 5.0 rejects. Every call runs inside ``clients.slot(connection)``
-and ``mongo_errors(connection, StorageError)``: driver text never reaches a message.
+and ``mongo_errors(connection, StorageError)``: driver text never reaches a message. The collection
+handle is pinned to the primary (``primary_database``): a ``readPreference=secondary*`` in the
+saved URI must not make a load miss the save before it.
 
 A graph document also holds ``folder_id`` (the library folder, ``None`` = top level): ``create``
 and ``put`` write it, ``update`` never touches it (its ``$set`` lists the editable fields only).
@@ -34,7 +36,7 @@ from pymongo.errors import DuplicateKeyError
 
 from sankey_studio.errors import NotFoundError, SourceNotFoundError, StorageError, UnsafeSourceError
 from sankey_studio.models import SCHEMA_VERSION, GraphDefinition, GraphSummary
-from sankey_studio.mongo import mongo_errors
+from sankey_studio.mongo import mongo_errors, primary_database
 from sankey_studio.mongo_safety import validate_namespace
 from sankey_studio.storage.base import (
     MONGO_FOLDERS_COLLECTION,
@@ -246,7 +248,7 @@ class MongoGraphRepository:
                 client = self._clients.get(name)
             except SourceNotFoundError:
                 raise StorageError(f"Storage connection '{name}' does not exist") from None
-            yield client[self._target.database][self._target.collection]
+            yield primary_database(client, self._target.database)[self._target.collection]
 
     def _prepare(self, coll: Collection[Any]) -> None:
         """Create the indexes once per repository, before the first write."""

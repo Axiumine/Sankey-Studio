@@ -104,6 +104,9 @@ class TrackingClient:
         self._server = server
         self.uri = uri
         self.closed = False
+        #: ``(database name, options)`` of every ``get_database`` call: the stores must pin a read
+        #: preference there
+        self.opened: list[tuple[str, dict[str, Any]]] = []
 
     @property
     def admin(self) -> Any:
@@ -111,6 +114,10 @@ class TrackingClient:
 
     def __getitem__(self, name: str) -> Any:
         return self._server[name]
+
+    def get_database(self, name: str, **options: Any) -> Any:
+        self.opened.append((name, options))
+        return self._server.get_database(name, **options)
 
     def close(self) -> None:
         self.closed = True  # the shared server stays up for the other clients

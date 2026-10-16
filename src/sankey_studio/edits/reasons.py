@@ -53,7 +53,7 @@ NOTICES: Final[dict[str, str]] = {
     ),
     "too_many_documents": f"The change would touch more than 1000 documents, so {_KEPT}.",
     "permission_denied": f"The database user may not write there, so {_KEPT}.",
-    "write_rejected": f"The database refused the new document, so {_KEPT}.",
+    "write_rejected": f"The database refused the change, so {_KEPT}.",
     "would_recolour": (
         "Rows were not reordered because that would change the colours. The order is kept in "
         "this graph."

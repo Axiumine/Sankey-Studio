@@ -15,9 +15,10 @@ Every primitive, in this order:
    failure becomes a message with the connection NAME and the exception class only.
 
 ``OperationFailure`` 13/18 (not authorised) is ``SourceEditRefused("permission_denied")`` and a
-``WriteError`` on insert is ``"write_rejected"``: expected answers, the edit then stays in the
-graph. The update filter is ``{"$and": [{"_id": {"$in": ids}}, flt]}``, so a document that was
-edited between the id lookup and the update is not touched.
+``WriteError`` on insert or update (schema validation, a shard key that may not change) is
+``"write_rejected"``: expected answers, the edit then stays in the graph. The update filter is
+``{"$and": [{"_id": {"$in": ids}}, flt]}``, so a document that was edited between the id lookup
+and the update is not touched.
 
 Accepted risk (ADR-34): the API has no login, so a caller who can reach it can ``$set`` one
 string field on documents selected by ``field in [names]`` and insert one scalar document, in any
@@ -134,9 +135,14 @@ def matching_ids(
 
 
 def _update(coll: Collection[Any], flt: dict[str, Any], update: dict[str, Any]) -> int:
-    result = coll.update_many(  # nosemgrep: sankey-no-mongo-writes -- source write-back, opt-in
-        flt, update
-    )
+    try:
+        result = coll.update_many(  # nosemgrep: sankey-no-mongo-writes -- source write-back, opt-in
+            flt, update
+        )
+    except WriteError as exc:
+        if exc.code in AUTH_FAILED_CODES:
+            raise
+        raise SourceEditRefused("write_rejected") from None
     return result.modified_count
 
 
