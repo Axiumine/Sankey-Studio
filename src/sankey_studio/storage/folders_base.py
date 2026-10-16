@@ -28,6 +28,7 @@ from pydantic import ValidationError
 from sankey_studio.errors import ConflictError, NotFoundError, StorageError
 from sankey_studio.models import GRAPH_ID_PATTERN, FolderDefinition
 from sankey_studio.storage.base import upgrade_doc
+from sankey_studio.storage.folder_tree import check_name_free, validate_new_count
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -87,6 +88,23 @@ def stale_error(revision: int | None, updated_at: datetime | None) -> ConflictEr
 def exists_error(revision: int | None, updated_at: datetime | None) -> ConflictError:
     """``put_folder`` without ``overwrite`` found the id taken."""
     return ConflictError(MSG_EXISTS, current_revision=revision, current_updated_at=updated_at)
+
+
+def check_put(
+    items: Sequence[FolderDefinition], folder: FolderDefinition, *, overwrite: bool
+) -> FolderDefinition | None:
+    """What both backends check before ``put_folder`` writes: the stored folder with this id.
+
+    ``None`` means a new folder. Refuses a taken id without ``overwrite``, a store that is full
+    and a sibling that already has the name.
+    """
+    existing = next((item for item in items if item.id == folder.id), None)
+    if existing is not None and not overwrite:
+        raise exists_error(existing.revision, existing.updated_at)
+    if existing is None:
+        validate_new_count(items)
+    check_name_free(items, folder.parent_id, folder.name, folder.id)
+    return existing
 
 
 class FolderRepository(Protocol):  # pragma: no mutate block - interface only, never executed

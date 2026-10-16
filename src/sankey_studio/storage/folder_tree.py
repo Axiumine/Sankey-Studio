@@ -205,7 +205,7 @@ def with_counts(
     for item in items:
         if item.parent_id is not None:
             children[item.parent_id] = children.get(item.parent_id, 0) + 1
-    ordered = sorted(items, key=lambda item: (name_key(item.name), item.id))
+    ordered = sorted(items, key=lambda folder: (name_key(folder.name), folder.id))
     return [
         FolderSummary(
             id=item.id,

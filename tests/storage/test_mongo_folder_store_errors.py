@@ -217,7 +217,7 @@ def _lose_the_cas(monkeypatch: pytest.MonkeyPatch, coll: Collection[Any], gone: 
         else:
             coll.update_one({"_id": flt["_id"]}, {"$inc": {"revision": 1}})
 
-    monkeypatch.setattr(mongo_folder_store, "_cas_folder", missed)
+    monkeypatch.setattr(mongo_folder_store, "_cas_update", missed)
 
 
 def test_an_update_whose_revision_moved_on_is_a_conflict_with_the_new_revision(
@@ -274,7 +274,7 @@ def test_a_stale_report_leaves_out_what_the_record_does_not_hold_properly(
         {"_id": box.id}, {"$set": case.changes}
     )
     _blind(monkeypatch, [box])  # the pure rules saw a valid record
-    monkeypatch.setattr(mongo_folder_store, "_cas_folder", lambda *_args: None)
+    monkeypatch.setattr(mongo_folder_store, "_cas_update", lambda *_args: None)
     with pytest.raises(ConflictError) as info:
         mongo_folders.update_folder(box.id, UPDATE)
     assert info.value.current_revision == case.revision
@@ -285,7 +285,7 @@ def test_a_delete_that_finds_the_record_gone_is_not_found(
     mongo_folders: MongoFolderRepository, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     box = mongo_folders.create_folder(body("box"))
-    monkeypatch.setattr(mongo_folder_store, "_remove_folder", lambda _coll, _id: 0)
+    monkeypatch.setattr(mongo_folder_store, "_remove", lambda _coll, _id: 0)
     with pytest.raises(NotFoundError):
         mongo_folders.delete_folder(box.id)
 
@@ -296,7 +296,7 @@ def test_a_driver_duplicate_key_message_never_reaches_the_caller(
     def refused(_coll: object, _doc: dict[str, Any]) -> None:
         raise DuplicateKeyError(f"E11000 {SECRET}")
 
-    monkeypatch.setattr(mongo_folder_store, "_insert_folder", refused)
+    monkeypatch.setattr(mongo_folder_store, "_insert", refused)
     with pytest.raises(FolderNameTakenError) as info:
         mongo_folders.create_folder(body("x"))
     assert "hunter2" not in repr(info.value)

@@ -25,7 +25,7 @@ NOTICES: Final[dict[str, str]] = {
     "no_match": f"No row or document matches that entry, so {_KEPT}.",
     "unsupported_format": f"This text cannot be edited in place, so {_KEPT}.",
     "file_too_large": f"The data is too large to rewrite, so {_KEPT}.",
-    "cannot_verify": (f"The edited data could not be checked, so nothing was written and {_KEPT}."),
+    "cannot_verify": f"The edited data could not be checked, so nothing was written and {_KEPT}.",
     "unreadable": f"The data could not be read for editing, so {_KEPT}.",
     "unrepresentable": f"The file's encoding cannot hold that text, so {_KEPT}.",
     "too_many": "There are too many entries to add another one.",
