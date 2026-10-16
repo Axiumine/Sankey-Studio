@@ -60,7 +60,7 @@ def parse_shard(value: str) -> Shard:
 
 def weight_of(item: Shardable) -> int:
     """Rough cost of one test: browser and Chrome-export tests take seconds, the rest do not."""
-    if item.get_closest_marker("mongo") is not None:
+    if any(item.get_closest_marker(name) is not None for name in ("mongo", "mongo_rs")):
         return 0  # left out of `make e2e` anyway
     browser = BROWSER_FIXTURES.intersection(item.fixturenames)
     return HEAVY if browser or item.get_closest_marker("slow") is not None else LIGHT

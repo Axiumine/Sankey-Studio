@@ -2,7 +2,9 @@
 
 Every test under ``tests/e2e`` is marked ``e2e`` automatically (``make test`` and ``make cov``
 skip them, ``make e2e`` runs them). Tests that need a real MongoDB add ``@pytest.mark.mongo`` and
-are left out of ``make e2e`` (``make e2e-mongo``, needs ``SANKEY_TEST_MONGO_URI``).
+are left out of ``make e2e`` (``make e2e-mongo``, needs ``SANKEY_TEST_MONGO_URI``); those that need
+a real replica set carry ``@pytest.mark.mongo_rs`` (``make e2e-mongo-rs``, needs
+``SANKEY_TEST_MONGO_RS_URI``).
 
 Servers (``support.server``; option reference in its docstring)
 ---------------------------------------------------------------

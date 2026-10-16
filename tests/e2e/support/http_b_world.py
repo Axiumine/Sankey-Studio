@@ -20,9 +20,11 @@ collections, and the graph store when a scenario switches the storage backend to
 
 from __future__ import annotations
 
+import ipaddress
+import socket
 import uuid
 from contextlib import contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Final
 from urllib.parse import unquote, urlsplit
 
@@ -30,6 +32,7 @@ import pytest
 from pymongo import MongoClient
 
 from sankey_studio.mongo import default_factory
+from tests.conftest import REAL_MONGO_ENV
 from tests.e2e.support.builders import FLOW_DOCS, MONGO_URI
 from tests.e2e.support.clients import make_client
 from tests.e2e.support.http_b_tape import Tape, attach
@@ -60,12 +63,12 @@ FLOW_FIELDS: Final = {
 #: listed by the app) and a neighbour (listed, like any other database of a shared server).
 NEIGHBOUR: Final = "unrelated_project"
 NOISE_DATABASES: Final = ("admin", "local", "config", NEIGHBOUR)
+SYSTEM_DATABASES: Final = frozenset(NOISE_DATABASES) - {NEIGHBOUR}
 MOCK_TIMEOUT_MS: Final = 500
 REAL_TIMEOUT_MS: Final = 2_000
 REAL_PING_TIMEOUT_MS: Final = 5_000
 MIN_SCANNED_PASSWORD: Final = 6
 #: Other projects' MongoDBs on this machine listen here: never a target of these tests.
-LOOPBACK_HOSTS: Final = frozenset({"127.0.0.1", "localhost", "::1"})
 FOREIGN_PORTS: Final = range(27017, 27020)
 DEFAULT_MONGO_PORT: Final = 27017
 
@@ -79,13 +82,14 @@ class MongoWorld:
     ``outage`` (mongomock only) switches the good server off and on.
     """
 
-    uri: str
+    uri: str = field(repr=False)  # user:password@: a failing assert prints the repr of the world
     database: str
     client: MongoClient[Any]
     factory: ClientFactory
-    secrets: tuple[str, ...]
+    secrets: tuple[str, ...] = field(repr=False)
     timeout_ms: int
     outage: Callable[[bool], None] | None = None
+    keep_database: bool = False
 
     def insert(self, collection: str, docs: Iterable[Mapping[str, Any]]) -> None:
         """Insert copies of ``docs`` into ``collection`` of ``database``."""
@@ -128,11 +132,23 @@ class MongoWorld:
         return {"mongo_timeout_ms": self.timeout_ms}
 
     def drop(self) -> None:
-        """Drop ``database`` (and nothing else) and close the client."""
-        if not self.database.startswith(DATABASE_PREFIX):
-            raise AssertionError(f"refusing to drop {self.database!r}: not an e2e database")
-        self.client.drop_database(self.database)
-        self.client.close()
+        """Drop ``database`` (and nothing else) and close the client.
+
+        With ``keep_database`` (a replica set whose user may not drop databases: ``rs_world``) the
+        collections of ``database`` go instead; it was empty when the test started."""
+        try:
+            if self.database in SYSTEM_DATABASES or not (
+                self.keep_database or self.database.startswith(DATABASE_PREFIX)
+            ):
+                raise AssertionError(f"refusing to drop {self.database!r}: not an e2e database")
+            if not self.keep_database:
+                self.client.drop_database(self.database)
+                return
+            database = self.client[self.database]
+            for name in database.list_collection_names():
+                database.drop_collection(name)
+        finally:
+            self.client.close()
 
 
 def unique_database() -> str:
@@ -177,40 +193,67 @@ def mongomock_world() -> MongoWorld:
 
 
 def targets_foreign_mongo(uri: str) -> bool:
-    """True for a loopback URI on 27017-27019 (the port 27017 is also the default of ``mongodb://``)."""
-    try:
-        parts = urlsplit(uri)
-        port = parts.port
-    except ValueError:  # several hosts: no single port to judge
+    """True when a loopback member of a ``mongodb://`` URI listens on 27017-27019 (the port 27017
+    is also the default). A seed list (``h1,h2,h3``) is judged member by member."""
+    scheme, sep, rest = uri.partition("://")
+    if not sep or scheme.lower() != "mongodb":
         return False
-    if parts.scheme != "mongodb" or parts.hostname not in LOOPBACK_HOSTS:
+    authority = rest.split("/", 1)[0].split("?", 1)[0].rpartition("@")[2]
+    return any(_is_foreign_member(member) for member in authority.split(","))
+
+
+def _is_foreign_member(member: str) -> bool:
+    try:
+        parts = urlsplit(f"//{member}")
+        port = parts.port
+    except ValueError:  # not a host[:port]: nothing to judge
+        return False
+    if not _is_this_machine(parts.hostname):
         return False
     return (DEFAULT_MONGO_PORT if port is None else port) in FOREIGN_PORTS
 
 
-def real_world(uri: str) -> MongoWorld:
+def _is_this_machine(host: str | None) -> bool:
+    """``localhost`` (also ``localhost.``) and every spelling of a loopback or unspecified address:
+    ``127.0.0.2``, ``127.1``, ``0.0.0.0``, ``::1``, ``0:0:0:0:0:0:0:1``, ``::ffff:127.0.0.1``."""
+    name = (host or "").rstrip(".").lower()
+    if name == "localhost":
+        return True
+    try:
+        address = ipaddress.ip_address(name)
+    except ValueError:
+        try:  # legacy IPv4 spellings that the resolver accepts: 127.1, 2130706433
+            address = ipaddress.IPv4Address(socket.inet_aton(name))
+        except OSError:
+            return False
+    if isinstance(address, ipaddress.IPv6Address) and address.ipv4_mapped is not None:
+        address = address.ipv4_mapped
+    return address.is_loopback or address.is_unspecified
+
+
+def real_world(uri: str, env: str = REAL_MONGO_ENV) -> MongoWorld:
     """A world on the real server at ``uri``; fails (does not skip) when it does not answer.
 
-    The caller owns ``world.drop()``. ``uri`` is only read here: it comes from
-    ``SANKEY_TEST_MONGO_URI``, which the user set on purpose. A loopback URI on 27017-27019 is
-    refused (those are other projects' MongoDBs; the compose Mongo of this project is 27117).
+    The caller owns ``world.drop()``. ``uri`` is only read here: it comes from ``env``
+    (``SANKEY_TEST_MONGO_URI``, or ``SANKEY_TEST_MONGO_RS_URI`` for a replica set), which the user
+    set on purpose. A loopback member on 27017-27019 is refused (those are other projects'
+    MongoDBs; the compose Mongo of this project is 27117).
     """
     if targets_foreign_mongo(uri):
-        pytest.fail(
-            "SANKEY_TEST_MONGO_URI points at 127.0.0.1:27017-27019; use `make mongo-up` (27117)"
+        pytest.fail(f"{env} points at 127.0.0.1:27017-27019; use `make mongo-up` (27117)")
+    try:
+        client: MongoClient[Any] = MongoClient(
+            uri,
+            serverSelectionTimeoutMS=REAL_PING_TIMEOUT_MS,
+            tz_aware=True,
         )
-    client: MongoClient[Any] = MongoClient(
-        uri,
-        serverSelectionTimeoutMS=REAL_PING_TIMEOUT_MS,
-        tz_aware=True,
-    )
+    except Exception as exc:  # noqa: BLE001 - say the type only: the text may hold the password
+        pytest.fail(f"{env} is not a usable MongoDB URI: {type(exc).__name__}")
     try:
         client.admin.command("ping")
     except Exception as exc:  # noqa: BLE001 - any driver error means the same: not reachable
         client.close()
-        pytest.fail(
-            f"SANKEY_TEST_MONGO_URI is set but the server did not answer: {type(exc).__name__}"
-        )
+        pytest.fail(f"{env} is set but the server did not answer: {type(exc).__name__}")
     return MongoWorld(
         uri=uri,
         database=unique_database(),

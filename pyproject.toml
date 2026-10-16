@@ -159,6 +159,7 @@ addopts = "-ra --strict-markers --strict-config -m 'not memory and not e2e'"
 filterwarnings = ["error"]
 markers = [
   "mongo: needs a real MongoDB; runs only when SANKEY_TEST_MONGO_URI is set",
+  "mongo_rs: needs a real MongoDB replica set; run with `make e2e-mongo-rs` (SANKEY_TEST_MONGO_RS_URI)",
   "memory: memory-budget test (pytest-memray); run with `make memray`",
   "slow: slow test (real Chrome export, large inputs)",
   "e2e: end-to-end test against a live server / real browser; run with `make e2e`",

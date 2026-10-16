@@ -5,7 +5,8 @@ Autouse guards (every test): ``SANKEY_*`` environment variables are removed, so 
 (``GIT_DIR``, ``GIT_INDEX_FILE``...) are removed, so a run under a git hook never reaches the
 real repository; and the pymongo client constructor is replaced by a tripwire, so no code path
 can open a socket to a real server. Tests marked ``@pytest.mark.mongo`` (they run only with
-``SANKEY_TEST_MONGO_URI``) are exempt from the first and the last.
+``SANKEY_TEST_MONGO_URI``) or ``@pytest.mark.mongo_rs`` (only with ``SANKEY_TEST_MONGO_RS_URI``,
+``make e2e-mongo-rs``) are exempt from the first and the last.
 
 Each agent may add a ``conftest.py`` only inside its own test sub-directory
 (``tests/sources``, ``tests/storage``, ``tests/render``, ``tests/web``).
@@ -36,16 +37,23 @@ if TYPE_CHECKING:
 TEST_URI = "mongodb://tester:hunter2@mongo.invalid:27017/?appName=tests"
 #: The one SANKEY_* variable tests may see (read only by ``@pytest.mark.mongo`` tests).
 REAL_MONGO_ENV = "SANKEY_TEST_MONGO_URI"
+#: The replica-set twin (``make e2e-mongo-rs``); also read from the dotenv file by ``rs_env.py``.
+REAL_MONGO_RS_ENV = "SANKEY_TEST_MONGO_RS_URI"
+#: marker -> the one SANKEY_* variable a test with that marker may see
+REAL_MONGO_MARKERS = {"mongo": REAL_MONGO_ENV, "mongo_rs": REAL_MONGO_RS_ENV}
 
 
 @pytest.fixture(autouse=True)
 def _scrub_sankey_env(monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest) -> None:
     """Remove SANKEY_* variables so ``BootstrapConfig()`` is hermetic."""
-    is_real = request.node.get_closest_marker("mongo") is not None
+    kept = {
+        env
+        for marker, env in REAL_MONGO_MARKERS.items()
+        if request.node.get_closest_marker(marker) is not None
+    }
     for name in [n for n in os.environ if n.startswith("SANKEY_")]:
-        if is_real and name == REAL_MONGO_ENV:
-            continue
-        monkeypatch.delenv(name)
+        if name not in kept:
+            monkeypatch.delenv(name)
 
 
 @pytest.fixture(autouse=True)
@@ -63,7 +71,7 @@ def _scrub_git_env(monkeypatch: pytest.MonkeyPatch) -> None:
 @pytest.fixture(autouse=True)
 def _no_real_mongo(monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest) -> None:
     """Fail loudly if anything constructs a real ``pymongo.MongoClient``."""
-    if request.node.get_closest_marker("mongo") is not None:
+    if any(request.node.get_closest_marker(marker) for marker in REAL_MONGO_MARKERS):
         return
 
     def _refuse(*_args: Any, **_kwargs: Any) -> None:
