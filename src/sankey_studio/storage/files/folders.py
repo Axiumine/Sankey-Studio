@@ -27,7 +27,6 @@ from sankey_studio.storage.files.locks import open_state
 from sankey_studio.storage.folder_tree import (
     MSG_NOT_FOUND,
     Placement,
-    check_name_free,
     name_key,
     reparent_plan,
     requested_parent,
@@ -37,7 +36,7 @@ from sankey_studio.storage.folder_tree import (
 )
 from sankey_studio.storage.folders_base import (
     check_folder_id,
-    exists_error,
+    check_put,
     new_folder_id,
     scope_id,
     stale_error,
@@ -170,12 +169,7 @@ class FileFolderRepository:
     def put_folder(self, folder: FolderDefinition, *, overwrite: bool = False) -> FolderDefinition:
         with self._state.lock:
             items = self._state.tree.read_for_write()
-            existing = next((item for item in items if item.id == folder.id), None)
-            if existing is not None and not overwrite:
-                raise exists_error(existing.revision, existing.updated_at)
-            if existing is None:
-                validate_new_count(items)
-            check_name_free(items, folder.parent_id, folder.name, folder.id)
+            existing = check_put(items, folder, overwrite=overwrite)
             kept = _replaced(items, folder) if existing else [*items, folder]
             self._state.tree.save(kept)
         return folder

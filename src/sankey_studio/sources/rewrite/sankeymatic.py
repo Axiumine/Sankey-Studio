@@ -97,7 +97,8 @@ class SankeymaticDoc:
 
     # ------------------------------------------------------------------ TextDoc
 
-    def with_category_column(self, items: list[Item]) -> list[Item]:
+    @staticmethod
+    def with_category_column(items: list[Item]) -> list[Item]:
         return items  # a category is just ``| text`` at the end of the line
 
     def terminated(self, items: list[Item]) -> list[Item]:
@@ -110,7 +111,8 @@ class SankeymaticDoc:
         entry = Entry(row.source, row.target, number_text(row.value), row.category)
         return [*items, Item(line_text(Line("", entry), self._eol), (row.source, row.target), None)]
 
-    def recategorised(self, item: Item, category: str | None) -> Item:
+    @staticmethod
+    def recategorised(item: Item, category: str | None) -> Item:
         line = cast("Line", item.payload)  # only entry lines are data items
         if line.entry.category == category:
             return item

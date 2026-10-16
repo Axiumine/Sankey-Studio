@@ -97,7 +97,8 @@ class JsonDoc:
 
     # ------------------------------------------------------------------ TextDoc
 
-    def with_category_column(self, items: list[Item]) -> list[Item]:
+    @staticmethod
+    def with_category_column(items: list[Item]) -> list[Item]:
         return items  # a category is just a member of the object
 
     def terminated(self, items: list[Item]) -> list[Item]:

@@ -112,35 +112,38 @@ class MongoStoreTarget:
 
 
 # --------------------------------------------------------------------------- writes
-# One tiny function per write so the waiver always sits on the first line of the call.
+# One tiny function per write so the waiver always sits on the first line of the call. The four
+# below are shared with ``mongo_folder_store`` (the same collection-level writes, one copy).
 
 
 def _insert(coll: Collection[Any], doc: dict[str, Any]) -> None:
-    coll.insert_one(doc)  # nosemgrep: sankey-no-mongo-writes -- graph store
+    coll.insert_one(doc)  # nosemgrep: sankey-no-mongo-writes -- library store
 
 
 def _replace(coll: Collection[Any], doc: dict[str, Any]) -> None:
     flt = {"_id": doc["_id"]}
-    coll.replace_one(flt, doc, upsert=True)  # nosemgrep: sankey-no-mongo-writes -- graph store
+    coll.replace_one(flt, doc, upsert=True)  # nosemgrep: sankey-no-mongo-writes -- library store
 
 
 def _cas_update(
     coll: Collection[Any], flt: dict[str, Any], changes: dict[str, Any]
 ) -> dict[str, Any] | None:
-    return coll.find_one_and_update(  # nosemgrep: sankey-no-mongo-writes -- graph store
+    return coll.find_one_and_update(  # nosemgrep: sankey-no-mongo-writes -- library store
         flt, {"$set": changes}, return_document=ReturnDocument.AFTER
     )
 
 
 def _remove(coll: Collection[Any], graph_id: str) -> int:
-    result = coll.delete_one({"_id": graph_id})  # nosemgrep: sankey-no-mongo-writes -- graph store
+    result = coll.delete_one(  # nosemgrep: sankey-no-mongo-writes -- library store
+        {"_id": graph_id}
+    )
     return result.deleted_count
 
 
 def _ensure_indexes(coll: Collection[Any]) -> None:
-    coll.create_index("updated_at")  # nosemgrep: sankey-no-mongo-writes -- graph store
-    coll.create_index("tags")  # nosemgrep: sankey-no-mongo-writes -- graph store
-    coll.create_index("folder_id")  # nosemgrep: sankey-no-mongo-writes -- graph store
+    coll.create_index("updated_at")  # nosemgrep: sankey-no-mongo-writes -- library store
+    coll.create_index("tags")  # nosemgrep: sankey-no-mongo-writes -- library store
+    coll.create_index("folder_id")  # nosemgrep: sankey-no-mongo-writes -- library store
 
 
 # --------------------------------------------------------------------------- documents
@@ -221,11 +224,16 @@ def _filter(query: str | None, tag: str | None) -> dict[str, Any]:
     return flt
 
 
-def _current_revision(coll: Collection[Any], graph_id: str) -> tuple[int | None, datetime | None]:
-    """Revision and ``updated_at`` of the stored graph; ``NotFoundError`` when it is gone."""
-    raw = coll.find_one({"_id": graph_id}, {"revision": 1, "updated_at": 1})
+def _current_revision(
+    coll: Collection[Any], doc_id: str, missing: str = MSG_NOT_FOUND
+) -> tuple[int | None, datetime | None]:
+    """Revision and ``updated_at`` of the stored document; ``NotFoundError(missing)`` if it is gone.
+
+    The folder store reads its own collection through this and passes its own wording.
+    """
+    raw = coll.find_one({"_id": doc_id}, {"revision": 1, "updated_at": 1})
     if raw is None:
-        raise NotFoundError(MSG_NOT_FOUND)
+        raise NotFoundError(missing)
     revision, updated = raw.get("revision"), _aware(raw.get("updated_at"))
     return (
         revision if isinstance(revision, int) else None,

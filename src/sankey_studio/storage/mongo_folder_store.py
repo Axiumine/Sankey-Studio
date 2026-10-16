@@ -32,10 +32,8 @@ from __future__ import annotations
 import logging
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from pymongo import ReturnDocument
 from pymongo.errors import DuplicateKeyError
 
 from sankey_studio.errors import (
@@ -52,7 +50,6 @@ from sankey_studio.storage.folder_tree import (
     MSG_NAME_TAKEN,
     MSG_NOT_FOUND,
     Placement,
-    check_name_free,
     name_key,
     reparent_plan,
     requested_parent,
@@ -62,16 +59,28 @@ from sankey_studio.storage.folder_tree import (
 )
 from sankey_studio.storage.folders_base import (
     check_folder_id,
+    check_put,
     exists_error,
     new_folder_id,
     parse_folder,
     scope_id,
     stale_error,
 )
-from sankey_studio.storage.mongo_store import _SORT, _SUMMARY_FIELDS, _aware, _summary
+from sankey_studio.storage.mongo_store import (
+    _SORT,
+    _SUMMARY_FIELDS,
+    _aware,
+    _cas_update,
+    _current_revision,
+    _insert,
+    _remove,
+    _replace,
+    _summary,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
+    from datetime import datetime
 
     from pymongo.collection import Collection
 
@@ -95,30 +104,6 @@ class _Handles:
 
 # --------------------------------------------------------------------------- writes
 # One tiny function per write so the waiver always sits on the first line of the call.
-
-
-def _insert_folder(coll: Collection[Any], doc: dict[str, Any]) -> None:
-    coll.insert_one(doc)  # nosemgrep: sankey-no-mongo-writes -- folder store
-
-
-def _replace_folder(coll: Collection[Any], doc: dict[str, Any]) -> None:
-    flt = {"_id": doc["_id"]}
-    coll.replace_one(flt, doc, upsert=True)  # nosemgrep: sankey-no-mongo-writes -- folder store
-
-
-def _cas_folder(
-    coll: Collection[Any], flt: dict[str, Any], changes: dict[str, Any]
-) -> dict[str, Any] | None:
-    return coll.find_one_and_update(  # nosemgrep: sankey-no-mongo-writes -- folder store
-        flt, {"$set": changes}, return_document=ReturnDocument.AFTER
-    )
-
-
-def _remove_folder(coll: Collection[Any], folder_id: str) -> int:
-    result = coll.delete_one(  # nosemgrep: sankey-no-mongo-writes -- folder store
-        {"_id": folder_id}
-    )
-    return result.deleted_count
 
 
 def _reparent_folders(coll: Collection[Any], old: str, new: str | None, now: datetime) -> None:
@@ -194,18 +179,6 @@ def _find(items: Sequence[FolderDefinition], folder_id: str) -> FolderDefinition
         if item.id == folder_id:
             return item
     raise NotFoundError(MSG_NOT_FOUND)
-
-
-def _stored_state(folders: Collection[Any], folder_id: str) -> tuple[int | None, datetime | None]:
-    """Revision and ``updated_at`` of the stored folder; ``NotFoundError`` when it is gone."""
-    raw = folders.find_one({"_id": folder_id}, {"revision": 1, "updated_at": 1})
-    if raw is None:
-        raise NotFoundError(MSG_NOT_FOUND)
-    revision, updated = raw.get("revision"), _aware(raw.get("updated_at"))
-    return (
-        revision if isinstance(revision, int) else None,
-        updated if isinstance(updated, datetime) else None,
-    )
 
 
 def _scope_filter(folders: Collection[Any], target: str | None) -> dict[str, Any] | None:
@@ -321,7 +294,7 @@ class MongoFolderRepository:
                 updated_at=now,
             )
             with _name_clash():
-                _insert_folder(db.folders, _encode(folder))
+                _insert(db.folders, _encode(folder))
         return folder
 
     def update_folder(self, folder_id: str, data: FolderUpdate) -> FolderDefinition:
@@ -342,9 +315,9 @@ class MongoFolderRepository:
                 "updated_at": self._clock(),
             }
             with _name_clash():
-                raw = _cas_folder(db.folders, {"_id": key, "revision": data.revision}, changes)
+                raw = _cas_update(db.folders, {"_id": key, "revision": data.revision}, changes)
             if raw is None:  # nothing matched {id, revision}: gone, or the revision moved on
-                raise stale_error(*_stored_state(db.folders, key))
+                raise stale_error(*_current_revision(db.folders, key, MSG_NOT_FOUND))
         return _definition(raw)
 
     def delete_folder(self, folder_id: str) -> None:
@@ -355,7 +328,7 @@ class MongoFolderRepository:
             parent = _find(items, key).parent_id
             moving = reparent_plan(items, key)  # refuse a name clash before anything changes
             _set_graph_folder(db.graphs, {"folder_id": key}, parent)
-            if _remove_folder(db.folders, key) == 0:
+            if _remove(db.folders, key) == 0:
                 raise NotFoundError(MSG_NOT_FOUND)
             if moving:
                 with _name_clash():
@@ -365,28 +338,23 @@ class MongoFolderRepository:
         with self._session() as db:
             self._prepare(db.folders)
             items = _read_all(db.folders)
-            existing = next((item for item in items if item.id == folder.id), None)
-            if existing is not None and not overwrite:
-                raise exists_error(existing.revision, existing.updated_at)
-            if existing is None:
-                validate_new_count(items)
-            check_name_free(items, folder.parent_id, folder.name, folder.id)
+            existing = check_put(items, folder, overwrite=overwrite)
             if existing is None:
                 self._insert_new(db.folders, _encode(folder))
             else:
                 with _name_clash():
-                    _replace_folder(db.folders, _encode(folder))
+                    _replace(db.folders, _encode(folder))
         return folder
 
     @staticmethod
     def _insert_new(folders: Collection[Any], doc: dict[str, Any]) -> None:
         """Insert; the unique index refused it: the id is taken, or a sibling has the name."""
         try:
-            _insert_folder(folders, doc)
+            _insert(folders, doc)
         except DuplicateKeyError:
             if folders.find_one({"_id": doc["_id"]}, {"_id": 1}) is None:
                 raise FolderNameTakenError(MSG_NAME_TAKEN) from None
-            raise exists_error(*_stored_state(folders, doc["_id"])) from None
+            raise exists_error(*_current_revision(folders, doc["_id"], MSG_NOT_FOUND)) from None
 
     def move_graphs(self, ids: Sequence[str], folder_id: str | None) -> MoveReport:
         wanted = list(dict.fromkeys(check_graph_id(graph_id) for graph_id in ids))
