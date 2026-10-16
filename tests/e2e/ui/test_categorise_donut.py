@@ -132,14 +132,15 @@ def test_link_colours_by_category_recolour_the_sankey_and_extra_categories_fold_
     editor.paste(BUDGET_CATEGORISED.csv)
 
     expect(mode.locator("option")).to_have_count(4)
+    editor.wait_preview()  # the options come with the new bundle and the redraw starts with it
     charts = ChartDom(page)
     by_node = Counter(charts.link_fills())
     expect(editor.tid("legend-item")).to_have_count(0)
     editor.open_section("style")  # the chart settings popover closes when the page is used
     mode.select_option("category")
-    editor.wait_preview()
 
     expect(editor.tid("legend-item")).to_have_count(BUDGET_CATEGORISED.category_count)
+    editor.wait_preview()  # the legend and the redraw start together: wait for Plotly.react
     colours = charts.legend_colours()
     assert sorted(colours) == sorted(BUDGET_CATEGORISED.categories)
     assert len(set(colours.values())) == BUDGET_CATEGORISED.category_count
