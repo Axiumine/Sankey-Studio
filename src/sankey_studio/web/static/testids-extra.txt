@@ -34,6 +34,8 @@ viewer-missing
 export-theme
 # js/viewer/links-table.js: the details block with the links as a table
 links-table
+# js/viewer/charts.js: the details block with the category table (the donut as numbers)
+category-details
 # js/compare/card.js, toolbar.js: remove a graph, add a graph, shared category colour note
 compare-remove
 compare-add

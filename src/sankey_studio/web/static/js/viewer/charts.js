@@ -13,8 +13,8 @@
  *   switches for the values and percentages printed on the charts (`display.onChange(key, on)` is
  *   the page's), and whatever the page adds with `addTool` (the export menu, export-menu.js).
  *
- * Test ids: chart-tab-sankey, chart-tab-donut, sankey-chart, donut-chart, donut-hint (and the
- * ones of display-menu.js, parts.js and links-table.js).
+ * Test ids: chart-tab-sankey, chart-tab-donut, sankey-chart, donut-chart, donut-hint,
+ * category-details (and the ones of display-menu.js, parts.js and links-table.js).
  */
 
 import { announce } from "../core/a11y.js";
@@ -27,7 +27,7 @@ import { createTabs } from "../core/tabs.js";
 import { createDisplayMenu } from "./display-menu.js";
 import { CHART_CONFIG_OVERRIDE, fitFigure } from "./figure.js";
 import { createLinksTable } from "./links-table.js";
-import { categoryTable, legendList, valueSuffix } from "./parts.js";
+import { categoryTable, legendList, tableDisclosure, valueSuffix } from "./parts.js";
 
 const DEFAULT_HEIGHT = 560;
 const BASIS_NOTES = {
@@ -164,9 +164,12 @@ class Charts {
       return [donutHint(bundle)];
     }
     const basis = BASIS_NOTES[this.basis];
+    const table = categoryTable(bundle.categories, { suffix, caption: `Categories of ${this.graph.name}, as a table` });
+    // the holder is rebuilt on every redraw (theme, display switch): a block the person opened stays open
+    const open = this.categoryHolder.querySelector("details")?.open ?? false;
     return [
       ...(basis ? [h("p", { class: "hint donut-basis" }, basis)] : []),
-      categoryTable(bundle.categories, { suffix, caption: `Categories of ${this.graph.name}, as a table` }),
+      tableDisclosure({ testid: "category-details", label: "Table view of the categories", open }, table),
     ];
   }
 

@@ -1,11 +1,11 @@
 /**
  * Read-only building blocks that show a RenderBundle as HTML: the legend list, the category table
- * (the accessible twin of the donut), the stats strip and the warnings list. The compare page
- * reuses them.
+ * (the accessible twin of the donut), the stats strip, the warnings list and the "Table view"
+ * disclosure that holds a table. The compare page reuses them.
  *
  * Colours: a swatch takes its colour from the server (`legend[].color`, `categories[].color`); text
  * is always ink. Every label is a text node. Test ids: legend / legend-item, category-table /
- * category-row, stats, warnings / warning-item.
+ * category-row, stats, warnings / warning-item (and the one `tableDisclosure` is given).
  */
 
 import { h } from "../core/dom.js";
@@ -66,6 +66,17 @@ export function legendList(items, options = {}) {
       ),
     ),
   );
+}
+
+/**
+ * A closed `<details>` whose summary reads as a link: the HTML twin of a chart (a table) stays out
+ * of sight until the person asks for it. The links table and the category table share it.
+ * @param {{testid: string, label: string, open?: boolean}} options
+ * @param {...(Node | null)} children  what shows when the block is open
+ * @returns {HTMLElement}
+ */
+export function tableDisclosure({ testid, label, open = false }, ...children) {
+  return h("details", { class: "table-view", "data-testid": testid, open }, h("summary", null, label), ...children);
 }
 
 const KIND_NOTES = {
