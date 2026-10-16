@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``mongo_write_plan``: the filter, update and document of an edit written back to MongoDB."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``edits.recolour``: the pins that keep the colours when a row reorder moves the slots."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """F7 on data the server may write: a text file, a MongoDB collection, a read-only server.
 
 "Add entry" on a graph that reads a file or a collection (mongomock) raises the consent dialog

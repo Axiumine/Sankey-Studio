@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.7, the edges of the compare page: the 12-graph limit, gone graphs and no graphs at all.
 
 One server for the module; unique names per test; a tall window so the lazy charts are in view.

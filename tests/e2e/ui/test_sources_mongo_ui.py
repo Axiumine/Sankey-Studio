@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """B5, part 4: the MongoDB tab against the mongomock connection of the test server.
 
 The server has one connection (``main``, default database ``flows``) and the collection

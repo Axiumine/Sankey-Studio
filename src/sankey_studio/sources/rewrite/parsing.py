@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Parse a text with the REAL parsers, the text being an argument.
 
 The rewriter and its self-check never go through ``TextSource.content``: that field is capped by

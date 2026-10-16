@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``TextDataSource.parse_job``: the per-load state the parsers and the rewriter share."""
 
 from __future__ import annotations

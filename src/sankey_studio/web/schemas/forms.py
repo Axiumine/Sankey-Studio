@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Form models: the multipart upload route.
 
 FastAPI cannot combine a ``Form()`` model with an ``UploadFile`` parameter (the model would be

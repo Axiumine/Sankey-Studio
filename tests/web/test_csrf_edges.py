@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Edges of the CSRF helpers that the full stack cannot reach: a host is never matched by prefix."""
 
 from __future__ import annotations

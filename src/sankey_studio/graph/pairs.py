@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Step 3: hide nodes, aggregate to (source, target) PAIR totals, ``min_link_value``, top-N.
 
 Pairs are category agnostic: categories never decide which pairs or nodes survive, so the

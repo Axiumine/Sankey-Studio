@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """F10 part 1: the gear next to the title and the "Graph details" dialog.
 
 The gear is a menu button (``Edit details`` and ``Change data source``); the details dialog holds

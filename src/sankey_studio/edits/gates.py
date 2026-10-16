@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The operator gates every file or MongoDB edit passes before the source is touched.
 
 Evaluated by ``plan`` AND ``write``, first match wins:

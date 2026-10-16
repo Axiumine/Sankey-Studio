@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Remote read-only mode on the FULL app: every persisting route is 403, the pure ones work."""
 
 from __future__ import annotations

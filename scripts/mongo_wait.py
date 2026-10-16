@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Wait until a MongoDB answers a ``ping`` (the compose file has no healthcheck).
 
     uv run python scripts/mongo_wait.py --uri mongodb://127.0.0.1:27117 --timeout 60

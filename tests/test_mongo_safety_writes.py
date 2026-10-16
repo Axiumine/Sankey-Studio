@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``mongo_safety`` write guards: ``check_write_document`` and ``check_write_update``.
 
 Source write-back may insert one small document of plain fields and scalars, or ``$set`` /

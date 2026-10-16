@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Helpers of ``test_matrix*.py`` and ``test_app_full*.py``: the route table of the FULL app.
 
 No tests here. ``ENDPOINTS`` lists every ``(method, path)`` that ``routers.ALL_ROUTERS`` serves,

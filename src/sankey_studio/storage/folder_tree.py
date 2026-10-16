@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The rules of the library folder tree ("collections" in the UI), as pure functions.
 
 Both backends call these on the list of ALL folders, so a rule lives in exactly one place:

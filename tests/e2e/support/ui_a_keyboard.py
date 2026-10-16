@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Keyboard helpers for the smoke suite (UI-A): follow the Tab order and read the focus ring.
 
 ``tab_until(page, target)`` presses Tab until the focused element is ``target`` (a test id, or the

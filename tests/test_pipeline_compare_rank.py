@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``render_compare``: the shared category ranking spans EVERY card, in the same way for each."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Helpers shared by the UI-B suites (library, compare, settings, theme, resilience, security).
 
 * ``PHONE`` / ``DESKTOP`` - viewport values for ``@pytest.mark.parametrize("viewport", [...])``.

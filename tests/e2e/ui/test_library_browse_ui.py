@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.6, browsing: paging, search, tag chips and sorting of the library.
 
 One server for the whole module (30 seeded graphs, nothing here writes), so the tests only read.

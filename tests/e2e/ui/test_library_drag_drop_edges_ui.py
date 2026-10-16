@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.6, the library collections: what drag and drop refuses, ignores and survives.
 
 Refusing places (with their reason), drags that did not start on the page, cards that are not drag

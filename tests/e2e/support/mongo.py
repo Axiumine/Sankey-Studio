@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``E2EMongoClient``: the mongomock client behind every e2e server (``LiveServer.mongo``).
 
 mongomock is a faithful stand-in for ``find``, ``aggregate`` and the ping of the connection test,

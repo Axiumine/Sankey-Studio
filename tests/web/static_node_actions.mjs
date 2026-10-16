@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 // Scenarios of test_static_node_actions.py: node-actions.js and the pure parts of order-dialog.js.
 globalThis.window = { addEventListener() {}, removeEventListener() {} }; // toast.js (reached through node-flow.js) watches the window
 globalThis.document = { addEventListener() {}, removeEventListener() {}, getElementById: () => null, querySelector: () => null };

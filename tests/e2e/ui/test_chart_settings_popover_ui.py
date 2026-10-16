@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """F8, the chart settings popover: a gear in the chart header opens Style and Export.
 
 The popover is NOT modal: the page stays live behind it (a style edit redraws the chart while it

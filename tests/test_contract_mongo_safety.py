@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Contract tests for ``mongo_safety``: every bypass the security review reproduced must stay shut.
 
 The MONGO agent owns ``mongo_safety.py`` and may harden it further; these tests must keep passing

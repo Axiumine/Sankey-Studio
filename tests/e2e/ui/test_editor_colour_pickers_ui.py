@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The two colour pickers of the editor: the category swatches and the One colour field.
 
 A real category row of "Totals by category" carries a colour input laid over its swatch; picking

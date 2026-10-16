@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The settings routes in the three modes: local, remote read-only and remote with writes."""
 
 from __future__ import annotations

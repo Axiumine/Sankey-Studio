@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The "Change data source" dialog: a guided way to switch the kind of source, opened from the gear
  * next to the title.

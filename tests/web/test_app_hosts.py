@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Host names are case-insensitive: ``allowed_hosts`` and the ``Host`` header, in both guards."""
 
 from __future__ import annotations

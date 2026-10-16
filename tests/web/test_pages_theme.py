@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The stored theme in the page, and bidirectional controls in names.
 
 The page paints in the saved colour theme before any script runs (``<html data-theme>``, also in

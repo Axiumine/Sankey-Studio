@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Process-wide state per graphs directory: ONE lock, ONE listing index and the folders file.
 
 Two ``FileGraphRepository`` instances on the same directory (for example after a settings change

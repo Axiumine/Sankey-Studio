@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``build_figure``: structure, escaping, hover, height and the truncation note."""
 
 from __future__ import annotations

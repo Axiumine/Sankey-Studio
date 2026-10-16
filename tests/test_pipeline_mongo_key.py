@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The cache key of a Mongo source follows the SECRET connection string, not just its masked form.
 
 A credential rotation that only changes the password leaves ``mask_uri`` (and so the old stamp)

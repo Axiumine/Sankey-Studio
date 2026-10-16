@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``LiveServer``: the real Sankey Studio app served by uvicorn in a thread of the test process.
 
 * Binds ``127.0.0.1`` on an EPHEMERAL port: the socket is bound to port 0 first, the port is read

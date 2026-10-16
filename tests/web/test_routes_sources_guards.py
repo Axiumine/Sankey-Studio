@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Upload and delete behind the guards: read-only remote mode, CSRF, and concurrent uploads."""
 
 from __future__ import annotations

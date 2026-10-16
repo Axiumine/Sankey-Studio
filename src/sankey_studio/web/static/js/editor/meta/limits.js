@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Limits and fixed texts of the graph details (name, description, tags), shared by the details
  * dialog and its field builders. They mirror the server's models (`models/graphs.py`).

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E A.3 (categories): reserved names and limits are refused; categories survive a save."""
 
 from __future__ import annotations

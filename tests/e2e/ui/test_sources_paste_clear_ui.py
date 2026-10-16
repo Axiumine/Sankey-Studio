@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """F1: the Clear icon inside the Paste box, with an Undo toast.
 
 The icon sits top right inside the box (clear of the vertical scrollbar and the text), exists only

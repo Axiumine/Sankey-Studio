@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Tab "Paste": the data is typed or pasted into a box and stored inside the graph
  * (`{type: "text", origin: "inline", content}`, up to 2,000,000 characters).

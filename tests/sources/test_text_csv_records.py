@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """csv records: one record may not swallow the file (quoted fields that span many lines)."""
 
 from __future__ import annotations

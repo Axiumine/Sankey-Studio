@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Step 4: cycles on pairs, found with an ITERATIVE depth-first search (100k nodes are fine)."""
 
 from __future__ import annotations

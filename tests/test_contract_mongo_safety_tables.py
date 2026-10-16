@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``mongo_safety`` / ``util``: the allow- and deny-lists are pinned, member by member."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``GuardedRoute``: read-only mode refuses an unsafe method BEFORE FastAPI decodes the body."""
 
 from __future__ import annotations

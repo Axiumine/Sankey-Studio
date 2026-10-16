@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Collections on the library page: the path, the cards of the open level, and the actions that
  * change them (create, rename, move, delete, and moving graphs into one).

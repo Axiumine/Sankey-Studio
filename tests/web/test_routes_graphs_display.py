@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """GET /api/v1/graphs/{id}/render with the label switches: drawn differently, saved unchanged."""
 
 from __future__ import annotations

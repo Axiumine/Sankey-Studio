@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``MongoWorld`` and ``FlowEnv``: one Mongo scenario, run on mongomock (A) or a real server (C).
 
 The Mongo and storage flows of E2E.md A.6 / A.7 are written once (``http_b_mongo_flows``,

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Folder membership and deletion, run once per backend: ``list_in``, moves, re-parenting."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * "Graph-only edits (N)": the visible, removable list of what this graph holds that its data does not.
  *

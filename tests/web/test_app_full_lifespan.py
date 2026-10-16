@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The FULL app owns the ``Services`` it builds: shutdown closes them and their Mongo clients."""
 
 from __future__ import annotations

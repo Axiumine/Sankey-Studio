@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * File names of the editor's downloads: ONE code path for the server's files and the ones the
  * browser draws itself.

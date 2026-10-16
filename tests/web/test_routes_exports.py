@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """GET /api/v1/graphs/{id}/export: both charts in every format, as attachments."""
 
 from __future__ import annotations

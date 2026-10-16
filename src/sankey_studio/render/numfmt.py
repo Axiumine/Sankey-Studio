@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """A small d3-format subset for text that Plotly cannot format itself (labels, centre total).
 
 ``StyleSpec.value_format`` is validated to the characters ``-+ ,.~$%a-zA-Z0-9`` (no fill or

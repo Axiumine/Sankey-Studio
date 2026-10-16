@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``styled``: the label switches of a render or export query applied to a saved style."""
 
 from __future__ import annotations

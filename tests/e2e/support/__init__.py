@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Support code of the end-to-end suites (no tests in here).
 
 Layout, one concern per module (fixtures built on them live in ``tests/e2e/conftest.py``):

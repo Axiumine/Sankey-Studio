@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The same flows when the saved URI reads from secondaries (``readPreference=secondaryPreferred``).
 
 A replica-set URI may carry any read preference, and the application never overrides it. The writes

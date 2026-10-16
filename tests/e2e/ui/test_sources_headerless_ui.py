@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """F3: a headerless text has its category in the fourth column (server rule, mirrored in JS)."""
 
 from __future__ import annotations

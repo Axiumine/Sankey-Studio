@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Storage contract for saved graphs. Implementations: ``files.py`` and ``mongo_store.py``.
 
 Application settings are *not* behind this protocol: they always live in the local

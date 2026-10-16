@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The files in the managed sources folder, as one small observable model shared by the "Text
  * file" and "Upload" tabs and the data preview.

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Bounded line reading: a hostile file cannot make us hold a huge line in memory."""
 
 from __future__ import annotations

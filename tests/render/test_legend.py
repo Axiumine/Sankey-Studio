@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``legend_items``: the same items feed the page and the legend traces inside the figure."""
 
 from __future__ import annotations

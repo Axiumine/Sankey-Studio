@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Was this hook started by ``git push --dry-run``? git does not say, so look at the ancestors.
 
 git runs ``pre-push`` for ``git push --dry-run`` too and gives the hook no flag for it. The hook

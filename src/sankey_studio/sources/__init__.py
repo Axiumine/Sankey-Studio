@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Data sources: text files (csv/tsv/sankeymatic/json), MongoDB, and manual entries.
 
 Owned by the architect. The concrete sources are imported inside the branches on purpose: a

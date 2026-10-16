@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """SVG and PNG export through kaleido and Chrome.
 
 The work is split so that every branch is testable without Chrome: ``resolve_image`` is pure

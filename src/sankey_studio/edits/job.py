@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """One edit request with everything the branches need, and the answers they build."""
 
 from __future__ import annotations

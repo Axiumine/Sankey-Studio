@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Limits of the folder routes: name length, depth, count, ``POST /graphs/move`` bounds."""
 
 from __future__ import annotations

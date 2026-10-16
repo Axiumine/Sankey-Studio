@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Optimistic concurrency under real threads: exactly one writer wins, nothing is torn."""
 
 from __future__ import annotations

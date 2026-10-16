@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The shell every page shares (``templates/page.html``): head, header, banners, regions, scripts.
 
 The markup is the contract of the frontend wave: the three navigation links and the theme switch

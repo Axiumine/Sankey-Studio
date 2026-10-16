@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """A bundle as a FastAPI response: the model is usable as a response model, alone and in a list.
 
 No ``from __future__ import annotations`` here: FastAPI reads the route annotations at runtime.

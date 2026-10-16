@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Boundaries of the web core that an independent mutation pass found unpinned."""
 
 from __future__ import annotations

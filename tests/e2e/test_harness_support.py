@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Self-tests of the pure parts of the harness: waits, builders and the watcher's allow-list.
 
 No server and no browser here: they run in milliseconds and pin the contracts the suites rely on.

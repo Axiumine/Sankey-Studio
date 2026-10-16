@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """What the settings, sources and mongo routers DECLARE: paths, status, guard, response model.
 
 mutmut skips decorated functions, and every route handler is one, so a changed decorator

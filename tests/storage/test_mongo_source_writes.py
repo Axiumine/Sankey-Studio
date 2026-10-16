@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``mongo_source_writes``: the only code that writes to a MongoDB source (mongomock).
 
 Namespace refusals, the ``_id`` scoping, the 1000-document limit, driver failures that never leak

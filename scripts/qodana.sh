@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 # Run Qodana (Ultimate Plus) on this project.
 #
 # The licence token QODANA_TOKEN is read from .env (see .env.example) into THIS process only.

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``sources``: exact category warnings, manual rows and the ``open_source`` dispatch."""
 
 from __future__ import annotations

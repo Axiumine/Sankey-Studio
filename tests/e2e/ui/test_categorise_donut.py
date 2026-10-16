@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """B3, part 2: the donut that categories bring, link colours by category, folding, persistence.
 
 The donut (labels with percent, centre total, hover tooltip, legend, the category table that

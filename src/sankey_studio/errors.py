@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Domain errors. The web layer maps these to HTTP status codes (see ``web/app.py``).
 
 Every error carries a stable ``code`` (API clients switch on it) and an HTTP ``status_code``.

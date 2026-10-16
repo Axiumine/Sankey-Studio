@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``GET /api/v1/health``: a liveness answer that never touches storage."""
 
 from __future__ import annotations

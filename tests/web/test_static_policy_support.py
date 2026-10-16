@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Helpers of ``test_static_policy.py``: the API.md section 5 test ids and the file scanners.
 
 No tests here. ``API_TESTIDS`` is a copy of the ``data-testid`` names of API.md section 5 (the

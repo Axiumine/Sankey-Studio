@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Library folders ("collections" in the UI) inside a graph bundle.
 
 A v2 bundle lists its folders after the graphs, parents first. An export carries the folders the

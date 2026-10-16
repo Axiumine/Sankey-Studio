@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 # Semgrep: project rules (.semgrep/rules) + registry packs, scanning product code only.
 #
 #   SEMGREP_OFFLINE=1  project rules only (registry packs need network)

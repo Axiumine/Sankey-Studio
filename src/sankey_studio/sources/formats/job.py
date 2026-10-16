@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Per-load parsing state shared by the format parsers."""
 
 from __future__ import annotations

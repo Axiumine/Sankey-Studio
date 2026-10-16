@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``escape_label``, ``truncate_label`` and ``value_text``: user text never becomes markup."""
 
 from __future__ import annotations

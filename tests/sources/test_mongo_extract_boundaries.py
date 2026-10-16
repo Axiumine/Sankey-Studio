@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``mongo_extract``: edges of the numeric-text grammar and of the control-character class."""
 
 from __future__ import annotations

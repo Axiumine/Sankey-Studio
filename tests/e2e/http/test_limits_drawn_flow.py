@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md A.9, part 2: ``max_drawn_links`` - the figure shows the biggest links, says so, and warns.
 
 Everything else (the entries table, the CSV export, the totals) keeps ALL links: the cap only

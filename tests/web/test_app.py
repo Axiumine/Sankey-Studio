@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``create_app``: assembly, middleware order, ownership of services, hooks."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``plan_edit`` for the data that lives in the draft: pasted text and manual links.
 
 No consent, no operator gate: ``plan`` rewrites the data and answers the whole new source.

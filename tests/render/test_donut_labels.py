@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Donut slice text: ``text_info``, and ``textinfo``, ``texttemplate``, ``text`` of the trace."""
 
 from __future__ import annotations

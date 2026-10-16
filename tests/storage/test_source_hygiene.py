@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Source rules Semgrep 1.178 cannot check for us: it fails to parse ``except A, B, C:``."""
 
 from __future__ import annotations

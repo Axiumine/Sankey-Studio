@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Donut data: totals per category for a basis, and the ONE fold into slices.
 
 ``fold_totals`` is used by the donut figure AND by ``tables.category_table``, so the table view

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``MongoDataSource`` on an in-memory MongoDB: rows, categories, values and skipped documents."""
 
 from __future__ import annotations

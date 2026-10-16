@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The pure planner of the git-hook gate (scripts/githook_plan.py): checks, tiers, ref -> checks."""
 
 from __future__ import annotations

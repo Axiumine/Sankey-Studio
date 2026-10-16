@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Git-hook gate: the logic behind .githooks/pre-commit, pre-merge-commit and pre-push.
 
     uv run --no-project --python 3.14 python -m scripts.githook_gate <command> [args]

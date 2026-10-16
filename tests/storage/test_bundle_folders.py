@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Folders in a v2 bundle: what an export carries and how a ``new_ids`` import places them."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The editor's "is it still the saved graph?" form: ``static/js/editor/meta/baseline.js``.
 
 The module is plain JavaScript, so these tests run it under ``node`` (skipped when node is not

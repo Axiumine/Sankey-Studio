@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The small value types of the text layer are frozen (or slotted) as designed."""
 
 from __future__ import annotations

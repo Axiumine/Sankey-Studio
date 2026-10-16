@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Graph-only edits stay visible: the chip "Graph-only edits (N)", its list, the unmatched notice.
 
 Category edits, added entries and a custom node order that live in the graph (not in its data) are

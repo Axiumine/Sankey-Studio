@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Test ids that survive pytest's id escaping unchanged.
 
 pytest escapes backslashes and non-ASCII characters in an explicit ``ids=`` list, and mutmut

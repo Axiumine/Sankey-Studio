@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.8, MongoDB connections: add, mask, keep the stored secret, test, delete.
 
 The password is the point of this module: it may be typed into a password field once, and it is

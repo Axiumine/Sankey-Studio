@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The happy path through the API of the FULL app, with a text source.
 
 create -> read -> render -> entries -> export svg (Chrome mocked), png, csv, json, html ->

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Publishes the height of the save bar as `--out-savebar-h` on <html> while the bar exists.
  *

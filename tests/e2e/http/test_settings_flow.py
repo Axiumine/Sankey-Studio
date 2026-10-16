@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E A.1 (settings): defaults, a PUT that is stored, ranges, and settings that act at once."""
 
 from __future__ import annotations

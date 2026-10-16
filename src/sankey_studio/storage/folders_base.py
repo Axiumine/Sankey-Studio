@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Storage contract for library folders ("collections" in the UI).
 
 ``FolderRepository`` is the second Protocol next to ``GraphRepository``. A graph points at AT MOST

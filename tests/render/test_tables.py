@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Table views: entries (filter, sort, page), nodes and the category table."""
 
 from __future__ import annotations

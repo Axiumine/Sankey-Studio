@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``build_graph``: nodes, layers, pair totals and node sums."""
 
 from __future__ import annotations

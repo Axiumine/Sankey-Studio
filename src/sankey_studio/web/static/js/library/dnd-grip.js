@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Where a card may be grabbed: keeps the controls and the text of a draggable card usable.
  *

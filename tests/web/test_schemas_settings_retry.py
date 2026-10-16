@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``PUT /settings`` renames a connection once and answers the identical retry the same way.
 
 A rename is ``name`` plus ``previous_name``. After the first save the previous name is gone, so

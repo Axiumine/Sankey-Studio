@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``GraphRepository.unreadable_ids``: stored records that ``iter_definitions`` cannot yield."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``/api/v1/folders``: create, read, rename/move (optimistic), delete, and every refusal."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.6, actions on cards: duplicate, delete with its confirmation, picking graphs to compare.
 
 One server for the module; every test seeds graphs with a unique name and looks at them through

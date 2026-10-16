@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """F10 part 1, D3: "Change data source" behind the gear next to the title.
 
 The dialog lists the five kinds, preselects the current one and, for a different kind, swaps the

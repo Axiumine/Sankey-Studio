@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The real-MongoDB flows of ``tests/e2e/mongo`` on a REPLICA SET (``make e2e-mongo-rs``).
 
 The scenarios are the very functions the standalone suite runs (and the mongomock suite before

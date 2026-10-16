@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``mongo_safety``: pipeline stage shapes and the lookup / unwind / facet budgets."""
 
 from __future__ import annotations

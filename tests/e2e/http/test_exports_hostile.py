@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E A.4 (hostile text in the files): what a person's own words can never become in an export.
 
 * the HTML page keeps its own structure: the name is the ``<title>`` text, never markup;

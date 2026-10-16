@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """OS errors of the gate (stamp, log, lock paths) end in a ``gate: refusing:`` line, no traceback.
 
 A regular file is put where the gate needs a directory (and the other way round for the lock),

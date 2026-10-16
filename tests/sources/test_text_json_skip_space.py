@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``skip_space`` across a refill that comes after earlier tokens were consumed.
 
 The consumed prefix of the buffer is dropped by the refill, so the newlines in the whitespace

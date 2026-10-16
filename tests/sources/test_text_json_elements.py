@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """JSON arrays: a non-object element is a row problem; a malformed array is an error."""
 
 from __future__ import annotations

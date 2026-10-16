@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Tab "MongoDB": read flows from a collection of a configured connection (read-only).
  * (`{type: "mongo", connection, database?, collection, mode, filter, pipeline, source_field,

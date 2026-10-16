@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Shared fixtures. Tests never touch a real MongoDB: they use mongomock.
 
 Autouse guards (every test): ``SANKEY_*`` environment variables are removed, so a developer's

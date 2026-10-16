@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The Mongo refusals of E2E.md A.6: unsafe stages, operators and names, and NOTHING written.
 
 ``MONGO_GUARDS`` is the pytest parameter list that ``tests/e2e/http`` (mongomock) and

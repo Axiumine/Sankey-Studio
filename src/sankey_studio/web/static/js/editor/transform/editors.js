@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The two list editors of the transform section: merge nodes (alias -> canonical name) and
  * category rules (glob -> category, first match wins). Both are row tables (meta/row-table.js)

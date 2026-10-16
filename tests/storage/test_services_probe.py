@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``Services.test_storage``: probes a candidate store; refused in read-only remote mode."""
 
 from __future__ import annotations

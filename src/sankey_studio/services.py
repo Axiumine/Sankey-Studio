@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``Services``: the only place that wires settings, Mongo clients, storage and source context.
 
 The web layer talks to this class and nothing else. One instance lives for the whole process.

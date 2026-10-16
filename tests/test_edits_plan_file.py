@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``plan_edit`` for a managed text file: the decision table, row by row (nothing is written)."""
 
 from __future__ import annotations

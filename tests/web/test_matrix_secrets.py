@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Secret hygiene on the FULL app: a saved Mongo password reaches no response and no log record.
 
 The connection is saved through ``PUT /settings`` with the password ``hunter2``. Every route of the

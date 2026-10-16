@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The sources router as a whole: its routes, the file listing and ``POST /sources/detect``."""
 
 from __future__ import annotations

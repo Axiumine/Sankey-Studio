@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Client-side image download: the answer when the server cannot draw an image (422
  * `export_too_large`, 501 no Chrome, 502 failed, 503 busy, 504 too slow).

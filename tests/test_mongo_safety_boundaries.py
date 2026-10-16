@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``mongo_safety``: the character classes of the SRV host and URI regexes, edge by edge."""
 
 from __future__ import annotations

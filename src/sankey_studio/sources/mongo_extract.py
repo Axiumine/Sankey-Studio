@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Dotted-path extraction and name/value coercion for MongoDB documents.
 
 Pure functions, no driver calls: ``mongo_source`` streams documents through ``extract_row``.

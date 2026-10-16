@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The settings page (`/settings`): appearance, storage, MongoDB connections, limits and the
  * read-only facts of the running server, with one global "Save settings" bar.

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Saved-graph shapes: drafts, create/update bodies, the persisted definition, summaries."""
 
 from __future__ import annotations

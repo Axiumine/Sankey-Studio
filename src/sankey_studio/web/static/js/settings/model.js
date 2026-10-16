@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The settings form as plain data, with no DOM: building a draft from the API answer, the
  * canonical snapshot used for dirty tracking, and the request body.

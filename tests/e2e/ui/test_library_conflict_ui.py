@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.6, a graph edited in two tabs: the second save meets a conflict (409) and is not lost.
 
 Tab B saves first; tab A then saves a stale revision. Nothing of A may reach the server until the

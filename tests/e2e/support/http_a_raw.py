@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``raw_request``: one HTTP request with an exact request target, for URLs a client would tidy.
 
 ``httpx`` (like a browser) removes ``..`` segments from the URL before it sends it, so it can

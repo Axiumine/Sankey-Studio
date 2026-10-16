@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Settings over the wire: what ``PUT /settings`` accepts and what ``GET /settings`` returns.
 
 ``AppSettings`` itself never crosses the API: its connection URIs are secrets. A request carries

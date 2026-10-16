@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``plan_edit``: where would this edit go, and what must the person agree to first?
 
 Pure: it reads a file or counts documents and writes nothing, so it stays available in read-only

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Data of the text rewriter: the job, the result and the document model the formats share.
 
 A document is an ordered list of ``Item`` objects. An item is RAW (``pair is None``: header,

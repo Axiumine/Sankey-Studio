@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * "N of your category edits no longer match an entry": the Entries card says so when graph-only
  * category edits (`transform.entry_categories`) point at pairs the data no longer has (a node was

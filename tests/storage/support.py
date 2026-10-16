@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Builders and fakes shared by the storage tests (not a test module)."""
 
 from __future__ import annotations

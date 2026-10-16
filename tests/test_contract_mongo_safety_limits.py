@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``mongo_safety``: exact limits, counters, error messages and the option scanner.
 
 The messages are part of the contract (the UI shows them), so they are compared whole. Every

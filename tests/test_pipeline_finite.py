@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``_require_finite_totals``: which graphs are refused and how the error reads."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.8, the remote read-only server: banners, locked controls, and writes refused anyway.
 
 ``remote_mode=True`` is ``--allow-remote`` without ``--allow-remote-writes``. The graphs are put in

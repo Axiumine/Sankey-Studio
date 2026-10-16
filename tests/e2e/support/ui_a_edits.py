@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Page objects and builders of the write-back flows (UI-A suites).
 
 ``ConsentDialog(page)`` - the "Change your data too?" dialog and its four answers.

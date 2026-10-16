@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Self-tests of the harness against the live server: options, samples and the HTTP side.
 
 The browser side (watcher, artefacts, waits, fixtures) is in ``test_harness_browser``.

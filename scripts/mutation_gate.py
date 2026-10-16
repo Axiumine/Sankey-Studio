@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Quality gate for mutmut: fail when the mutation score is below a threshold.
 
 ``mutmut run`` stores one ``<module>.py.meta`` JSON file per mutated module under ``mutants/``.

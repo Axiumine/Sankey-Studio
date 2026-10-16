@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md A.6, second half: what must be refused, and the proof that nothing was written.
 
 Shared with the real-Mongo suite (``tests/e2e/mongo``, section C). Every case is a source with a

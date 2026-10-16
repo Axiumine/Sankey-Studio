@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Contract tests for ``sources.base``: the category tolerance rule and strict/lenient rows."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """A settings round trip leaves no secret in the logs (SPEC section 4: bodies and logs)."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Step 5: layers (longest path from a source node, iterative Kahn) and node sums."""
 
 from __future__ import annotations

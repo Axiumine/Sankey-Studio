@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Regression tests added by the wave-2 assembly verifier.
 
 * The compare page keeps the order of ``ids`` (the ids are fixed, so a sorted or reversed list is

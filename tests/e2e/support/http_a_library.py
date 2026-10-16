@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Library helpers of the HTTP flows: update bodies, seeded libraries and the documented order."""
 
 from __future__ import annotations

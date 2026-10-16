@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The two actions of a graph card that change the library and need a reload afterwards: Duplicate
  * and Delete (Move is asked by folders.js). Both take the card button that was pressed, mark it busy

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The only code that writes to a MongoDB SOURCE collection (opt-in write-back of edits).
 
 Four I/O primitives take plain dicts built by ``sources.mongo_write_plan``: ``count_matching``

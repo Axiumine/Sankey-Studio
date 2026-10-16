@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``Tape``: everything an ``httpx.Client`` received, to scan for strings that must never leak.
 
 ``attach(client)`` records every response of ``client`` from then on (status line, all headers and

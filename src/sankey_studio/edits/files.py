@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The file branch of an edit: rewrite the text of a managed source file.
 
 ``dry_run`` reads the file and rewrites the text in memory (nothing is written; a reorder also

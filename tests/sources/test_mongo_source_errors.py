@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``MongoDataSource`` against fakes: exact driver calls, error mapping, cursors, slots, safety."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E A.1 (settings): the connection password appears in no response, log line or console text."""
 
 from __future__ import annotations

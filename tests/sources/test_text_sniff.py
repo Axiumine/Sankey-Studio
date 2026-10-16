@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``detect_format`` and ``sniff_delimiter``: the 4 KB window and the tie-breaks."""
 
 from __future__ import annotations

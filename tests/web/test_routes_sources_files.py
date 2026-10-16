@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``DELETE /sources/files/{name}`` and ``GET /sources/files/{name}/preview``."""
 
 from __future__ import annotations

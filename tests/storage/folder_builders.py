@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Builders for folder tests (not a test module): ids, folder records, create bodies."""
 
 from __future__ import annotations

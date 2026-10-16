@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.8, the limits: validated, saved, discarded, guarded and checked for conflicts."""
 
 from __future__ import annotations

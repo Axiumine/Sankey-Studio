@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 // Node scenarios of test_static_entries_add.py: the pure parts of the Entries card additions.
 // argv[2] is the js/ directory of the shipped files; the result is printed as JSON.
 const dir = process.argv[2];

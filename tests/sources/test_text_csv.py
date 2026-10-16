@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """csv/tsv parsing: delimiters, quoting, blank rows, row problems and hostile input."""
 
 from __future__ import annotations

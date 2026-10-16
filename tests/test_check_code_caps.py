@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Tests for the pre-commit code-caps check (scripts/check_code_caps.py)."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Process side of the gate (scripts/githook_runner.py): child environment, signals, the runner."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The "Graph details" dialog: name, description and tags in a modal opened from the gear next to
  * the title (and by the save bar when the name is missing).

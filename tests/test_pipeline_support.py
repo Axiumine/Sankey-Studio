@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Helpers shared by ``tests/test_pipeline*.py`` and ``tests/test_bundle*.py`` (no tests here)."""
 
 from __future__ import annotations

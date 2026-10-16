@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Typed accessors over ``request.app.state`` and the dependencies routers share.
 
 ``request.app.state.<x>`` is ``Any``; every read goes through ONE function here so the rest of the

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """JSON hostile and large inputs: chunk boundaries, the per-object cap, nesting and big numbers."""
 
 from __future__ import annotations

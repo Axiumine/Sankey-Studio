@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Hook flows over one tree: pre-commit, pre-merge-commit, ``run``, ``plan``, hooks-check."""
 
 from __future__ import annotations

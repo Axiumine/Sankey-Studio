@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``ViewerPage`` (``/graphs/<id>``) and readers of the Plotly figure behind a chart div.
 
 The chart div keeps its figure (``div.data`` and ``div.layout``), so a test can ask "what colour is

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Server paging of the entries table: `POST /entries?offset&limit&q&only_uncategorized&sort` with the
  * draft as body.

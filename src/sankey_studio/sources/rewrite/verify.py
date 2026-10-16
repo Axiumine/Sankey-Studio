@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The self-check: read the old and the new text with the real parser and compare.
 
 An edit is accepted only when the new text loads to exactly the old links plus the intended

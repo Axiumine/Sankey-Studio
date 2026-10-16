@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``SettingsStore`` file handling: corrupt files, unreadable files, directory safety, failures."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Contract smoke tests: the tooling every other test relies on is wired."""
 
 from __future__ import annotations

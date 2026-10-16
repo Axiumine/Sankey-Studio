@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``RenderBundle``: everything a page needs to draw one graph, as JSON primitives only.
 
 The bundle is the response of ``POST /preview``, ``GET /graphs/{id}/render`` and (as a list)

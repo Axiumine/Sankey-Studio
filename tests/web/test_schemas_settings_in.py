@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``SettingsIn`` / ``MongoConnectionIn``: limits that match ``AppSettings``, and refusals."""
 
 from __future__ import annotations

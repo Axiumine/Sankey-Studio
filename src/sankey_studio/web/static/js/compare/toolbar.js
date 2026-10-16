@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The strip above the compare grid: what is compared, the shared-colour note with its legend, the
  * "add a graph" control, and the cap message.

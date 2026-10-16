@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Text data source: wires decoding, format sniffing and the parsers together.
 
 The text is read as a stream and never held whole. Bytes become text only through

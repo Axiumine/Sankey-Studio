@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Viewer page: one saved graph with its Sankey and (when entries have categories) donut chart,
  * legend and tables, numbers, warnings, and the export panel. Everything lives in js/viewer/.

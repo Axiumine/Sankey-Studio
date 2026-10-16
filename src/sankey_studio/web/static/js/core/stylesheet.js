@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Loads a stylesheet on demand, once per page. The promise resolves when the sheet is applied (or
  * failed: the page then looks plain but still works), so a panel that awaits it never paints

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``JsonSanitizer``: documents become plain, bounded JSON whatever they hold."""
 
 from __future__ import annotations

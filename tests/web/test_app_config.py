@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``create_app`` refuses an ``allowed_hosts`` entry that could only fail at the first request."""
 
 from __future__ import annotations

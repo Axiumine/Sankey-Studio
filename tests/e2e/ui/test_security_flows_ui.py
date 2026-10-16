@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.12, hostile text typed into the editor and carried into files.
 
 The page tests seed the graph through the API; here the person types it, saves it, reloads it and

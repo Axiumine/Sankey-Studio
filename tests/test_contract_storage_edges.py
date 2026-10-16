@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``storage.base``: exact messages, version boundaries and codec edge cases."""
 
 from __future__ import annotations

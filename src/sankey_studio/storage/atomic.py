@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Crash-safe, symlink-safe file primitives shared by the graph files and ``settings.json``.
 
 Everything here raises plain ``OSError`` (callers map it to ``StorageError`` or ``SettingsError``

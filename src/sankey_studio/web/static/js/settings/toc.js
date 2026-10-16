@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * "On this page": the short list of the page's sections that sits in the free column right of the
  * settings from 1280px up (the layout is in css/pages/settings.css; below that width the list is

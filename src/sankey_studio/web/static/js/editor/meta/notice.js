@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * A section's error notice wired to the store: shows the failure of the last preview or save that
  * belongs to the section (`domain`: "source", "transform", "style"), places each message on its

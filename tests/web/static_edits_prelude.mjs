@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 // Shared setup of the node scenarios of test_static_edits_*.py (see run_driver).
 const dir = process.argv[2];
 const events = [];

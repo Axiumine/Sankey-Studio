@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Annotated field types and validator helpers shared by several spec models."""
 
 from __future__ import annotations

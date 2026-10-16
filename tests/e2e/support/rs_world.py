@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``real_rs_world``: a ``MongoWorld`` on a replica set whose database is named by the URI.
 
 The standalone suite makes a database of its own (``sankey_e2e_<8 hex>``) and drops it. A shared

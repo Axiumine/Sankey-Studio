@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The library-folder ("collection") flows of ``/api/v1/folders``, written once for the file store,
 mongomock (``tests/e2e/http``) and a real MongoDB (``tests/e2e/mongo``).
 

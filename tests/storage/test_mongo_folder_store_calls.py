@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The exact driver calls the Mongo folder store makes (filters, projections, CAS, indexes)."""
 
 from __future__ import annotations

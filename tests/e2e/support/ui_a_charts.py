@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Readers for the Plotly DOM of the Sankey and the donut (UI-A suites).
 
 ``ChartDom(page)`` wraps the page and answers what a person sees in a drawn chart:

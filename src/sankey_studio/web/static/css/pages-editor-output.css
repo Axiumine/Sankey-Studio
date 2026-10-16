@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Giovanni Manzoni */
 /* Editor OUTPUT panels: chart, entries, export and the save bar.
    Loaded by js/editor/output-panel-kit.js (ensureOutputStyles) when the first panel mounts.
    Only token variables: no colour literals (tokens.css owns them), so light and dark follow the

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The export menu of the viewer: a download icon at the right of the tab row opens the panel.
 
 The export panel is not a card beside the chart any more. A icon icon (``export-menu-button``,

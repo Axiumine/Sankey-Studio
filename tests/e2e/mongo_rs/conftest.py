@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Fixtures of the replica-set suite (``make e2e-mongo-rs``, docs/e2e.md section C).
 
 The flows of ``tests/e2e/mongo`` again, against a REPLICA SET you run yourself. The URI comes from

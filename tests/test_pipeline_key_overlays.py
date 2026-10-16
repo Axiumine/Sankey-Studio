@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``cache_key``: what the overlays (extra links, categories, node order, consent) do to it."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """What the pages router DECLARES: paths, order, status, response model, tags, public names.
 
 mutmut skips decorated functions, and every route handler is one, so a moved router, a changed

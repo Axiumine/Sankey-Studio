@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.7, the compare page with real graphs: cards, donut switches, shared colours, add/remove.
 
 One server for the module and a tall window (charts draw when a card nears the viewport). Every

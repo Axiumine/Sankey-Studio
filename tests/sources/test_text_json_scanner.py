@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The JSON scanner's starting state: nothing read, nothing consumed, the stream not at its end.
 
 ``json_links`` always calls ``skip_space`` first, which refills the buffer and overwrites every

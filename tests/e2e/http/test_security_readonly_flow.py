@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md A.8, part 4: the remote server (``--allow-remote``) is read-only unless told otherwise.
 
 A read-only remote server refuses every route that persists with 403 ``read_only_mode`` - also

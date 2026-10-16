@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * "Order nodes": the keyboard and single-pointer twin of dragging a bar (WCAG 2.1.1, 2.5.7).
  *

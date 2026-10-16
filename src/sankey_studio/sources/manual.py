@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Manual (web-editor) source: links already live inside the graph definition."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Query-string models: one per route, so a route never takes more than one query parameter.
 
 Every model forbids unknown parameters (a typo is a 422, not a silently ignored filter) and is

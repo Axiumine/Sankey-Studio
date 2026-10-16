@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``MongoDataSource``: truncation warning, the ``$limit`` rule and the row cap."""
 
 from __future__ import annotations

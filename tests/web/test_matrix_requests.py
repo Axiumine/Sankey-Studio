@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Host check, no docs UI, no CORS and the security headers, on every route of the FULL app."""
 
 from __future__ import annotations

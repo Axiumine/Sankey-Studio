@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The saved answer to "may edits be written back to the data source?"."""
 
 from __future__ import annotations

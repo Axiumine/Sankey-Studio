@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Small helpers shared by the four OUTPUT panels of the editor (chart, entries, export, savebar).
  *

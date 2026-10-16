@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The pre-push flow (scripts/githook_push.py): refs -> checks, stamps, refusals, resume, lock."""
 
 from __future__ import annotations

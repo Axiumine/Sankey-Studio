@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Donut data: totals per basis and the one fold into slices."""
 
 from __future__ import annotations

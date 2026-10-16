@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``scripts/profile_memory.py``: the synthetic data, the pipeline and the two report modes."""
 
 from __future__ import annotations

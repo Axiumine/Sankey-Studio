@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Text helpers: escaping of user text for Plotly and label truncation.
 
 Plotly renders a small pseudo-HTML subset in labels, titles, legends, annotations and hover

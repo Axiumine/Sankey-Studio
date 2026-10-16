@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Thousands separators: the first group holds one to three digits, never four."""
 
 from __future__ import annotations

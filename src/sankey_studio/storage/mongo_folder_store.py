@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``MongoFolderRepository``: library folders in the collection ``sankey_studio_collections``.
 
 The twin of ``files/folders.py`` for the MongoDB backend. Together with ``mongo_store.py`` (graphs

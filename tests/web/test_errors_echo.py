@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """A 422 never echoes what the caller sent (API.md section 1, "Input echo").
 
 ``validation_details`` keeps the location and the message of every pydantic error. The message of

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The pure pieces of the CSRF guard: origin parsing, host matching, the allowed-host list."""
 
 from __future__ import annotations

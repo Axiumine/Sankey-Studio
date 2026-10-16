@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """What the browser does with ``transform.entry_categories`` after a category reached the data.
 
 The server never edits ``transform`` (no clobbering of concurrent edits); it only says what to do

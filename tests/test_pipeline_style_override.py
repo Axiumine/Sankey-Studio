@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``BundleOptions.style``: the style a bundle is drawn with instead of ``draft.style``."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Folders on the graph routes: ``?folder=`` listing and creation, duplicate, PUT, move."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The Sankey figure, built by hand as a plain dict (no ``plotly`` import).
 
 Plotly renders pseudo-HTML in labels and hover text, so every user-derived string goes through

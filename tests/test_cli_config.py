@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``main`` fails fast, with a short message and status 2, on a configuration that cannot run."""
 
 from __future__ import annotations

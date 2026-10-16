@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The frontend files as a whole: policy beyond ``test_templates_policy.py`` (which stays the home
 of the SPEC section 5 banned-construct grep; the rules here are added on top, not repeated).
 

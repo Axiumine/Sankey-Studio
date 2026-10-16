@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Option types: one small frozen dataclass per purpose, never a fifth parameter."""
 
 from __future__ import annotations

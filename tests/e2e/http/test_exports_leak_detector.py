@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Control for the "no leftover Chrome" checks of the export tests: the detector can see one."""
 
 from __future__ import annotations

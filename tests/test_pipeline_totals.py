@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Flow sums that overflow a float are a 422 build error, never a 500 or an ``inf`` in a bundle."""
 
 from __future__ import annotations

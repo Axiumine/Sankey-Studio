@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 out.classify = [
   classify(null), classify({ type: "manual", links: [] }), classify({ type: "text", origin: "inline" }),
   classify({ type: "text", origin: "file", path: null }), classify({ type: "text", origin: "file", path: "a.csv" }),

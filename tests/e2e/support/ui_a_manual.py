@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Page object of the Manual source tab (UI-A suites): the editable table of links.
 
 Rows are numbered from 1, the way their inputs are labelled (``Source, row 1`` ...). Remove

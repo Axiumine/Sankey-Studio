@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The export panel of the viewer: image size options, SVG / PNG of the chart that is showing,
  * and the HTML / JSON / CSV downloads. Its `el` is the bare content; export-menu.js puts it into

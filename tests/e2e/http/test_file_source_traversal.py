@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E A.2 (file source, security): no name, link or special file reaches outside the sources dir.
 
 One server for the module. Its sources directory holds a regular file, a symlink to a secret file

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``MongoContextDep``: a ``SourceContext`` that never needs (or creates) the sources directory."""
 
 from __future__ import annotations

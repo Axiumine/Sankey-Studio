@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Node events of a Plotly Sankey: a click on a bar and a drag of a bar, as plain data.
  *

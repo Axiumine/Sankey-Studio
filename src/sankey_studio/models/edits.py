@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Edits to the data of a graph and the answer to them (the write-back contract).
 
 ``AddEntry``, ``SetCategory`` and ``ReorderNodes`` are what the editor can do to a graph's

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Exports: HTML, JSON, CSV and (through Chrome) SVG/PNG. The only code that imports plotly."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Huge ``limit`` / ``offset`` values behave the same on both backends (BSON stops at 8 bytes)."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``build_graph`` steps below the public surface: link order, pair selection, caches, columns.
 
 These pin behaviour a mutation of the step functions would move without changing any of the

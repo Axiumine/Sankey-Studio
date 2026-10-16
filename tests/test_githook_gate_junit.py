@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Fail-closed reading of JUnit reports (scripts/githook_junit.py): a skip or a gap fails a gate."""
 
 from __future__ import annotations

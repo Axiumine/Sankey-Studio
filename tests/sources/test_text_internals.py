@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Parser internals whose results the public API hides (they decide ties, not outcomes)."""
 
 from __future__ import annotations

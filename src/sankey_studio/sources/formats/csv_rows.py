@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Delimited text (csv/tsv): header optional, columns by name or 0-based index, category column."""
 
 from __future__ import annotations

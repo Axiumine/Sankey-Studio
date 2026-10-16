@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Self-tests of the browser side of the harness: fixtures, UI waits, the watcher in a real page.
 
 Everything here proves one promise of ``conftest.py``: a suite built on ``page`` sees the same

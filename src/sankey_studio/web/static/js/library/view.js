@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The result area of the library: summary line, card grid, and the honest states around it
  * (empty library, no match, error). Created once; `show*` calls swap the content.

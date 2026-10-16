@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``create_app``: assembles the FastAPI application. Nothing else lives here.
 
 Middleware order, outermost first (Starlette wraps the LAST ``add_middleware`` outermost, so they

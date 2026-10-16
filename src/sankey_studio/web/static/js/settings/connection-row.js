@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * One MongoDB connection of the settings page: name, default database, connection string, a
  * "Test connection" button with its result (and latency) and a "Delete" button.

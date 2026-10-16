@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """B4, part 1: every download of the viewer, drawn by the server (real Chrome, a second each).
 
 Real downloads: the file names (``<name>.svg``, ``<name>-donut.svg``, ``.csv`` ...), the SVG and

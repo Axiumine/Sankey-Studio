@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``make_graph_repository``, ``make_folder_repository``, ``make_stores`` and ``storage_target``."""
 
 from __future__ import annotations

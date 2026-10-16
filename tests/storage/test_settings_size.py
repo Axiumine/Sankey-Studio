@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``SettingsStore.save`` never writes a file that ``load`` would refuse (1 MiB cap, inclusive)."""
 
 from __future__ import annotations

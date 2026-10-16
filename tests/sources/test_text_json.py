@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """JSON entries: an array of objects, NDJSON, value/name types, categories and structure errors."""
 
 from __future__ import annotations

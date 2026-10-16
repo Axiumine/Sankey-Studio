@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``askKeepOverlays``: the Keep / Drop / Cancel question about graph-only edits.
 
 The inline tab strip asks it before it replaces the source (wizard wave); the change-source dialog

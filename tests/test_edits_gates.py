@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The operator gates of ``plan`` and ``write``: read-only server, source writes, namespaces,
 formula-like text. First match wins; ``write`` raises 403 where ``plan`` answers ``graph``."""
 

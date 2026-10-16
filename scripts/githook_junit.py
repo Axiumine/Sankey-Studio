@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Fail-closed reading of the JUnit reports a pytest-based check leaves behind.
 
 The reports are machine-written by pytest, and a skipped test must fail a gate (a skip is how

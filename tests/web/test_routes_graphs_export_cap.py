@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """GET /graphs/export refuses what POST /graphs/import would refuse: one cap for both."""
 
 from __future__ import annotations

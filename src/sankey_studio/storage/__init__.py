@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Saved-graph storage: the repositories, the settings file and migration helpers.
 
 ``make_graph_repository`` and ``make_folder_repository`` pick the backend named by

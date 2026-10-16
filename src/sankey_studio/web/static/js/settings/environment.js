@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * "This server" section: facts the operator set when the server started (sources folder, whether
  * it can be reached from other machines, whether it accepts changes). They come from the

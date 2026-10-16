@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``LineReader`` corner cases around the BOM top-up and the drain of an overlong line."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``storage.folder_tree``: the pure rules of the folder tree, as tables (both sides of limits)."""
 
 from __future__ import annotations

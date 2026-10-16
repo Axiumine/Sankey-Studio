@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Layout pieces shared by both charts: every constant is pinned, in both themes."""
 
 from __future__ import annotations

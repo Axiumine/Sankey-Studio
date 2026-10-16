@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The pure parts of the Entries card additions, run with node on the shipped files.
 
 Covered: the rules of the "Add a flow" dialog (``entries/add-form.js``: names, value, category,

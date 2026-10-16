@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Field-name suggestions for the editor's Mongo form, from a few sample documents.
 
 Heuristics only (the user can always overwrite them). A dotted path whose LAST segment is a

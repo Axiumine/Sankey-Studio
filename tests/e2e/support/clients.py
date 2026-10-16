@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """HTTP clients for the live server, plus multipart and "fetch from the page" helpers.
 
 Three ``httpx.Client`` flavours (the ``api`` / ``foreign`` / ``bare`` fixtures), all bound to one

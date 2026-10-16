@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Every line the gate prints on a refusal or a failure (templates for ``str.format``)."""
 
 from __future__ import annotations

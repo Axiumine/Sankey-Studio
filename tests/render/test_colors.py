@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``ColorMap``: slots, overrides, ``has_hue``, and the compare-view ranking."""
 
 from __future__ import annotations

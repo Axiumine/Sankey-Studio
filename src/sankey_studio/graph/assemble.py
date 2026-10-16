@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Step 6: split the surviving pairs by category into parallel links and build the graph."""
 
 from __future__ import annotations

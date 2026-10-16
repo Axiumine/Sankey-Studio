@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``editor/source/overlays.js``: the graph-only edits a source change may drop.
 
 ``OVERLAYS`` is the one list of the edits that live in the graph, not in its data

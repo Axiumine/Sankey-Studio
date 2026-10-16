@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The tables of the Mongo guard scenarios: unsafe sources and refused inspect requests.
 
 Pure data (no I/O). ``UnsafeCase.build(database)`` returns the overrides of a ``world.source()``

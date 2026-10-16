@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E A.5 (library): create, duplicate, edit with the revision check, and delete."""
 
 from __future__ import annotations

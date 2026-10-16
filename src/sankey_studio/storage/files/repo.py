@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``FileGraphRepository``: one atomically written ``<id>.json`` per graph.
 
 The revision compare and the write run inside ONE critical section on the lock of the (resolved)

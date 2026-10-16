@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """scripts/mongo_wait.py: wait until the project MongoDB answers a ping (no real server here)."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Listing stays cheap: a thousand graphs are parsed once, not on every request."""
 
 from __future__ import annotations

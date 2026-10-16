@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Policy: the comments and settings that weaken a quality gate are rationed and justified.
 
 Rules (SPEC section 7, QUALITY.md sections 2 and 4), enforced over ``src``, ``tests`` and

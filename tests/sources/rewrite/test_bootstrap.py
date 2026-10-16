@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """An empty text becomes a one-entry document in the format of the spec."""
 
 from __future__ import annotations

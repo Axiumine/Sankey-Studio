@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``support.rs_env``: where the replica-set suite finds its URI (environment, else dotenv file).
 
 Only ``SANKEY_TEST_MONGO_RS_URI`` is taken from the file; another key (the Qodana token lives

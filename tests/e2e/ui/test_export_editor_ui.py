@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """B4, part 2: downloads from the editor (the draft, not a saved graph).
 
 The editor exports the draft: ``graph`` until the Name field has text, then the name (``-donut``

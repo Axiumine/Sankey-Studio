@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Connection names that reach ``require_connection`` from raw query parameters.
 
 ``CONNECTION_NAME_RE`` ends in ``$``, which also matches before a trailing line feed, so a

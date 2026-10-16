@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Skipped array elements under hostile input: chunk edges, the entry cap and a bounded buffer."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """B3, part 3: the entries table pages through every link (100 rows a page, server paged).
 
 250 links are three pages (100, 100 and 50: a count that is not a multiple of the page size, so a

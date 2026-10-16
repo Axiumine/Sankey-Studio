@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Versioned URLs of the files under ``web/static``: the cache-busting half of the cache policy.
 
 ``UncachedStaticFiles`` answers ``Cache-Control: no-store``, but a browser that stored a file

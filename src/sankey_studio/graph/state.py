@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The mutable intermediate columns of ``build_graph``, passed between the build steps.
 
 One small object instead of a long argument list (code cap: 4 parameters). Entries and pairs

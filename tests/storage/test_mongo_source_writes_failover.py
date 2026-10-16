@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Source write-back on a cluster: a refused update, and a failover in the middle of a write.
 
 A refused ``update_many`` (a collection validator, a shard key that may not change) is the answer

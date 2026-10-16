@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.12, hostile collection names on every place the library shows them.
 
 A collection name may hold markup, script text, a direction override and a control character (the

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``storage.atomic``: short writes and reads, and every descriptor closed exactly once."""
 
 from __future__ import annotations

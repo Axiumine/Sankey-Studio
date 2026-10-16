@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """F2: click a bar of the Sankey to add a flow at that node.
 
 A click on a node (never a link) opens the "Add a flow" dialog with the node prefilled by its role

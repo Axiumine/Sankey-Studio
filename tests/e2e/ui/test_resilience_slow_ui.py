@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.11, a slow server: the loading state is shown and a superseded answer never wins.
 
 Requests are held inside the page (``support.ui_b_hold``), so every test controls exactly when the

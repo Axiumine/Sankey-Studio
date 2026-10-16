@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Query models: defaults, exact bounds on both sides, blank filters and the domain options."""
 
 from __future__ import annotations

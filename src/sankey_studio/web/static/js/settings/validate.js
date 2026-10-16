@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Early checks of the settings draft, so the form can say what is wrong before a request is made.
  * They mirror the server rules (API.md section 2.4); the server stays the authority and its 422

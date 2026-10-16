@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Fits a server figure to the page. The page already names the graph (the heading, or the card
  * header on the compare page), so the figure's own title is dropped: it repeats the name and, on a

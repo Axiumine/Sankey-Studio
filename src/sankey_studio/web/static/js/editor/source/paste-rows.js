@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The "Paste rows" dialog of the Manual tab: text copied from a spreadsheet or a CSV file becomes
  * rows of the links table (source, target, value and an optional category).

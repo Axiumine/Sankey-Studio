@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Each early refusal of the middleware answers with the very ``receive`` and ``send`` it got."""
 
 from __future__ import annotations

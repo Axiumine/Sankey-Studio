@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """HTML and JSON exports of a figure."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``/static``: plotly.js comes from the installed plotly package, cached, never from a CDN."""
 
 from __future__ import annotations

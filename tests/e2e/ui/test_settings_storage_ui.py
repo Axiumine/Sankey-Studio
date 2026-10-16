@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.8, the storage backend: files <-> MongoDB, with and without copying the graphs.
 
 The Mongo behind the server is mongomock; ``server.mongo`` shows what really landed in it. A fresh

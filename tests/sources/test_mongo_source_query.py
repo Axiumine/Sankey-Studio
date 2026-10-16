@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``mongo_source``: query construction is pure, so every rule is tested without a client."""
 
 from __future__ import annotations

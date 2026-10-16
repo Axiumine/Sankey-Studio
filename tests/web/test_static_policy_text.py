@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Bidirectional controls, the theme bootstrap and the scrollbar rules of the shared frontend.
 
 ``static/js/core/text.js`` removes bidirectional embeddings, overrides and isolates from every

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Tests for the mutation-score gate (scripts/mutation_gate.py).
 
 The meta files are written with mutmut's own ``SourceFileMutationData.save()`` and the exit-code

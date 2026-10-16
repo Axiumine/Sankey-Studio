@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E A.4 (exports, real Chrome): exports in a row and in parallel, and no browser left behind."""
 
 from __future__ import annotations

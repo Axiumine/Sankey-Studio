@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The import mode of a bundle is a closed set: any other word is refused up front."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """JSON rewriting: arrays are re-formatted (and say so), NDJSON is edited in place."""
 
 from __future__ import annotations

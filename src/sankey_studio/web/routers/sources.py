@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Managed source files and format detection (prefix ``/api/v1/sources``).
 
 * ``GET /files`` -> ``[{"name", "size", "modified"}, ...]``: allowed regular files below the

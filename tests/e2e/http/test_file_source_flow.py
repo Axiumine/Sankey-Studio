@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E A.2 (file source): upload, list, preview, a graph that reads the file, and the render."""
 
 from __future__ import annotations

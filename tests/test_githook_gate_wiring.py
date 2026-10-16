@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The hook shims and the Makefile targets the gate relies on. Nothing here runs a hook or a check.
 
 The shims are only read (and syntax-checked with ``bash -n``); the Makefile is only asked what it

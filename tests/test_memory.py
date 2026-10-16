@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Memory budgets (pytest-memray): ``make memray`` = ``pytest -m memory --memray``.
 
 pytest-memray measures only the body of a test function, so every input (the links, the CSV)

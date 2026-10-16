@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Waits on the DOM signals of the app (UI.md section 3). Never ``networkidle``, never a sleep.
 
 All of them are Playwright ``expect`` assertions, so they retry until the (suite-wide) expect

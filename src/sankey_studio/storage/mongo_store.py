@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``MongoGraphRepository``: saved graphs in the collection ``sankey_studio_graphs``.
 
 With ``mongo_folder_store.py`` (the library folders, collection ``sankey_studio_collections``)

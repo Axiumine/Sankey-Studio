@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E A.4 (exports, real Chrome): SVG and PNG of the Sankey and the donut, drawn by the server.
 
 Slow tests: each image costs one Chrome start (about a second). They skip when the server has no

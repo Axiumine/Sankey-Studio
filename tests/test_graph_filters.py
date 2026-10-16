@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``build_graph``: hide_nodes, min_link_value and top_links (category-agnostic pair totals)."""
 
 from __future__ import annotations

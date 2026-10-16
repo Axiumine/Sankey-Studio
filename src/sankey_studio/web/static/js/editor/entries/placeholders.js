@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * What the entries list shows instead of the table: loading, "no data yet" and "nothing matches".
  *

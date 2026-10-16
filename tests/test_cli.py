@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``sankey-studio serve``: argument parsing and the configuration it builds."""
 
 from __future__ import annotations

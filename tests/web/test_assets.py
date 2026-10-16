@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``web/assets.py``: the ``/static/v-<digest>/`` prefix of every static link a page carries."""
 
 from __future__ import annotations

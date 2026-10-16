@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``write_edit``: write the edit to the file or the collection the person agreed to.
 
 The browser calls ``plan`` first; ``write`` checks everything again, because the request is the

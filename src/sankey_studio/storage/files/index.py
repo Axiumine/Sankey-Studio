@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """In-memory listing index of one graphs directory, validated by ``stat`` on every use.
 
 Listing 1000 graphs must not parse 1000 JSON files per request. The index keeps one

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Real browser downloads and the image formats the exports produce (UI-A suites).
 
 ``download(page, button)``  - click ``button`` and return the file the browser saved

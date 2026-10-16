@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Hover templates: their literal text, and the sentence a hover shows for a known node and link.
 
 The templates only hold ``%{customdata[i]}`` slots; this fills the slots the way plotly.js does,

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``content_disposition`` and ``download_response``: the Content-Disposition table and headers."""
 
 from __future__ import annotations

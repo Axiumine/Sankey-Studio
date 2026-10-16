@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """POST /api/v1/graphs/{id}/duplicate: save a stored graph again as a copy."""
 
 from __future__ import annotations

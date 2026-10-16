@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """A graph called ``<script>alert(1)</script>``: escaped in every page, embedded via tojson only."""
 
 from __future__ import annotations

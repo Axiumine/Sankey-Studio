@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Contract tests: ``AppSettings`` limits and the secret handling of ``MongoConnection``."""
 
 from __future__ import annotations

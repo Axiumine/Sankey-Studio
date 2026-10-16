@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md A.8, part 2: the response headers of the live server, on pages AND on the API.
 
 Every answer carries the CSP, ``nosniff``, ``Referrer-Policy`` and ``Cross-Origin-Resource-Policy``;

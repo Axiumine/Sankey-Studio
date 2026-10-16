@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``GraphDefinition.folder_id`` in both graph repositories: create, update, put, summaries."""
 
 from __future__ import annotations

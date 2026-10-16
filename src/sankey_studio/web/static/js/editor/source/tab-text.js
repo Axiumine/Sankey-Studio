@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Tab "Text file": read a file that is already in the sources folder of the server
  * (`{type: "text", origin: "file", path}`). New files are added on the Upload tab.

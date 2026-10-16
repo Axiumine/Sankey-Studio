@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The CSRF matrix of SPEC section 6: which unsafe requests pass, 403 or 415, and the GET rule."""
 
 from __future__ import annotations

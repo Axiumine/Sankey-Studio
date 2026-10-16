@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``wait_until``: bounded polling for conditions that are not in a browser.
 
 Browser state is waited for with Playwright's ``expect`` / auto-wait (see ``uiwait``), never with

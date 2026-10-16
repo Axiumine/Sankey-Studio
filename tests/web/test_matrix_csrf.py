@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The CSRF matrix of SPEC section 6 against the FULL app, for every unsafe route of its table.
 
 Every case below runs once per ``(method, path)`` in ``UNSAFE`` (20 routes), so a route added to

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """JSON adapter: one array of entry objects, or NDJSON (any run of objects).
 
 Array: every element is an item, the text is re-serialised (``indent=2``, ``ensure_ascii=False``)

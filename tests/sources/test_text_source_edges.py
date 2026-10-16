@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``TextDataSource`` internals: the label of a file source and a sample that cannot decode."""
 
 from __future__ import annotations

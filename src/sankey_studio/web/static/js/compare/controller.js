@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The compare page: a responsive grid of up to 12 cards (one per graph), all drawn with the same
  * category colours.

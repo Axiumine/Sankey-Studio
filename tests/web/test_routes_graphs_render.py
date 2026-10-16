@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """GET /api/v1/graphs/{id}/render: a stored graph, drawn."""
 
 from __future__ import annotations

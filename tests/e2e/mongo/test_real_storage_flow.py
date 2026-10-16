@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md section C, part 2: the storage-backend switch of A.7 against a REAL MongoDB.
 
 Skipped unless ``SANKEY_TEST_MONGO_URI`` is set (``make e2e-mongo``). The scenarios are the ones

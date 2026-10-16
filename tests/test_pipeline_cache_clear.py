@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``ResultCache.clear`` / ``ClearableCache``: dropping every cached graph after a source write."""
 
 from __future__ import annotations

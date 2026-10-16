@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Physical lines of a text, byte for byte.
 
 The parsers read through universal newlines (``\\r\\n``, ``\\r`` and ``\\n`` end a line) and keep

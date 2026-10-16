@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """One error envelope for every failure: ``{"error": {"code", "message", "details"}}``.
 
 * ``SankeyError`` subclasses answer with their own ``status_code`` and ``code``.

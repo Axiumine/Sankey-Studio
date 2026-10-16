@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """JSON-safe, size-bounded copies of MongoDB documents for the editor's sample view.
 
 The result goes to the browser, so it must be plain JSON and small whatever the document holds:

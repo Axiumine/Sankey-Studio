@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Fixtures of the real-MongoDB suite (E2E.md section C).
 
 Nothing here runs without ``SANKEY_TEST_MONGO_URI``: ``real_mongo_uri`` (``tests/e2e/conftest.py``)

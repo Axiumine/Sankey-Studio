@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The donut figure (value per category), built by hand as a plain dict (no ``plotly`` import)."""
 
 from __future__ import annotations

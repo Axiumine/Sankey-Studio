@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``with_extra_links``: the graph-only entries come after the rows of the source."""
 
 from __future__ import annotations

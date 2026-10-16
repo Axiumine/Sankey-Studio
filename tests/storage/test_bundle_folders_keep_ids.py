@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``keep_ids`` imports store the folders of a bundle verbatim (the library-level mode)."""
 
 from __future__ import annotations

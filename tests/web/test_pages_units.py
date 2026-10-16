@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The value types, the template environment and the health model of ``routers/pages.py``.
 
 The dataclasses are immutable values without a ``__dict__``, ``PageView`` defaults to the common

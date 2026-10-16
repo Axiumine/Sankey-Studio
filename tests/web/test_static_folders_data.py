@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``library/folders-data.js buildIndex``: the lookups over the list of collections.
 
 The index is pure, so it runs under ``node`` against the real module. It must answer for ANY list

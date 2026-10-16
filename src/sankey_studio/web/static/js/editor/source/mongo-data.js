@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The three read-only MongoDB discovery calls the Mongo tab uses (API.md section 2.5), with a
  * small cache per connection so switching tabs does not ask the server again.

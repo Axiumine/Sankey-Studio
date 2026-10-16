@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Edges a mutation sweep of the storage layer found unpinned: texts and interrupt cleanup."""
 
 from __future__ import annotations

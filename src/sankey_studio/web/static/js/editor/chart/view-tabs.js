@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The Sankey | Donut switch of the chart panel (WAI-ARIA tabs: roving tabindex, arrow keys, Home
  * and End move AND activate). Unlike core/tabs.js the Donut tab really leaves the DOM while there

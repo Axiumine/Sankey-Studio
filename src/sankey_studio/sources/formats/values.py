@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Number and name cleaning shared by every text format.
 
 A row problem is reported with ``RowError``; its message says WHAT is wrong, never the cell

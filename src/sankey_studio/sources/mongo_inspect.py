@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Read-only MongoDB introspection that powers the editor's Mongo form.
 
 The web layer passes query parameters straight through, so every function validates its raw

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Request and response models of the web API (``from sankey_studio.web.schemas import ...``).
 
 ``queries`` holds the query-string models, ``forms`` the multipart form, ``folders`` the library

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * A menu button (WAI-ARIA "menu button" pattern) built on core/popover.js.
  *

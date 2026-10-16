@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The viewer page: header, numbers, warnings and the chart card of one saved graph. The export
  * panel lives in a popover that a download icon in the chart card opens (export-menu.js).

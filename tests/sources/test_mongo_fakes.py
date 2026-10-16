@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Fakes for the MongoDB source tests (no tests here; the file name keeps it in MONGO's paths).
 
 ``FakeMongo`` plays client, database and collection at once, records every call with its exact

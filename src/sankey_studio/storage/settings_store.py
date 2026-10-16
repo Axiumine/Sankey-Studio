@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``settings.json``: the one place that reads and writes real Mongo URIs.
 
 ``dump_settings`` / ``load_settings`` are the ONLY code that turns the ``SecretStr`` of a

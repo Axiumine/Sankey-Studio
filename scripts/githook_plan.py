@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Pure planner of the git-hook gate: which checks a hook or a pushed ref requires. No I/O.
 
 Checks (the units that get a stamp), in the order they run:

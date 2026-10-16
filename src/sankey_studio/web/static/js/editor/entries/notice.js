@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The notice above the entries rows when the last refresh failed ("The rows below are the last ones
  * that loaded").

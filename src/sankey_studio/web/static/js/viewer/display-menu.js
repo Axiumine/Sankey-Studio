@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The display menu of the viewer's chart card: an icon at the right of the tab row that opens a
  * small panel of switches for what the charts print on themselves.

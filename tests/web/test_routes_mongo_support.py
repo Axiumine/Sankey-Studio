@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Helpers of ``tests/web/test_routes_mongo*.py`` (no tests here).
 
 ``build_rig`` serves the Mongo router over a ``FakeMongo`` (the recording fake of the MONGO tests:

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md A.8, part 3: what the server says when something goes wrong.
 
 404 and 500 bodies hold no stack trace, source file name or file-system path; an error body never

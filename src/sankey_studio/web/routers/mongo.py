@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Read-only MongoDB inspection for the editor's Mongo form (prefix ``/api/v1/mongo``).
 
 * ``GET /{name}/databases`` -> ``["db", ...]`` (``admin``, ``local`` and ``config`` are never

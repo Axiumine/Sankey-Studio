@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * Registers the "chart" panel (Sankey | Donut views, legend, category table, stats, warnings).
  * Import this module from the editor composer; it mounts into the container `data-panel="chart"`.

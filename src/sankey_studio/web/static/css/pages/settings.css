@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-only */
+/* Copyright (C) 2026 Giovanni Manzoni */
 /* Settings page (/settings). Tokens come from tokens.css, shared pieces (card, notice, badge, field,
    savebar, states) from base.css, components.css and layout.css. Only token variables here, no
    colour literals. Status colours appear on dots and icons next to ink text, never on the text. */

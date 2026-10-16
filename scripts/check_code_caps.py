@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Pre-commit check 1.1 - code caps, measured on the AST, ratcheted against a baseline.
 
 Caps (a value ABOVE the cap is a violation):

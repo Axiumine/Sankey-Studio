@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``merge_nodes``: alias chains, merged names and self-loops through merging."""
 
 from __future__ import annotations

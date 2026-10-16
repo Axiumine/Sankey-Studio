@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Security building blocks shared by the middleware, the error handlers and the routers.
 
 * ``HeaderPolicy`` / ``DEFAULT_POLICY``: the response headers every answer carries (the CSP of

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Body caps on every unsafe route of the FULL app: N bytes pass, N + 1 answer 413."""
 
 from __future__ import annotations

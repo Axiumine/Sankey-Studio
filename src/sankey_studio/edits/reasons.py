@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The fixed English sentence of every reason an edit stays in the graph.
 
 Sentences never hold cell text, file content, URIs or driver messages: the browser shows them

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``DirectoryIndex``: stat-validated listing cache of one graphs directory."""
 
 from __future__ import annotations

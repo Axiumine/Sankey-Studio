@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``mongo``: driver options, cache hits, invalidation, ``ping`` and default databases."""
 
 from __future__ import annotations

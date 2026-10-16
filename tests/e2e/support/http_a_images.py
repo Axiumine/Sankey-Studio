@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Read exported images without an imaging library: PNG header and pixels, SVG text.
 
 ``png_info`` checks the magic and the IHDR chunk. ``png_pixels`` decodes an 8-bit RGBA PNG (what

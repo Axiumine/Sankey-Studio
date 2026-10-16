@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Real Chrome exports (slow; skipped when Chrome is not available)."""
 
 from __future__ import annotations

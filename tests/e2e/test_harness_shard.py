@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Self-tests of the shards ``make e2e`` runs in parallel (``support.shard`` and its conftest hook).
 
 The promise: every e2e test runs in exactly one shard, a shard owns whole modules (module-scoped

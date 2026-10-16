@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Contract tests for ``storage.folders_base``: ids, scopes, stored records and the Protocol."""
 
 from __future__ import annotations

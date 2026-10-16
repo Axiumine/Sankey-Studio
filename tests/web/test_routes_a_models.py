@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The small pydantic models of the settings, sources and mongo routers refuse unknown fields.
 
 Their ``model_config`` is only reachable by building a model directly: a response is never

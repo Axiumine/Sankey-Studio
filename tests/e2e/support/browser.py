@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Chrome launch and browser-context creation (plain Playwright sync API, no pytest-playwright).
 
 ``launch_browser(pw)`` tries the system Chrome first (``channel="chrome"``), then the Chromium that

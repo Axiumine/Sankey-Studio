@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Giovanni Manzoni
 /**
  * The facts under the chart: stats strip, HTML legend, the category table (the donut as numbers,
  * obligatory for light-mode contrast) and the warnings list.

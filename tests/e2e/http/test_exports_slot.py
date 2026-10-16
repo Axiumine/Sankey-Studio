@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E A.4 (exports, real Chrome): one image export at a time, the others are told to come back.
 
 Chrome is heavy, so the server runs ONE image export and answers the next ones with

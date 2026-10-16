@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Data-source contract. Concrete sources live in ``text.py`` and ``mongo_source.py``;
 ``sources/__init__.py`` exposes ``open_source``.
 

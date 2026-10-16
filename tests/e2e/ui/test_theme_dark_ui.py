@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """E2E.md B.9, dark mode: tokens, chart surfaces and the palette, plus screenshots for a human.
 
 The truth about colours lives in ``sankey_studio.render.palette``. The page's CSS custom properties

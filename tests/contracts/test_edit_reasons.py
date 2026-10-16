@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``edits.reasons``: one fixed sentence for every reason that is not silent."""
 
 from __future__ import annotations

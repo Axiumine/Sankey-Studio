@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Colour tokens: constants and lookups only (values exactly as in the data-viz palette).
 
 The categorical palette keeps its fixed order (the order is the colour-blind-safety mechanism).

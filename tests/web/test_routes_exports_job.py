@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """``ExportJob``, the value that carries one export through the router: frozen and slotted."""
 
 from __future__ import annotations

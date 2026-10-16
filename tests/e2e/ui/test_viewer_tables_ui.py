@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The viewer's tables behind a link: "Table view of the links" and "Table view of the categories".
 
 Both charts keep their HTML twin out of sight until the person opens it: the Sankey tab has the

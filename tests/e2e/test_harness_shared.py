@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """The module-scoped server recipe of ``conftest.py``: one server for every test of this module.
 
 Overriding ``live_server`` with ``module_server`` makes ``api``, ``foreign``, ``bare`` and ``page``

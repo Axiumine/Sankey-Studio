@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Running checks: the Gate context, one CheckRun, the Mongo session, ``ensure_checks``."""
 
 from __future__ import annotations

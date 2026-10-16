@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# Copyright (C) 2026 Giovanni Manzoni
 """Pins that keep the colours of a chart when a row reorder moves the colour slots.
 
 ``SankeyGraph.node_color_slot`` is the first-appearance id of a node and the category slots are
