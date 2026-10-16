@@ -20,6 +20,11 @@ if [ -z "${QODANA_TOKEN:-}" ]; then
   exit 2
 fi
 export QODANA_TOKEN
+# `qodana.sh --check` (make preflight-qodana): the token is there, which is all the hook gate asks
+# before it starts the long checks.
+if [ "${1:-}" = "--check" ]; then
+  exit 0
+fi
 
 RESULTS=reports/qodana
 SCRATCH=.qodana

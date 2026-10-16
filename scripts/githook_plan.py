@@ -15,6 +15,11 @@ Checks (the units that get a stamp), in the order they run:
 * ``qodana``     a fresh ``make cov`` and then ``make qodana`` (before mutation: it fails sooner)
 * ``mutation``   ``make mutate`` then ``make mutate-gate`` as one unit (never a stale mutants/)
 
+Some checks need something from the machine that a 30 minute run should not discover at the end:
+``Check.needs`` names the quick probes (``PREFLIGHTS``: Docker answers, ``QODANA_TOKEN`` is set,
+the replica set answers) that run, in seconds and unstamped, before the first long check of a
+run. A failing probe refuses the push or the commit at once.
+
 Tiers are cumulative groups of checks (``release`` is everything):
 
 * ``commit``   fast
@@ -28,6 +33,7 @@ with ``refs/tags/``, and the ``push`` tier otherwise. Deletions need nothing.
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import TYPE_CHECKING, Final
@@ -74,6 +80,7 @@ class Check:
     dated: bool = False
     mongo: bool = False
     offline_guard: bool = False
+    needs: tuple[str, ...] = ()
 
 
 def make(target: str, *, junit: bool = False, allow_skips: tuple[str, ...] = ()) -> Step:
@@ -82,6 +89,22 @@ def make(target: str, *, junit: bool = False, allow_skips: tuple[str, ...] = ())
 
 #: The 8 mongo-marked unit tests skip inside ``cov`` without the URI; ``e2e-mongo`` runs them.
 COV_STEP: Final = make("cov", junit=True, allow_skips=(MONGO_ENV,))
+
+DOCKER_PROBE: Final = "preflight-docker"
+QODANA_PROBE: Final = "preflight-qodana"
+RS_PROBE: Final = "preflight-rs"
+
+#: The quick probes of the machine (never stamped, never part of a tier): ``make <name>``.
+#: ``preflight-rs`` runs one cheap replica-set test, so a missing URI is a skip and fails.
+PREFLIGHTS: Final[dict[str, Check]] = {
+    check.name: check
+    for check in (
+        Check(DOCKER_PROBE, (make(DOCKER_PROBE),)),
+        Check(QODANA_PROBE, (make(QODANA_PROBE),)),
+        Check(RS_PROBE, (make(RS_PROBE, junit=True),)),
+    )
+}
+PREFLIGHT_ORDER: Final = tuple(PREFLIGHTS)
 
 CHECKS: Final[dict[str, Check]] = {
     check.name: check
@@ -95,12 +118,13 @@ CHECKS: Final[dict[str, Check]] = {
             (make("semgrep-test"), make("semgrep"), make("trivy")),
             dated=True,
             offline_guard=True,
+            needs=(DOCKER_PROBE,),
         ),
-        Check("e2e-mongo", (make("e2e-mongo", junit=True),), mongo=True),
-        # No Docker: the replica set is the user's own. Without its URI the tests skip, and a skip
+        Check("e2e-mongo", (make("e2e-mongo", junit=True),), mongo=True, needs=(DOCKER_PROBE,)),
+        # The replica set is the user's own (no Docker). Without its URI the tests skip, and a skip
         # fails the check; an unreachable set fails the tests. Either way the push is refused.
-        Check("e2e-mongo-rs", (make("e2e-mongo-rs", junit=True),)),
-        Check("qodana", (COV_STEP, make("qodana"))),
+        Check("e2e-mongo-rs", (make("e2e-mongo-rs", junit=True),), needs=(RS_PROBE,)),
+        Check("qodana", (COV_STEP, make("qodana")), needs=(DOCKER_PROBE, QODANA_PROBE)),
         Check("mutation", (make("mutate"), make("mutate-gate"))),
     )
 }
@@ -133,9 +157,38 @@ def resolve_names(names: Iterable[str]) -> tuple[str, ...]:
     return tuple(name for name in CHECK_ORDER if name in wanted)
 
 
-def stamp_key(check: Check, tree: str, today: date) -> str:
-    """File name of a stamp: the tree hash, plus the UTC date for a dated check."""
-    return f"{tree}.{today:%Y%m%d}" if check.dated else tree
+#: Files no check reads, so a change to them leaves every stamp valid: Markdown anywhere but
+#: ``src/`` and the images under ``docs/``. No test or script reads either (see docs/quality.md,
+#: "Git hooks"); one that starts to must take its file type out of this rule.
+INERT_IMAGE_SUFFIXES: Final = (".png", ".jpg", ".jpeg", ".gif", ".webp")
+INERT_IMAGE_DIR: Final = "docs/"
+SHIPPED_DIR: Final = "src/"
+
+
+def is_inert(path: str) -> bool:
+    """True for a tracked file that no check reads: Markdown outside ``src/``, ``docs/`` images."""
+    lowered = path.lower()
+    if lowered.startswith(SHIPPED_DIR):
+        return False
+    return lowered.endswith(".md") or (
+        lowered.startswith(INERT_IMAGE_DIR) and lowered.endswith(INERT_IMAGE_SUFFIXES)
+    )
+
+
+def scoped_key(entries: Iterable[str]) -> str:
+    """The stamp key of a tree, from its ``git ls-tree -r -z`` entries without the inert files.
+
+    ``<mode> <type> <sha>\t<path>`` per entry. Two trees that differ only in inert files (a new
+    screenshot, an edited README) have the same key, so the stamps of the first count for the
+    second; any other change, even a mode, gives another key.
+    """
+    kept = sorted(entry for entry in entries if entry and not is_inert(entry.partition("\t")[2]))
+    return hashlib.sha256("\n".join(kept).encode()).hexdigest()
+
+
+def stamp_key(check: Check, key: str, today: date) -> str:
+    """File name of a stamp: the scoped key of the tree, plus the UTC date for a dated check."""
+    return f"{key}.{today:%Y%m%d}" if check.dated else key
 
 
 def is_zero_sha(sha: str) -> bool:

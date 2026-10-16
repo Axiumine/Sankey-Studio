@@ -41,6 +41,10 @@ MOVED: Final = (
 NOT_STAMPED: Final = (
     "gate: push refused: {check} passed but left no stamp for tree {tree}; run the push again"
 )
+PREFLIGHT_REFUSED: Final = (
+    "gate: push refused: {probe} failed (exit {code}); no check was started. "
+    "Fix what it reports and push again"
+)
 COMMIT_REFUSED: Final = "gate: commit refused: {check} failed (exit {code})"
 COMMIT_NOT_RUN: Final = "gate: commit refused: {check} did not run (see the line above)"
 MESSAGE_BAD: Final = "gate: commit message of {sha} is refused by .githooks/commit-msg:\n{output}"

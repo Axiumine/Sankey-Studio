@@ -331,4 +331,5 @@ def test_the_push_shows_progress_for_each_check_like_any_other_run(rig: Rig) -> 
     go(rig, text)
     tree = rig.tree()
     assert "gate: fast: running" in lines_of(rig)
-    assert f"gate: e2e: ok in 6.0s (stamp {rig.gate.store.path('e2e', tree)})" in lines_of(rig)
+    stamp = rig.gate.store.path("e2e", rig.gate.scoped(tree))
+    assert f"gate: e2e: ok in 6.0s (stamp {stamp})" in lines_of(rig)

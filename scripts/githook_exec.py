@@ -18,7 +18,16 @@ from scripts import githook_messages as msg
 from scripts.githook_git import run_commit_msg_hook
 from scripts.githook_junit import check_reports
 from scripts.githook_parent import invoked_by_dry_run_push
-from scripts.githook_plan import CHECKS, MONGO_ENV, MONGO_URI, Check, Step, stamp_key
+from scripts.githook_plan import (
+    CHECKS,
+    MONGO_ENV,
+    MONGO_URI,
+    PREFLIGHT_ORDER,
+    PREFLIGHTS,
+    Check,
+    Step,
+    stamp_key,
+)
 from scripts.githook_runner import Command, Runner, build_child_env
 from scripts.githook_stamps import GateBusyError, GateLock, Stamp, StampStore, StepTiming
 
@@ -54,6 +63,7 @@ class Gate:
     label: str = "gate"
     check_message: Callable[[Repo, str], tuple[int, str]] = run_commit_msg_hook
     git_dry_run: Callable[[], bool] = invoked_by_dry_run_push
+    _scoped: dict[str, str] = field(default_factory=dict, init=False, repr=False)
 
     @property
     def store(self) -> StampStore:
@@ -85,8 +95,17 @@ class Gate:
     def today(self) -> date:
         return self.clock().astimezone(UTC).date()
 
+    def scoped(self, tree: str) -> str:
+        """The key of ``tree`` without the files no check reads (asked of git once per tree)."""
+        if tree not in self._scoped:
+            self._scoped[tree] = self.repo.scoped_tree(tree)
+        return self._scoped[tree]
+
+    def key_of(self, check: Check, tree: str) -> str:
+        return stamp_key(check, self.scoped(tree), self.today())
+
     def key_for(self, name: str, tree: str) -> str:
-        return stamp_key(CHECKS[name], tree, self.today())
+        return self.key_of(CHECKS[name], tree)
 
     def stamp_of(self, name: str, tree: str) -> Stamp | None:
         return self.store.read(name, self.key_for(name, tree))
@@ -173,7 +192,7 @@ class CheckRun:
         self.gate = gate
         self.check = check
         self.target = target
-        self.key = stamp_key(check, target.tree, gate.today())
+        self.key = gate.key_of(check, target.tree)
         self.log_path = gate.log_dir / f"{check.name}.log"
         self.junit_root = gate.log_dir / f"{check.name}.junit"
         self.timings: list[StepTiming] = []
@@ -291,6 +310,30 @@ def offline_refusal(gate: Gate, todo: Sequence[str]) -> str | None:
     return msg.OFFLINE.format(check=guarded[0], name=name)
 
 
+def preflight_names(names: Sequence[str]) -> list[str]:
+    """The probes the checks in ``names`` need, each once, in the fixed order of ``PREFLIGHTS``."""
+    wanted = {probe for name in names for probe in CHECKS[name].needs}
+    return [probe for probe in PREFLIGHT_ORDER if probe in wanted]
+
+
+def run_preflight(gate: Gate, names: Sequence[str], target: Target) -> tuple[int, str]:
+    """Run the probes of ``names`` before any long check.
+
+    Returns ``(0, "")``, else the failing exit code and the probe.
+
+    A probe says something about this machine and not about the tree, so it is never stamped.
+    """
+    probes = preflight_names(names)
+    if probes:
+        gate.say(f"gate: preflight: {', '.join(probes)} (seconds, before any long check)")
+    machine = target._replace(stampable=False, why_not_stamped="a probe of this machine")
+    for probe in probes:
+        code = CheckRun(gate, PREFLIGHTS[probe], machine).execute()
+        if code != 0:
+            return code, probe
+    return 0, ""
+
+
 def ensure_checks(gate: Gate, names: Sequence[str], target: Target) -> Outcome:
     """Run the checks without a stamp for ``target`` one at a time; stop at the first failure."""
     todo = missing_checks(gate, names, target)
@@ -313,6 +356,9 @@ def ensure_checks(gate: Gate, names: Sequence[str], target: Target) -> Outcome:
 
 
 def run_todo(gate: Gate, todo: Sequence[str], target: Target) -> Outcome:
+    code, probe = run_preflight(gate, todo, target)
+    if code != 0:
+        return Outcome(code, probe)
     for name in todo:
         if not target.force and gate.stamp_of(name, target.tree) is not None:
             gate.say(f"gate: {name}: stamped meanwhile, skipped")

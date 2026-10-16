@@ -1,12 +1,13 @@
 .PHONY: sync lint format typecheck caps test e2e e2e-serial e2e-mongo e2e-mongo-rs cov memray profile mutate mutate-gate \
         semgrep semgrep-test trivy qodana security gitnexus gitnexus-status hooks hooks-check \
-        gate-commit gate-push gate-main gate-release check ci full serve mongo-up mongo-down mongo-absent clean
+        gate-commit gate-push gate-main gate-release check ci full serve mongo-up mongo-down mongo-absent clean \
+        preflight-docker preflight-qodana preflight-rs
 
 PY := uv run
 SRC := src tests scripts
 
 # The git hooks run every check through scripts/githook_gate.py, which calls the targets below.
-# It appends JUNIT=<report path> to the pytest-based ones (test cov memray e2e e2e-mongo e2e-mongo-rs): the
+# It appends JUNIT=<report path> to the pytest-based ones (test cov memray e2e e2e-mongo e2e-mongo-rs preflight-rs): the
 # targets then also write a JUnit report, and the gate fails on any skipped test.
 JUNIT ?=
 junit = $(if $(JUNIT),--junitxml="$(JUNIT:.xml=$(1).xml)")
@@ -122,6 +123,22 @@ qodana:
 	scripts/qodana.sh
 
 security: semgrep-test semgrep trivy
+
+# ---------------------------------------------------------------- preflight probes
+# The hook gate runs these first, in seconds, so that a push of main or a tag that cannot pass is
+# refused before the 30 minute checks (scripts/githook_plan.py, Check.needs). Nothing is changed.
+# Docker answers: needed by security, e2e-mongo and qodana
+preflight-docker:
+	@docker info >/dev/null 2>&1 || { echo "Docker does not answer: security, e2e-mongo and qodana need it" >&2; exit 1; }
+
+# QODANA_TOKEN is set (the environment or the repo-root dotenv file, read by scripts/qodana.sh only)
+preflight-qodana:
+	scripts/qodana.sh --check
+
+# The replica set answers: one cheap test of the e2e-mongo-rs suite (a skipped test fails the probe)
+preflight-rs:
+	$(PY) pytest tests/e2e/mongo_rs/test_rs_topology.py::test_the_uri_reaches_a_replica_set_with_a_primary \
+	  -m "e2e and mongo_rs" -p no:cacheprovider $(call junit,)
 
 # ---------------------------------------------------------------- code intelligence + hooks
 gitnexus:

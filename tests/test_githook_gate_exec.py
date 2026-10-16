@@ -13,7 +13,7 @@ import pytest
 from scripts import githook_exec as ex
 from scripts.githook_git import Snapshot
 
-from tests.githook_support import Case, Rig, case_id, log_of, make_rig, run_check
+from tests.githook_support import Case, Rig, case_id, commit_file, log_of, make_rig, run_check
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -96,12 +96,12 @@ def test_today_is_the_utc_date_whatever_the_zone_of_the_clock(rig: Rig) -> None:
 
 def test_the_key_of_a_stamp_carries_the_utc_day_only_for_the_security_check(rig: Rig) -> None:
     tree = rig.tree()
-    assert rig.gate.key_for("fast", tree) == tree
-    assert rig.gate.key_for("cov", tree) == tree
-    assert rig.gate.key_for("security", tree) == f"{tree}.20261015"
+    assert rig.gate.key_for("fast", tree) == rig.gate.scoped(tree)
+    assert rig.gate.key_for("cov", tree) == rig.gate.scoped(tree)
+    assert rig.gate.key_for("security", tree) == f"{rig.gate.scoped(tree)}.20261015"
     rig.clock.advance(days=1)
-    assert rig.gate.key_for("security", tree) == f"{tree}.20261016"
-    assert rig.gate.key_for("fast", tree) == tree
+    assert rig.gate.key_for("security", tree) == f"{rig.gate.scoped(tree)}.20261016"
+    assert rig.gate.key_for("fast", tree) == rig.gate.scoped(tree)
 
 
 def test_stamp_of_finds_the_stamp_for_the_tree_and_for_the_day(rig: Rig) -> None:
@@ -111,10 +111,11 @@ def test_stamp_of_finds_the_stamp_for_the_tree_and_for_the_day(rig: Rig) -> None
     rig.stamp("fast", tree)
     found = rig.gate.stamp_of("security", tree)
     assert found is not None
-    assert (found.check, found.key) == ("security", f"{tree}.20261015")
+    assert (found.check, found.key) == ("security", f"{rig.gate.scoped(tree)}.20261015")
     assert rig.gate.stamp_of("fast", tree) is not None
     assert rig.gate.stamp_of("cov", tree) is None
-    assert rig.gate.stamp_of("fast", "f" * 40) is None
+    commit_file(rig.repo.root, "other.txt")  # another tree: nothing stamped for it
+    assert rig.gate.stamp_of("fast", rig.tree()) is None
     rig.clock.advance(hours=12)
     assert rig.gate.stamp_of("security", tree) is None
     assert rig.gate.stamp_of("fast", tree) is not None
@@ -192,7 +193,7 @@ def test_only_caps_runs_without_a_locked_uv(rig: Rig) -> None:
 
 def test_a_passing_check_prints_its_progress_and_the_stamp_path(rig: Rig) -> None:
     run_check(rig, "fast")
-    stamp = rig.gate.store.path("fast", rig.tree())
+    stamp = rig.gate.store.path("fast", rig.gate.scoped(rig.tree()))
     assert rig.text == (
         "gate: fast: running\n"
         "$ make lint\nfake output of lint\n"
@@ -207,7 +208,7 @@ def test_the_stamp_records_the_tree_the_time_and_every_step(rig: Rig) -> None:
     tree = rig.tree()
     stamp = rig.gate.stamp_of("fast", tree)
     assert stamp is not None
-    assert (stamp.check, stamp.key, stamp.tree) == ("fast", tree, tree)
+    assert (stamp.check, stamp.key, stamp.tree) == ("fast", rig.gate.scoped(tree), tree)
     assert stamp.finished_utc == "2026-10-15T12:30:00Z"
     assert stamp.duration_s == 14.0
     assert [(s.argv, s.exit_code, s.duration_s) for s in stamp.steps] == [
@@ -249,10 +250,11 @@ def test_the_first_failing_step_ends_the_check_with_its_code(rig: Rig) -> None:
 
 def test_a_failed_check_leaves_an_earlier_stamp_alone(rig: Rig) -> None:
     run_check(rig, "fast")
-    before = rig.gate.store.path("fast", rig.tree()).read_text(encoding="utf-8")
+    before = rig.gate.store.path("fast", rig.gate.scoped(rig.tree())).read_text(encoding="utf-8")
     rig.runner.codes["lint"] = 1
     assert run_check(rig, "fast") == 1
-    assert rig.gate.store.path("fast", rig.tree()).read_text(encoding="utf-8") == before
+    stamp = rig.gate.store.path("fast", rig.gate.scoped(rig.tree()))
+    assert stamp.read_text(encoding="utf-8") == before
 
 
 @pytest.mark.parametrize("code", [1, 2, 127, 130, 255])
