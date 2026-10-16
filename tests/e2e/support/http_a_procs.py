@@ -67,20 +67,37 @@ def descendants(root: int) -> set[int]:
     return found
 
 
+def _is_browser(pid: int) -> bool:
+    name = _name_of(pid)
+    return any(mark in name for mark in BROWSER_NAMES)
+
+
 def chrome_descendants() -> set[int]:
     """The pids of this process's descendants whose program name looks like a Chrome."""
-    names = {pid: _name_of(pid) for pid in descendants(os.getpid())}
-    return {pid for pid, name in names.items() if any(mark in name for mark in BROWSER_NAMES)}
+    return {pid for pid in descendants(os.getpid()) if _is_browser(pid)}
 
 
-def roots_among(pids: set[int], parent_of: Callable[[int], int | None]) -> set[int]:
-    """The members of ``pids`` whose parent is not a member: one per tree, i.e. per browser."""
-    return {pid for pid in pids if parent_of(pid) not in pids}
+def roots_among(
+    pids: set[int], parent_of: Callable[[int], int | None], below: set[int] | None = None
+) -> set[int]:
+    """The members of ``pids`` whose parent is not a member: one per tree, i.e. per browser.
+
+    With ``below`` (the processes we own), a parent outside it makes no root either: a helper
+    whose browser ended a moment ago was handed to init, and a process that ended meanwhile has no
+    parent. Neither is a browser of ours, but a scan that straddles the end of a browser sees them.
+    """
+    return {
+        pid
+        for pid in pids
+        if (parent := parent_of(pid)) not in pids and (below is None or parent in below)
+    }
 
 
 def browser_roots() -> set[int]:
     """The Chrome processes that no other Chrome process started: one per browser."""
-    return roots_among(chrome_descendants(), _parent_of)
+    tree = descendants(os.getpid())
+    browsers = {pid for pid in tree if _is_browser(pid)}
+    return roots_among(browsers, _parent_of, below=tree | {os.getpid()})
 
 
 class BrowserWatch:
