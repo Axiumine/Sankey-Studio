@@ -7,6 +7,7 @@ from typing import Any
 
 import pytest
 from pydantic import SecretStr
+from pymongo import ReadPreference
 
 import sankey_studio.mongo as mongo_module
 from sankey_studio.errors import SourceNotFoundError
@@ -15,13 +16,18 @@ from sankey_studio.mongo import MongoClients, default_factory
 
 
 class FakeClient:
-    """Records ``close()`` and the ``admin.command`` calls."""
+    """Records ``close()``, the ``admin.command`` calls and their keyword options."""
 
     def __init__(self, name: str = "") -> None:
         self.name = name
         self.closed = 0
         self.commands: list[tuple[Any, ...]] = []
-        self.admin = SimpleNamespace(command=lambda *args: self.commands.append(args))
+        self.command_options: list[dict[str, Any]] = []
+        self.admin = SimpleNamespace(command=self._command)
+
+    def _command(self, *args: Any, **options: Any) -> None:
+        self.commands.append(args)
+        self.command_options.append(options)
 
     def close(self) -> None:
         self.closed += 1
@@ -194,6 +200,15 @@ def test_ping_returns_the_round_trip_in_milliseconds(monkeypatch: pytest.MonkeyP
     monkeypatch.setattr(mongo_module, "time", Clock(10.0, 10.25))
     assert registry.clients.ping("a") == 250.0
     assert registry.made[0].commands == [("ping",)]
+
+
+def test_ping_prefers_the_primary_but_a_secondary_may_answer() -> None:
+    """During an election no primary exists; a cluster that serves reads is not 'unreachable'."""
+    registry = Registry("a")
+    registry.clients.ping("a")
+    assert registry.made[0].command_options == [
+        {"read_preference": ReadPreference.PRIMARY_PREFERRED}
+    ]
 
 
 def test_ping_pings_once_per_call_over_the_cached_client() -> None:

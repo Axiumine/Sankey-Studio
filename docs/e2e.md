@@ -30,8 +30,8 @@ push that has no stamp for the pushed tree ([quality.md](quality.md#git-hooks)).
 not part of `make check`, `make ci` or `make full`, which must pass without any database; the
 `pre-push` hook runs it only for `main` and tags, against its own Mongo.
 
-The suite has roughly 1,070 tests (`uv run pytest -m e2e tests/e2e --collect-only -q | tail -1`); about
-1,010 run in `make e2e` and about 60 need a real MongoDB.
+The suite has roughly 1,260 tests (`uv run pytest -m e2e tests/e2e --collect-only -q | tail -1`); about
+1,100 run in `make e2e`, about 60 need a real MongoDB and about 95 a real replica set.
 
 **`-m e2e` is needed by hand.** `pyproject.toml` runs pytest with `-m 'not memory and not e2e'`, so a
 plain `uv run pytest tests/e2e/ui/test_smoke_nav.py` deselects every test and runs nothing. Name the
@@ -43,6 +43,7 @@ The make targets already do.
 | `tests/e2e/http/` | `httpx` clients against the live server, no browser | The API as a client sees it, see the table below |
 | `tests/e2e/ui/` | Chrome through the `page` fixture | The pages as a person uses them, see the table below |
 | `tests/e2e/mongo/` | The HTTP flows again, against a real MongoDB | The Mongo and storage flows of `http/`, plus a safety net that refuses other projects' MongoDBs |
+| `tests/e2e/mongo_rs/` | The same flows against a real MongoDB replica set you run yourself (`make e2e-mongo-rs`) | The Mongo, storage, collection and write-back flows plus the topology itself; the `e2e-mongo-rs` check of the release gate, see [Replica set](#replica-set) |
 | `tests/e2e/test_harness_*.py` | The harness itself | Self-tests of the fixtures, the watcher, the shards and the failure artefacts, so a broken harness is never mistaken for a broken app |
 | `tests/e2e/support/` | none (no tests) | The harness code: servers, clients, builders, waits, watcher, page objects |
 
@@ -110,18 +111,19 @@ uv run pytest -m e2e tests/e2e/ui/test_smoke_nav.py                # one file (-
 uv run pytest -m e2e "tests/e2e/ui/test_smoke_nav.py::test_escape_closes_the_delete_dialog_and_the_chart_tabs_follow_the_arrow_keys"
 uv run pytest -m e2e tests/e2e -k "theme and dark" -x              # by keyword, stop at the first failure
 uv run pytest -m "e2e and not slow" tests/e2e/http                 # HTTP flows without the Chrome exports
-E2E_SHARD=2/5 uv run pytest tests/e2e -m "e2e and not mongo" -p no:cacheprovider   # one shard by hand
+E2E_SHARD=2/5 uv run pytest tests/e2e -m "e2e and not mongo and not mongo_rs" -p no:cacheprovider   # one shard by hand
 ```
 
 * **Marks.** Every test below `tests/e2e` gets the `e2e` mark from `tests/e2e/conftest.py`, which is why
   `make test` (`-m "not memory and not e2e"`, also the `addopts` default) leaves them out. `mongo` marks the tests that need a real
-  MongoDB and `slow` the ones that start Chrome on the server; `make e2e` runs `-m "e2e and not
-  mongo"`. Markers are strict, and `filterwarnings = error` applies here as everywhere.
+  MongoDB, `mongo_rs` a real replica set and `slow` the ones that start Chrome on the server;
+  `make e2e` runs `-m "e2e and not mongo and not mongo_rs"`. Markers are strict, and
+  `filterwarnings = error` applies here as everywhere.
 * **Shards.** `make e2e` runs `E2E_SHARDS` pytest processes at once, each with
   `E2E_SHARD=<n>/<count>`, and prints their output one shard at a time. A shard owns whole modules, so
   a module-scoped server starts once. The assignment is computed by every shard from the same
   collection (`tests/e2e/support/shard.py`): modules are weighed (a test that uses `page` or `open_page`,
-  or is marked `slow`, weighs 8, any other test 1, a `mongo` test 0), sorted by weight, and dealt out
+  or is marked `slow`, weighs 8, any other test 1, a `mongo` or `mongo_rs` test 0), sorted by weight, and dealt out
   biggest first, each to the lightest shard so far. Every test runs in exactly one shard
   (`test_harness_shard.py` proves it). A failing shard fails the target after the others finish. A bad
   `E2E_SHARD` (`0/5`, `6/5`, `x`) is a usage error, never an empty run. Running a file by hand without
@@ -167,9 +169,10 @@ make mongo-down
   bound to `127.0.0.1:27117` so it never collides with another MongoDB. Never point the suite at other
   projects' instances. `real_world` (`tests/e2e/support/http_b_world.py`) fails the test when the URI is a
   loopback address (`127.0.0.1`, `localhost`, `::1`) on port 27017, 27018 or 27019, and a URI without a
-  port means 27017. `tests/e2e/mongo/test_real_guards.py` proves the refusal; it needs no MongoDB, so
-  it runs in plain `make e2e`. A host that is not loopback is not judged: that is your deliberate
-  choice.
+  port means 27017. A seed list (`h1,h2,h3`) is judged member by member: one loopback member on
+  27017-27019 refuses the whole URI. `tests/e2e/mongo/test_real_guards.py` proves the refusal; it needs
+  no MongoDB, so it runs in plain `make e2e`. A host that is not loopback is not judged: that is your
+  deliberate choice.
 * **One unique database per test.** `sankey_e2e_<8 hex>` holds the seeded documents, the source
   collections and, when a scenario switches the storage backend, the graph store. It is dropped at
   teardown, after the server has stopped, even when the test failed. `MongoWorld.drop()` refuses a
@@ -197,6 +200,36 @@ make mongo-down
 * **A new real-Mongo test** carries `@pytest.mark.mongo` and takes `real_env` (from
   `tests/e2e/mongo/conftest.py`) or `real_mongo_uri`. Without the mark `tests/conftest.py` removes the
   variable and a tripwire refuses to construct a real `pymongo.MongoClient`.
+
+### Replica set
+
+The compose Mongo is one standalone node. `make e2e-mongo-rs` runs the very same scenarios
+(`tests/e2e/mongo_rs/test_rs_flows.py`) against a replica set you run yourself, plus
+`test_rs_topology.py`, which pins what only a cluster proves: the driver finds a replica set with a
+primary and at least two data-bearing members, and `MongoClients` (client cache, `default_factory`,
+`ping`) works on it with the URI as saved. `test_rs_secondary.py` replays the Mongo, storage,
+collection and write-back flows with `readPreference=secondaryPreferred` in the URI the application
+saves (the test side keeps reading the primary): a read that follows a write must not miss it.
+It needs `SANKEY_TEST_MONGO_RS_URI`, from the environment or from the repo-root `.env` (a gitignored
+file; only that key is used or returned, because the file also holds `QODANA_TOKEN`;
+`tests/e2e/support/rs_env.py`):
+
+```bash
+SANKEY_TEST_MONGO_RS_URI='mongodb://user:pw@h1:27017,h2:27017,h3:27017/sankey_test_rs?replicaSet=rs0&authSource=sankey_test_rs'
+```
+
+* **The database is the one in the URI path** (`sankey_test_rs`), not a random `sankey_e2e_<8 hex>`:
+  a shared replica set usually gives the test user `readWrite` on one database only (no `dropDatabase`,
+  nothing on a name it has never seen). It must be an empty throwaway database: a test that finds a
+  collection in it fails and touches nothing (`support/rs_world.py`). At teardown, after the server
+  stopped, the collections are dropped (`MongoWorld.drop` with `keep_database`); the database stays.
+  `admin`, `local` and `config` are refused.
+* **Marker `mongo_rs`**, not `mongo`: `cov`, `e2e` and `e2e-mongo` never select it (they need no
+  machine on your LAN). Only `make e2e-mongo-rs` does, and so does the `e2e-mongo-rs` check of the
+  release gate (pre-push of `main` and tags, `make gate-release`). Without the variable a test
+  skips with the reason, and in the gate a skip fails the check; with it set and nothing answering
+  the test fails. So a push of `main` or a tag needs the cluster reachable and its database empty.
+* **No failover test.** The suite never steps a member down or changes the set.
 
 ## Harness reference
 

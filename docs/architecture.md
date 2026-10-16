@@ -394,6 +394,13 @@ There is no login, so the app defends itself in every layer.
   characters, no leading dots, basename only, at most 255 bytes). Write-back replaces an EXISTING
   allowed file atomically with the same fd-based checks (`edit_file`: stat stamp, size cap, part file
   with `O_EXCL`); it never creates a file.
+* **Mongo topologies** ([ADR-38](decisions.md#adr-38-mongodb-runs-on-one-server-and-on-a-cluster)).
+  One `MongoClient` per (connection, URI) serves a standalone server, a replica set, `mongos`
+  routers and `mongodb+srv://`; URI options reach the driver, except the timeouts and the pool,
+  which `default_factory` sets from `mongo_timeout_ms`. The library stores open their database
+  through `mongo.primary_database` (primary reads); sources keep the URI's read preference.
+  `mongo_errors` words a failover (`NotPrimaryError`, `AutoReconnect`, `WriteConcernError`) as "try
+  again shortly" or "may have been applied". No code path uses sessions or transactions.
 * **Mongo.** Reads go through `mongo_safety`: a recursive pipeline-stage allow-list, name validators,
   `admin`, `local`, `config` and `system.*` never readable, and a URI check that refuses options which
   read local files, load code or weaken TLS (`tlsCAFile`, `tlsCertificateKeyFile`, `tlsInsecure`,

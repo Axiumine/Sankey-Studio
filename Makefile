@@ -1,4 +1,4 @@
-.PHONY: sync lint format typecheck caps test e2e e2e-serial e2e-mongo cov memray profile mutate mutate-gate \
+.PHONY: sync lint format typecheck caps test e2e e2e-serial e2e-mongo e2e-mongo-rs cov memray profile mutate mutate-gate \
         semgrep semgrep-test trivy qodana security gitnexus gitnexus-status hooks hooks-check \
         gate-commit gate-push gate-main gate-release check ci full serve mongo-up mongo-down mongo-absent clean
 
@@ -6,7 +6,7 @@ PY := uv run
 SRC := src tests scripts
 
 # The git hooks run every check through scripts/githook_gate.py, which calls the targets below.
-# It appends JUNIT=<report path> to the pytest-based ones (test cov memray e2e e2e-mongo): the
+# It appends JUNIT=<report path> to the pytest-based ones (test cov memray e2e e2e-mongo e2e-mongo-rs): the
 # targets then also write a JUnit report, and the gate fails on any skipped test.
 JUNIT ?=
 junit = $(if $(JUNIT),--junitxml="$(JUNIT:.xml=$(1).xml)")
@@ -43,7 +43,7 @@ test:
 # the target after the others have finished. `make e2e-serial` runs everything in one process
 # (debugging); `make e2e E2E_SHARDS=1` is the same.
 E2E_SHARDS ?= 5
-E2E_PYTEST := $(PY) pytest tests/e2e -m "e2e and not mongo" -p no:cacheprovider
+E2E_PYTEST := $(PY) pytest tests/e2e -m "e2e and not mongo and not mongo_rs" -p no:cacheprovider
 
 e2e:
 	$(MAKE) --no-print-directory -O -j$(E2E_SHARDS) \
@@ -64,6 +64,18 @@ e2e-serial:
 e2e-mongo:
 	$(PY) pytest -m "e2e and mongo" $(call junit,-1)
 	$(PY) pytest -m "mongo and not e2e" $(call junit,-2)
+
+# the same real-MongoDB flows against a REPLICA SET you run yourself (the compose Mongo is one
+# standalone node). Needs SANKEY_TEST_MONGO_RS_URI in the environment or in the repo-root dotenv file
+# (only that key is used from it), e.g.
+#   mongodb://user:pw@h1,h2,h3/sankey_test_rs?replicaSet=rs0&authSource=sankey_test_rs
+# The release gate runs it too (the e2e-mongo-rs check, pre-push of main or a tag): without the URI the
+# tests skip and a skip fails the check, so that push needs the cluster reachable. Not in check / ci /
+# full (they must pass without any database). Everything happens in the database named in the URI
+# path, which must be empty: its collections are dropped at teardown, the database stays (see
+# docs/e2e.md, "Replica set").
+e2e-mongo-rs:
+	$(PY) pytest tests/e2e/mongo_rs -m "e2e and mongo_rs" -p no:cacheprovider $(call junit,)
 
 # 100% line + branch coverage of src/sankey_studio from the unit suite (slow tests included, e2e
 # excluded; `make e2e` runs the live-server tests). The threshold is reachable without a browser, but
@@ -132,7 +144,7 @@ hooks-check:
 
 # The same checks as the hooks, for a human at a terminal: each one writes a stamp for the tree of
 # HEAD (needs a clean working tree), and the next commit or push finds it. Cumulative tiers:
-# commit (fast), push (+ cov memray e2e), main (+ security), release (+ e2e-mongo qodana mutation)
+# commit (fast), push (+ cov memray e2e), main (+ security), release (+ e2e-mongo e2e-mongo-rs qodana mutation)
 gate-commit:
 	$(GATE) run commit
 

@@ -34,6 +34,7 @@ RELEASE_LABELS = [
     "trivy",
     "ping-once",
     "e2e-mongo",
+    "e2e-mongo-rs",
     "cov",
     "qodana",
     "mutate",
@@ -253,7 +254,8 @@ def test_a_tree_that_changes_during_a_check_voids_that_stamp_and_refuses(rig: Ri
 
 def test_the_release_checks_stamped_earlier_are_not_run_again(rig: Rig) -> None:
     text = prepare(rig, "main")
-    rig.stamp_all(["fast", "cov", "memray", "e2e", "e2e-mongo", "qodana", "mutation"], rig.tree())
+    names = ["fast", "cov", "memray", "e2e", "e2e-mongo", "e2e-mongo-rs", "qodana", "mutation"]
+    rig.stamp_all(names, rig.tree())
     assert go(rig, text) == 0
     assert rig.runner.labels == ["semgrep-test", "semgrep", "trivy"]
 
@@ -314,7 +316,9 @@ def test_a_push_of_main_from_another_branch_asks_for_that_branch(rig: Rig) -> No
     feature = ahead(rig)
     rig.git("checkout", "-q", "main")
     assert go(rig, push_line("refs/heads/feature", feature, "refs/heads/main")) == 1
-    assert "needs fast, cov, memray, e2e, security, e2e-mongo, qodana, mutation;" in rig.text
+    assert (
+        "needs fast, cov, memray, e2e, security, e2e-mongo, e2e-mongo-rs, qodana, mutation;"
+    ) in rig.text
     assert lines_of(rig)[-1] == "gate: check it out (git checkout feature) and push again"
 
 
@@ -453,7 +457,7 @@ def test_a_dry_run_of_a_release_push_names_its_tier_and_the_offline_refusal(rig:
         "offline switches weaken the scans, unset it"
     ) in lines_of(rig)
     assert "check(s) would run" in lines_of(rig)[-1]
-    assert lines_of(rig)[-1] == "gate: dry run: 8 check(s) would run, nothing was run"
+    assert lines_of(rig)[-1] == "gate: dry run: 9 check(s) would run, nothing was run"
 
 
 def test_the_dry_run_argument_overrides_the_environment(rig: Rig) -> None:

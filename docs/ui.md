@@ -792,7 +792,9 @@ Behaviour:
   MongoDB storage connection while the backend is `mongo`. The visible names of the test and delete
   buttons are "Test connection" and "Delete", but their `aria-label` includes the connection name.
   On a read-only server the hint reads "Stored: mongodb://***. Connection strings cannot be changed
-  because this server is read-only."
+  because this server is read-only." For a new row the hint gives the three shapes: one server
+  (`mongodb://user:password@host:27017/`), a replica set (`...@h1:27017,h2:27017,h3:27017/?replicaSet=rs0`)
+  and Atlas (`mongodb+srv://...`); the input placeholder stays `mongodb://user:password@host:27017`.
 * **Limits.** `settings-max-links` (100 to 5,000,000, default 200,000), `settings-max-drawn-links` (50
   to 20,000, default 3,000), `settings-max-upload-mb` (1 to 100, default 25) and
   `settings-mongo-timeout` (500 to 300,000 ms, default 15,000). Values are validated in the browser

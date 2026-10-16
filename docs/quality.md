@@ -28,7 +28,7 @@ Contents
 | Lint and format | `make lint` | `ruff check` with `select = ["ALL"]` and `ruff format --check` on `src tests scripts` | `fast` |
 | Types | `make typecheck` | `mypy --strict` on Python 3.14 | `fast` |
 | Unit tests | `make test` | `pytest -m "not memory and not e2e"`, `filterwarnings = error`, no sleeps | none: `cov` runs the same selection |
-| End-to-end | `make e2e`, `make e2e-mongo` | `pytest -m "e2e and not mongo"`: the real app on an ephemeral loopback port driven over HTTP and by real Chrome; `e2e-mongo` runs the same flows against a real MongoDB and then the mongo-marked unit tests; see [e2e.md](e2e.md) | `e2e`: every pre-push. `e2e-mongo`: pre-push of `main` and tags |
+| End-to-end | `make e2e`, `make e2e-mongo`, `make e2e-mongo-rs` | `pytest -m "e2e and not mongo and not mongo_rs"`: the real app on an ephemeral loopback port driven over HTTP and by real Chrome; `e2e-mongo` runs the same flows against a real MongoDB and then the mongo-marked unit tests; `e2e-mongo-rs` runs them against a replica set you run yourself (`SANKEY_TEST_MONGO_RS_URI`); see [e2e.md](e2e.md) | `e2e`: every pre-push. `e2e-mongo`: pre-push of `main` and tags. `e2e-mongo-rs`: pre-push of `main` and tags |
 | Coverage | `make cov` | 100% line and branch of `src/sankey_studio` from the unit suite, slow tests included, e2e excluded | `cov`: every pre-push (`qodana` runs it again) |
 | Memory | `make memray` | `limit_memory` budgets (pytest-memray) | `memray`: every pre-push |
 | Mutation | `make mutate`, `make mutate-gate` | mutmut 3.x score of at least 90 | `mutation`: pre-push of `main` and tags |
@@ -139,7 +139,9 @@ rendering) under `memray run`, prints `memray stats` and writes a flamegraph to
   type information, so values they return are wrapped (`cast` or a typed local).
 * **pytest** with `--strict-markers`, `--strict-config` and `filterwarnings = ["error"]`. There are no
   warning ignores; do not add one without a comment naming the package and the exact warning.
-* Markers: `mongo` (needs a real MongoDB), `memory`, `slow`, `e2e`.
+* Markers: `mongo` (needs a real MongoDB), `mongo_rs` (needs a real replica set; `make
+  e2e-mongo-rs`; only the `e2e-mongo-rs` check of the release gate selects it), `memory`, `slow`,
+  `e2e`.
 
 ## Scanners
 
@@ -213,7 +215,9 @@ Suppression comments are rationed and checked by `tests/test_policy.py`:
   `app_settings`, `mongo_client`, `mongo_clients`, `make_source_ctx`, `source_ctx` and
   `make_connection`.
 * Unit tests use mongomock. A real MongoDB is used only by tests marked `@pytest.mark.mongo`, which
-  run when `SANKEY_TEST_MONGO_URI` is set and then create and drop a uniquely named database. The
+  run when `SANKEY_TEST_MONGO_URI` is set and then create and drop a uniquely named database (and by
+  the replica-set suite marked `mongo_rs`, which uses the empty database named in
+  `SANKEY_TEST_MONGO_RS_URI` and drops its collections; see [e2e.md](e2e.md#replica-set)). The
   project-local Mongo from `make mongo-up` listens on `127.0.0.1:27117`, for example
   `SANKEY_TEST_MONGO_URI=mongodb://127.0.0.1:27117`. The `e2e-mongo` check of the hooks sets it for
   its own steps only and removes it from every other child.
@@ -253,7 +257,7 @@ refuses instead of passing. `commit-msg` stays a bash script.
 | `commit-msg` | commit, amend, merge commit; not `rebase` or `cherry-pick` | the message format, see [Commit policy](#commit-policy) | none |
 | `pre-commit` | commit, amend, the commit that concludes a conflicted merge | `fast` | the index (`git write-tree`) |
 | `pre-merge-commit` | a clean `merge --no-ff`; not a fast-forward | `fast` | the index |
-| `pre-push`, remote ref `refs/heads/main` or `refs/tags/*` | `git push origin main`, `git push origin feature:main`, a tag push | the messages of the new commits, then the `release` tier: `fast`, `cov`, `memray`, `e2e`, `security`, `e2e-mongo`, `qodana`, `mutation` | the pushed commit (an annotated tag is peeled) |
+| `pre-push`, remote ref `refs/heads/main` or `refs/tags/*` | `git push origin main`, `git push origin feature:main`, a tag push | the messages of the new commits, then the `release` tier: `fast`, `cov`, `memray`, `e2e`, `security`, `e2e-mongo`, `e2e-mongo-rs`, `qodana`, `mutation` | the pushed commit (an annotated tag is peeled) |
 | `pre-push`, any other remote ref | a branch push | the messages of the new commits, then the `push` tier: `fast`, `cov`, `memray`, `e2e` | the pushed commit |
 
 * The tier follows the name on the REMOTE side of the refspec, so `git push origin feature:main` is a
@@ -282,6 +286,7 @@ it) or *unknown*:
 | `e2e` | `make e2e JUNIT=<report>` (5 shards) | under 3 minutes (see [e2e.md](e2e.md#runtime-budget-and-flakiness); the changelog says about 90 s) | documented |
 | `security` | `make semgrep-test`, `make semgrep`, `make trivy` | not known (Docker; a Trivy database refresh downloads about 120 MB) | unknown |
 | `e2e-mongo` | start the project Mongo if it is not running, `make e2e-mongo JUNIT=<report>`, stop it again | not known | unknown |
+| `e2e-mongo-rs` | `make e2e-mongo-rs JUNIT=<report>` against the replica set of `SANKEY_TEST_MONGO_RS_URI` (no Docker, nothing started or stopped) | about 85 s against a replica set on a LAN (95 tests, one local run) | measured once, locally |
 | `qodana` | `make cov JUNIT=<report>` (fresh coverage), then `make qodana` | not known (a second coverage run, then a Qodana scan that uploads to Qodana Cloud) | unknown |
 | `mutation` | `make mutate`, then `make mutate-gate` | about 19 minutes with 8 workers, from the file times of the last local run (`mutants/`) | recorded locally, unverified |
 
@@ -294,7 +299,7 @@ it) or *unknown*:
 | `commit` | `fast` | `pre-commit`, `pre-merge-commit`, `make gate-commit` |
 | `push` | `commit` + `cov`, `memray`, `e2e` | `pre-push` of any ref except `main` and tags, `make gate-push` |
 | `main` | `push` + `security` | `make gate-main` only |
-| `release` | `main` + `e2e-mongo`, `qodana`, `mutation` (all eight) | `pre-push` of `main` and tags, `make gate-release` |
+| `release` | `main` + `e2e-mongo`, `e2e-mongo-rs`, `qodana`, `mutation` (all nine) | `pre-push` of `main` and tags, `make gate-release` |
 
 **Runtime figures.** Measured: `fast`. Documented: `e2e` (under 3 minutes). Recorded locally and
 unverified: the unit suite (about 91 s of test time) and `mutation` (about 19 minutes). Unknown:
@@ -341,16 +346,16 @@ as `e2e` in one process), `make profile` (no pass or fail), `make format` (it re
 
 ### Fail-closed rules
 
-* **A skipped test fails the check.** The JUnit reports of `cov`, `memray`, `e2e`, `e2e-mongo` and
+* **A skipped test fails the check.** The JUnit reports of `cov`, `memray`, `e2e`, `e2e-mongo`, `e2e-mongo-rs` and
   `qodana`'s coverage run are read after the run. Any `skipped` test fails it, except in `cov` and
   `qodana` a skip whose reason names `SANKEY_TEST_MONGO_URI` (the 8 mongo-marked unit tests; the
   `e2e-mongo` check runs them). A missing report, a report that was cut off and a run with no test
-  case fail too. This is what keeps "no Chrome" and "no Mongo" from turning `e2e` and `e2e-mongo`
-  green. It also makes the machine part of the gate. To pass `cov` a machine needs Chrome or
+  case fail too. This is what keeps "no Chrome", "no Mongo" and "no replica set" from turning `e2e`,
+  `e2e-mongo` and `e2e-mongo-rs` green. It also makes the machine part of the gate. To pass `cov` a machine needs Chrome or
   Chromium (the slow unit tests that draw SVG and PNG), `node` (a dozen unit modules under
   `tests/web` run the frontend modules with it), `bash`, and a Linux-style `/proc` and `/dev/null`
   (the descriptor-leak and path tests). `e2e` needs Chrome, `e2e-mongo` needs Docker and the
-  project Mongo. On macOS, or without `node`, the push gate fails with `gate: cov: junit: skipped
+  project Mongo, `e2e-mongo-rs` needs `SANKEY_TEST_MONGO_RS_URI` and a reachable replica set. On macOS, or without `node`, the push gate fails with `gate: cov: junit: skipped
   test ... (node is not installed)`: install the prerequisite, the skip is the failure.
 * **Offline switches are refused.** When `security` is about to run and any environment variable
   ending in `_OFFLINE` is set to something other than empty or `0`, the gate refuses and names it.
@@ -366,6 +371,16 @@ as `e2e` in one process), `make profile` (no pass or fail), `make format` (it re
   repository), minus `PYTEST_ADDOPTS` and `SANKEY_TEST_MONGO_URI`. `~/.local/bin` comes first on
   `PATH`, and `UV_LOCKED=1` makes a stale `uv.lock` fail the check instead of being rewritten in the
   middle of a commit (`make caps` runs without it, because `uv run --no-project` warns about it).
+* **Replica set for `e2e-mongo-rs`.** The gate starts nothing and sets nothing: it runs
+  `make e2e-mongo-rs` with the hook's own environment, in which `SANKEY_TEST_MONGO_RS_URI` passes
+  through (`SANKEY_TEST_MONGO_URI` is scrubbed as for every check). The tests find the URI in that
+  variable or in the repo-root dotenv file, and take only that key (the gate itself never opens
+  the file). Without a URI the tests skip and the skip fails the check (`gate: e2e-mongo-rs: junit:
+  skipped test ... (needs SANKEY_TEST_MONGO_RS_URI ...)`); a URI that does not answer fails the
+  tests (`SANKEY_TEST_MONGO_RS_URI is set but the server did not answer: <error type>`). Either
+  way a push of `main` or a tag is refused until the cluster is reachable. The database named in
+  the URI must be empty (a used one fails the test and nothing is touched); its collections are
+  dropped at teardown.
 * **Mongo for `e2e-mongo`.** One ping of `127.0.0.1:27117`. If it answers, the gate says so and
   leaves the Mongo running. If not, a booting container of yours would look the same, so the gate
   asks Docker through `make mongo-absent` (exit 0 only when Docker answers and no project container
@@ -432,6 +447,8 @@ every refusal, whatever the exit code of the failed command (that code is in the
 | `gate: another gate run holds <lock> (<holder>); wait for it to finish` | A push gate or `make gate-*` is running (a commit is refused too). Wait for it; its stamps then make your run shorter |
 | `gate: refusing to run security: <NAME> is set; offline switches weaken the scans, unset it` | Unset the variable |
 | `gate: e2e-mongo: the project MongoDB on 127.0.0.1:27117 did not answer` | `make mongo-up` failed (it then fails at once) or the Mongo did not come up in 60 s, or something else holds port 27117. Look at `<common>/hook-logs/e2e-mongo.log` |
+| `gate: e2e-mongo-rs: junit: skipped test ... (needs SANKEY_TEST_MONGO_RS_URI ...)` | The replica-set URI is in neither the environment of the hook nor the repo-root dotenv file. Set `SANKEY_TEST_MONGO_RS_URI` there and push again |
+| `SANKEY_TEST_MONGO_RS_URI is set but the server did not answer: <error type>` (in `<common>/hook-logs/e2e-mongo-rs.log`) | The replica set is not reachable from this machine (LAN, VPN, a stopped member). Fix that, or push `main` from a machine that reaches it |
 | `gate: mongo: a project Mongo container may already exist (make mongo-absent failed) ...` | Not a failure. The Mongo did not answer the first ping and Docker did not confirm that no container is running, so the gate waits for it and never stops it |
 | `gate: FAILED <check>: the working tree is no longer the one the run started with ...` | HEAD moved or a file changed between two checks of one run, before this one began. Nothing was run and no stamp was written; leave the tree alone and run again |
 | `gate: push refused: <check> passed but left no stamp for tree <tree>; run the push again` | A check exited 0 and the stamp file is not there (a disk problem). Run the push again |
@@ -447,7 +464,7 @@ every refusal, whatever the exit code of the failed command (that code is in the
 
 ```bash
 make gate-push                  # fast, cov, memray, e2e on the tree of HEAD; leaves stamps if the tree is clean
-make gate-release               # all eight checks; the later push of main or a tag then returns at once
+make gate-release               # all nine checks; the later push of main or a tag then returns at once
 uv run --no-project --python 3.14 python -m scripts.githook_gate plan release     # which checks have a stamp
 uv run --no-project --python 3.14 python -m scripts.githook_gate run cov --force   # run one check again
 uv run --no-project --python 3.14 python -m scripts.githook_gate hooks-check       # what make hooks-check runs
@@ -542,7 +559,7 @@ Before calling a change finished:
    and `e2e` checks of `pre-push`, and a skipped e2e test fails the check, so "skipped with a reason"
    is no longer a way to pass.
 5. The hooks decide, not a person: a push of a branch must pass `fast`, `cov`, `memray` and `e2e`; a
-   push of `main` or a tag must also pass `security`, `e2e-mongo`, `qodana` and `mutation`.
+   push of `main` or a tag must also pass `security`, `e2e-mongo`, `e2e-mongo-rs`, `qodana` and `mutation`.
    `make gate-push` and `make gate-release` run the same checks earlier by hand and leave the stamps
    that the push then finds. `make ci` and `make full` remain one-shot aggregates for a person at a
    terminal (`make full` does not include `e2e-mongo`).

@@ -235,7 +235,7 @@ def test_an_unknown_check_name_is_refused_with_the_valid_names(
     err = capsys.readouterr().err
     assert err == (
         "gate: refusing: unknown check or tier 'nope'; use one of: fast, cov, memray, e2e, "
-        "security, e2e-mongo, qodana, mutation, commit, push, main, release\n"
+        "security, e2e-mongo, e2e-mongo-rs, qodana, mutation, commit, push, main, release\n"
     )
     assert rig.runner.calls == []
 

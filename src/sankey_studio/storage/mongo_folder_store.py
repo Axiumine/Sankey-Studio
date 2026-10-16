@@ -21,6 +21,8 @@ connection needs WRITE permission on both. Every call runs inside ``clients.slot
   record is gone leaves sub-folders pointing at a missing parent, which every reader treats as
   the top level (the tree helpers never loop on a missing parent).
 * There are no transactions: two racing moves can leave a cycle; the readers are cycle-safe.
+* Both collection handles are pinned to the primary (``primary_database``), whatever
+  ``readPreference`` the saved URI carries: a delete then an import must not see the old folders.
 """
 
 from __future__ import annotations
@@ -41,7 +43,7 @@ from sankey_studio.errors import (
     StorageError,
 )
 from sankey_studio.models import FOLDERS_MAX, FolderDefinition, MoveReport
-from sankey_studio.mongo import mongo_errors
+from sankey_studio.mongo import mongo_errors, primary_database
 from sankey_studio.storage.base import check_graph_id
 from sankey_studio.storage.common import Clock, clamp_page, utc_now
 from sankey_studio.storage.folder_tree import (
@@ -248,7 +250,7 @@ class MongoFolderRepository:
                 client = self._clients.get(name)
             except SourceNotFoundError:
                 raise StorageError(f"Storage connection '{name}' does not exist") from None
-            database = client[self._target.database]
+            database = primary_database(client, self._target.database)
             yield _Handles(
                 graphs=database[self._target.collection],
                 folders=database[self._target.folders_collection],

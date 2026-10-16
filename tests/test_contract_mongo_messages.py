@@ -14,10 +14,16 @@ import pytest
 from bson.errors import BSONError, InvalidDocument
 from pydantic import SecretStr
 from pymongo.errors import (
+    AutoReconnect,
     ConfigurationError,
     ExecutionTimeout,
+    NetworkTimeout,
+    NotPrimaryError,
     OperationFailure,
     ServerSelectionTimeoutError,
+    WriteConcernError,
+    WriteError,
+    WTimeoutError,
 )
 
 import sankey_studio.mongo as mongo_module
@@ -36,6 +42,34 @@ MESSAGES = [
     (OperationFailure(LEAK, code=18), "MongoDB connection 'conn' is not authorised"),
     (OperationFailure(LEAK, code=2), "MongoDB query on 'conn' failed: OperationFailure"),
     (OperationFailure(LEAK), "MongoDB query on 'conn' failed: OperationFailure"),
+    (WriteError(LEAK, code=121), "MongoDB query on 'conn' failed: OperationFailure"),
+    # replica-set failover: the person is told to retry, and a maybe-applied write says so
+    (
+        NotPrimaryError(LEAK),
+        "MongoDB connection 'conn' has no primary right now; try again shortly",
+    ),
+    (
+        AutoReconnect(LEAK),
+        (
+            "MongoDB connection 'conn' was interrupted (AutoReconnect); try again shortly. "
+            "A write in flight may have been applied"
+        ),
+    ),
+    (
+        NetworkTimeout(LEAK),
+        (
+            "MongoDB connection 'conn' was interrupted (NetworkTimeout); try again shortly. "
+            "A write in flight may have been applied"
+        ),
+    ),
+    (
+        WriteConcernError(LEAK, code=100),
+        "MongoDB write on 'conn' was not confirmed by enough members; it may have been applied",
+    ),
+    (
+        WTimeoutError(LEAK, code=64),
+        "MongoDB write on 'conn' was not confirmed by enough members; it may have been applied",
+    ),
     (ConfigurationError(LEAK), "MongoDB operation on 'conn' failed: ConfigurationError"),
     (InvalidDocument(LEAK), "MongoDB operation on 'conn' failed: InvalidDocument"),
     (BSONError(LEAK), "MongoDB operation on 'conn' failed: BSONError"),

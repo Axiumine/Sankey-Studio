@@ -214,6 +214,38 @@ backends:
   permission on both. Switching backends can copy the existing graphs and collections; the old store
   is never deleted. With files, the collections are `<data-dir>/graphs/folders.json`.
 
+**One server or a cluster.** A connection string can name a standalone `mongod`, a replica set, the
+`mongos` routers of a sharded cluster or an Atlas cluster:
+
+```text
+mongodb://user:password@host:27017/                                       one server
+mongodb://user:password@h1:27017,h2:27017,h3:27017/?replicaSet=rs0        replica set
+mongodb://user:password@r1:27017,r2:27017/                                sharded cluster (mongos list)
+mongodb+srv://user:password@cluster.example.com/                          Atlas / DNS seed list
+```
+
+Options in the string such as `replicaSet`, `readPreference`, `w`, `retryWrites`, `authSource` and
+`tls` reach the driver unchanged. Things worth knowing:
+
+* The library store (saved graphs and collections) always reads from the primary, so a save is
+  visible at once whatever `readPreference` you set. Your data sources keep the preference you set,
+  so with `secondary` they can lag the primary a little (also right after a write-back).
+* The timeouts come from Settings, not from the string: server selection and connect use "MongoDB
+  timeout" (default 15 s; a failover takes several seconds, so do not lower it much), the socket
+  timeout is at least 60 s and the pool is 8 connections per host. During a failover a request
+  ends with "try again shortly"; a write that timed out waiting for replicas says it may have been
+  applied.
+* A single host that is a replica-set member but advertises names this machine cannot resolve
+  (Docker, NAT) needs `?directConnection=true`.
+* No transactions or sessions are used, so every topology behaves the same. Do not shard the
+  application's own `sankey_studio_*` collections.
+* `tlsCAFile`, client certificates and X.509/Kerberos/LDAP logins are refused on purpose (see
+  [Security model](#security-model)). A private CA works when it is in the system trust store of the
+  machine that runs Sankey Studio (or named by `SSL_CERT_FILE` / `SSL_CERT_DIR`).
+
+`make e2e-mongo-rs` runs the Mongo flows against a replica set you run yourself
+([docs/e2e.md](docs/e2e.md#replica-set)).
+
 For a project-local MongoDB on `127.0.0.1:27117` run `make mongo-up` (needs Docker); `make mongo-down`
 stops it.
 
@@ -273,8 +305,9 @@ make check    # lint, typecheck, caps, cov, memray
 | `make typecheck` | `mypy` in strict mode |
 | `make caps` | Code caps (file 500, function 50, class 300, params 4, nesting 4), ratcheted against `.code-caps-baseline.json`, run on Python 3.14 |
 | `make test` | Unit tests: `pytest -m "not memory and not e2e"` |
-| `make e2e` | End-to-end tests: the real app and real Chrome (`pytest -m "e2e and not mongo"`) |
+| `make e2e` | End-to-end tests: the real app and real Chrome (`pytest -m "e2e and not mongo and not mongo_rs"`) |
 | `make e2e-mongo` | The same flows against a real MongoDB, then the mongo-marked unit tests (needs `SANKEY_TEST_MONGO_URI`) |
+| `make e2e-mongo-rs` | The same flows against a replica set you run yourself (needs `SANKEY_TEST_MONGO_RS_URI`; the hooks run it as the `e2e-mongo-rs` check for `main` and tags) |
 | `make cov` | Unit tests with coverage; fails below 100% line and branch of `src/sankey_studio` |
 | `make memray` | Memory-budget tests (pytest-memray) |
 | `make profile` | Whole-pipeline memory profile and flamegraph in `.memray/` |
@@ -291,7 +324,7 @@ make check    # lint, typecheck, caps, cov, memray
 | `make gate-commit` | The `commit` tier by hand: `fast` (lint, typecheck, caps) on HEAD, with a stamp |
 | `make gate-push` | The `push` tier by hand: `fast`, `cov`, `memray`, `e2e` |
 | `make gate-main` | The `main` tier by hand: `push` plus `security` |
-| `make gate-release` | The `release` tier by hand: `main` plus `e2e-mongo`, `qodana`, `mutation` |
+| `make gate-release` | The `release` tier by hand: `main` plus `e2e-mongo`, `e2e-mongo-rs`, `qodana`, `mutation` |
 | `make check` | `lint`, `typecheck`, `caps`, `cov`, `memray` |
 | `make ci` | `check` plus `security` and `e2e` |
 | `make full` | `ci` plus `mutate`, `mutate-gate`, `qodana` |
@@ -310,8 +343,8 @@ violation instead of recording it. Unit tests use mongomock. Real-MongoDB tests 
 and `make e2e-mongo` run only when `SANKEY_TEST_MONGO_URI` is set, for example
 `SANKEY_TEST_MONGO_URI=mongodb://127.0.0.1:27117 make e2e-mongo` after `make mongo-up`. The compose
 MongoDB binds `127.0.0.1:27117` so it never collides with another local MongoDB. The git hooks run
-all these gates for you (see [Commit policy](#commit-policy)); `test`, `cov`, `memray`, `e2e` and
-`e2e-mongo` accept `JUNIT=<path>` to also write a JUnit report, which the hooks use to refuse skipped
+all these gates for you (see [Commit policy](#commit-policy)); `test`, `cov`, `memray`, `e2e`,
+`e2e-mongo` and `e2e-mongo-rs` accept `JUNIT=<path>` to also write a JUnit report, which the hooks use to refuse skipped
 tests.
 
 Python 3.14 syntax such as `except A, B:` (PEP 758) is used, so tools that parse the sources need a
@@ -370,7 +403,7 @@ its `make` target, one at a time.
 | `commit-msg` | every commit and merge commit | the message format above |
 | `pre-commit`, `pre-merge-commit` | commit, amend, clean `merge --no-ff` | `fast`: `make lint`, `make typecheck`, `make caps` on the tree about to be committed |
 | `pre-push` | push of any ref except `main` and tags | the messages of the new commits, then `fast`, `cov`, `memray`, `e2e` |
-| `pre-push` | push whose remote ref is `refs/heads/main` or `refs/tags/*` | the same, plus `security` (Semgrep, Trivy), `e2e-mongo`, `qodana` and `mutation` |
+| `pre-push` | push whose remote ref is `refs/heads/main` or `refs/tags/*` | the same, plus `security` (Semgrep, Trivy), `e2e-mongo`, `e2e-mongo-rs` (your replica set), `qodana` and `mutation` |
 
 * **Stamps.** A check that passed on a tree leaves `hook-stamps/<check>/<tree hash>` in the git common
   directory (`.git/` in an ordinary clone). It is written only after every step exited 0, no test was

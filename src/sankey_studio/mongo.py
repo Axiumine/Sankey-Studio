@@ -22,12 +22,15 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
 
 from bson.errors import BSONError
-from pymongo import MongoClient
+from pymongo import MongoClient, ReadPreference
 from pymongo.errors import (
+    AutoReconnect,
     ExecutionTimeout,
+    NotPrimaryError,
     OperationFailure,
     PyMongoError,
     ServerSelectionTimeoutError,
+    WriteConcernError,
 )
 
 from sankey_studio.errors import (
@@ -39,6 +42,8 @@ from sankey_studio.errors import (
 )
 
 if TYPE_CHECKING:
+    from pymongo.database import Database
+
     from sankey_studio.models import AppSettings
 
 #: ``factory(uri, timeout_ms) -> client``
@@ -67,9 +72,27 @@ def default_factory(uri: str, timeout_ms: int) -> MongoClient[Any]:
     )
 
 
+def primary_database(client: MongoClient[Any], name: str) -> Database[Any]:
+    """``name`` read from the primary, whatever ``readPreference`` the saved URI carries.
+
+    The library stores read what they have just written (a save then a load, a delete then an
+    import): a secondary may not have replicated it yet. On a standalone node this is a no-op.
+    """
+    return client.get_database(name, read_preference=ReadPreference.PRIMARY)
+
+
 @contextmanager
 def mongo_errors(connection: str, error: type[SankeyError] = SourceError) -> Iterator[None]:
-    """Map driver exceptions to ``error`` (default ``SourceError``) without leaking details."""
+    """Map driver exceptions to ``error`` (default ``SourceError``) without leaking details.
+
+    Replica-set failover has its own words, so a person sees "try again shortly" and not a bare
+    class name: ``NotPrimaryError`` (a primary stepped down under the request), ``AutoReconnect``
+    (a connection was cut; ``NetworkTimeout`` is one: a write in flight may have been applied) and
+    ``WriteConcernError`` (``WTimeoutError`` is one: the write may be applied even though it was
+    not confirmed). Order matters: ``NotPrimaryError`` and ``ServerSelectionTimeoutError`` are
+    ``AutoReconnect`` subclasses and ``WriteConcernError`` is an ``OperationFailure``, so each
+    subclass is handled before its parent.
+    """
     try:
         yield
     except SankeyError:
@@ -78,6 +101,20 @@ def mongo_errors(connection: str, error: type[SankeyError] = SourceError) -> Ite
         raise error(f"MongoDB connection '{connection}' is unreachable") from None
     except ExecutionTimeout:
         raise error(f"MongoDB query on '{connection}' exceeded the time limit") from None
+    except NotPrimaryError:
+        raise error(
+            f"MongoDB connection '{connection}' has no primary right now; try again shortly"
+        ) from None
+    except AutoReconnect as exc:
+        raise error(
+            f"MongoDB connection '{connection}' was interrupted ({type(exc).__name__}); "
+            "try again shortly. A write in flight may have been applied"
+        ) from None
+    except WriteConcernError:
+        raise error(
+            f"MongoDB write on '{connection}' was not confirmed by enough members; "
+            "it may have been applied"
+        ) from None
     except OperationFailure as exc:
         if exc.code in AUTH_FAILED_CODES:
             raise error(f"MongoDB connection '{connection}' is not authorised") from None
@@ -137,10 +174,16 @@ class MongoClients:
         return conn.default_database if conn else None
 
     def ping(self, connection: str) -> float:
-        """Round-trip ``ping`` in milliseconds; raises ``StorageError`` (name only) on failure."""
+        """Round-trip ``ping`` in milliseconds; raises ``StorageError`` (name only) on failure.
+
+        ``primaryPreferred``: while a replica set elects a new primary, a secondary still answers,
+        so "Test connection" does not report a cluster that serves reads as unreachable.
+        """
         start = time.perf_counter()
         with mongo_errors(connection, StorageError):
-            self.get(connection).admin.command("ping")
+            self.get(connection).admin.command(
+                "ping", read_preference=ReadPreference.PRIMARY_PREFERRED
+            )
         return (time.perf_counter() - start) * 1000
 
     @contextmanager

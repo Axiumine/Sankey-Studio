@@ -21,7 +21,7 @@ from pymongo.errors import (
     WriteError,
 )
 
-from sankey_studio.errors import BusyError, SourceEditRefused, SourceNotFoundError, SourceWriteError
+from sankey_studio.errors import BusyError, SourceNotFoundError, SourceWriteError
 from sankey_studio.storage import mongo_source_writes as writes
 from sankey_studio.storage.base import MONGO_FOLDERS_COLLECTION, MONGO_GRAPHS_COLLECTION
 from sankey_studio.storage.mongo_source_writes import (
@@ -34,23 +34,20 @@ from sankey_studio.storage.mongo_source_writes import (
     update_by_ids,
 )
 from tests.storage.mongo_fakes import Recorder, SlotLog, broken_clients
+from tests.storage.source_write_support import (
+    COLLECTION,
+    DATABASE,
+    SECRET,
+    Fun,
+    refusal,
+    target,
+)
 
 if TYPE_CHECKING:
     from pymongo import MongoClient
 
     from sankey_studio.models import AppSettings
     from sankey_studio.mongo import MongoClients
-
-SECRET = "mongodb://user:hunter2@db.internal:27017/flows"
-DATABASE = "flows"
-COLLECTION = "events"
-Fun = {"$set": {"cat": "Fun"}}
-
-
-def target(
-    clients: MongoClients, collection: str = COLLECTION, database: str = DATABASE
-) -> SourceTarget:
-    return SourceTarget(clients, "test", database, collection)
 
 
 def fill(client: MongoClient[Any], count: int, **fields: Any) -> list[Any]:
@@ -62,12 +59,6 @@ def fill(client: MongoClient[Any], count: int, **fields: Any) -> list[Any]:
 
 def stored(client: MongoClient[Any]) -> list[dict[str, Any]]:
     return sorted(client[DATABASE][COLLECTION].find({}), key=lambda doc: doc.get("n", -1))
-
-
-def refusal(call: Any, *args: Any) -> str:
-    with pytest.raises(SourceEditRefused) as info:
-        call(*args)
-    return info.value.reason
 
 
 def test_the_target_is_a_frozen_value(mongo_clients: MongoClients) -> None:
@@ -415,12 +406,6 @@ def test_a_rejected_insert_is_an_expected_refusal(
 ) -> None:
     clients = broken_clients(app_settings, error)
     assert refusal(insert_document, target(clients), {"a": 1}) == reason
-
-
-def test_a_write_error_on_update_is_an_ordinary_failure(app_settings: AppSettings) -> None:
-    clients = broken_clients(app_settings, WriteError("nope", code=121))
-    with pytest.raises(SourceWriteError):
-        update_by_ids(target(clients), [1], {}, Fun)
 
 
 def test_an_unknown_connection_is_not_found(mongo_clients: MongoClients) -> None:

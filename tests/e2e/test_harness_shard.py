@@ -73,6 +73,7 @@ def test_browser_and_slow_tests_weigh_more_than_plain_http_tests() -> None:
     assert weight_of(FakeItem(Path("a.py"), ["open_page"])) == HEAVY
     assert weight_of(FakeItem(Path("a.py"), ["api"], frozenset({"slow"}))) == HEAVY
     assert weight_of(FakeItem(Path("a.py"), ["api"], frozenset({"mongo"}))) == 0
+    assert weight_of(FakeItem(Path("a.py"), ["page"], frozenset({"mongo_rs"}))) == 0
 
 
 # ------------------------------------------------------------------------------ the split
@@ -134,7 +135,7 @@ def collect(shard: str | None) -> subprocess.Popen[str]:
     if shard is not None:
         env[SHARD_ENV] = shard
     command = [sys.executable, "-m", "pytest", "tests/e2e", "--collect-only", "-q", "-m"]
-    command += ["e2e and not mongo", "-p", "no:cacheprovider"]
+    command += ["e2e and not mongo and not mongo_rs", "-p", "no:cacheprovider"]
     return subprocess.Popen(  # noqa: S603 - a fixed argv of this interpreter, no shell
         command, cwd=ROOT, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
     )

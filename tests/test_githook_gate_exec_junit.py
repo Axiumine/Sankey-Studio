@@ -94,7 +94,7 @@ def test_cov_still_fails_on_any_other_skip(rig: Rig) -> None:
 
 
 def test_the_same_mongo_skip_fails_every_other_pytest_check(rig: Rig) -> None:
-    for name in ("memray", "e2e", "e2e-mongo"):
+    for name in ("memray", "e2e", "e2e-mongo", "e2e-mongo-rs"):
         rig.runner.skips[name] = (MONGO_SKIP,)
         assert run_check(rig, name) == 1, name
         assert not rig.stamped(name, rig.tree())
