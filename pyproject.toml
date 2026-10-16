@@ -1,5 +1,6 @@
 [build-system]
-requires = ["hatchling>=1.25"]
+# 1.27: the first hatchling that reads a PEP 639 license expression and license-files.
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
@@ -7,6 +8,9 @@ name = "sankey-studio"
 version = "0.1.0"
 description = "Draw, store and manage Sankey graphs from text files or MongoDB, with a local web UI."
 readme = "README.md"
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
+authors = [{ name = "Giovanni Manzoni", email = "dev@giovannimanzoni.com" }]
 requires-python = ">=3.14"
 dependencies = [
   "fastapi>=0.115",

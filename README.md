@@ -464,6 +464,7 @@ scripts/                code caps, mutation gate, memory profile, Semgrep/Trivy/
                         the git-hook gate (githook_*.py) and mongo_wait.py
 tests/                  unit tests mirroring src/, contracts/, e2e/
 docs/                   project documentation and screenshots
+LICENSE                 GNU General Public License, version 3
 .semgrep/rules/         custom Semgrep rules and their tests
 .githooks/              commit-msg hook and the pre-commit, pre-merge-commit and pre-push shims
 ```
@@ -478,3 +479,11 @@ docs/                   project documentation and screenshots
 * [docs/decisions.md](docs/decisions.md): architecture decision records
 * [docs/e2e.md](docs/e2e.md) (end-to-end tests)
 * [CHANGELOG.md](CHANGELOG.md): release notes
+
+## License
+
+Copyright (C) 2026 Giovanni Manzoni.
+
+Sankey Studio is free software: you can redistribute it and modify it under the terms of the
+GNU General Public License, version 3, as published by the Free Software Foundation. It is
+distributed without any warranty. The full text is in [LICENSE](LICENSE).
