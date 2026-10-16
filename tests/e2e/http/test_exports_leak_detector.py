@@ -11,7 +11,13 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from tests.e2e.support.http_a_procs import chrome_descendants, descendants, have_proc, roots_among
+from tests.e2e.support.http_a_procs import (
+    browser_roots,
+    chrome_descendants,
+    descendants,
+    have_proc,
+    roots_among,
+)
 from tests.e2e.support.waits import wait_until
 
 if TYPE_CHECKING:
@@ -36,6 +42,8 @@ def test_a_child_named_like_chrome_is_found_while_it_runs_and_gone_afterwards(
         assert chrome.pid in wait_until(chrome_descendants, what="the fake Chrome to be listed")
         assert other.pid in descendants(os.getpid())
         assert other.pid not in chrome_descendants()
+        assert chrome.pid in browser_roots()  # started by us, no browser above it
+        assert other.pid not in browser_roots()
     finally:
         for child in (chrome, other):
             child.kill()
@@ -48,3 +56,12 @@ def test_a_browser_is_the_root_of_its_tree_of_processes() -> None:
     assert roots_among(set(parents), parents.get) == {10, 20}
     assert roots_among({11, 12, 13}, parents.get) == {11, 13}
     assert roots_among(set(), parents.get) == set()
+
+
+def test_a_scan_that_straddles_the_end_of_a_browser_counts_no_second_browser() -> None:
+    """Pid 21 went to init and pid 22 ended while the scan ran: neither is a browser of ours."""
+    parents = {10: 5, 11: 10, 21: 1}  # 5 is this process; 22 has no parent any more
+    seen = {10, 11, 21, 22}
+    assert roots_among(seen, parents.get) == {10, 21, 22}  # without `below`: the old count
+    assert roots_among(seen, parents.get, below={5, 10, 11}) == {10}
+    assert roots_among({21}, parents.get, below={5, 10, 11}) == set()
