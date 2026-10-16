@@ -38,8 +38,14 @@ pytestmark = pytest.mark.skipif(
 
 
 def make_dry_run(*args: str) -> str:
-    """What ``make -n ARGS`` prints: the commands it would run, none of them executed."""
-    env = {**os.environ, "LC_ALL": "C", "MAKEFLAGS": ""}
+    """What ``make -n ARGS`` prints: the commands it would run, none of them executed.
+
+    ``JUNIT`` is dropped from the environment: the gate runs this suite as ``make cov JUNIT=...``
+    and make exports a command-line variable to the pytest it starts, so a leaked ``JUNIT`` would
+    add ``--junitxml`` to every target printed here.
+    """
+    env = {key: value for key, value in os.environ.items() if key != "JUNIT"}
+    env |= {"LC_ALL": "C", "MAKEFLAGS": ""}
     done = subprocess.run(  # noqa: S603 - fixed argv, `-n` only prints the recipes
         [MAKE, "-n", "--no-print-directory", "-C", str(REPO_ROOT), *args],
         capture_output=True,
@@ -224,8 +230,13 @@ def test_a_pytest_target_writes_the_report_the_gate_asks_for(
     assert re.findall(r'--junitxml="([^"]+)"', printed) == case.expected
 
 
-@pytest.mark.parametrize("target", ["test", "cov", "memray", "e2e-mongo", "e2e-shard-2"])
-def test_without_a_junit_variable_no_report_option_is_added(target: str) -> None:
+@pytest.mark.parametrize(
+    "target", ["test", "cov", "memray", "e2e-mongo", "e2e-mongo-rs", "e2e-shard-2"]
+)
+def test_without_a_junit_variable_no_report_option_is_added(
+    target: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("JUNIT", "/leak/report.xml")  # what the gate's own `make cov JUNIT=` exports
     assert "--junitxml" not in make_dry_run(target)
 
 
