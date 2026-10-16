@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple, Self
 
 from scripts import githook_messages as msg
-from scripts.githook_plan import is_zero_sha
+from scripts.githook_plan import is_zero_sha, scoped_key
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -107,6 +107,10 @@ class Repo:
 
     def head_tree(self) -> str:
         return self.commit_tree("HEAD")
+
+    def scoped_tree(self, tree: str) -> str:
+        """The stamp key of ``tree``: its files without the ones no check reads (``scoped_key``)."""
+        return scoped_key(self.git("ls-tree", "-r", "-z", tree).split("\0"))
 
     def status(self) -> tuple[str, ...]:
         lines = self.git("status", "--porcelain", "--untracked-files=all").splitlines()

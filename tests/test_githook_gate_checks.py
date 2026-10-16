@@ -16,7 +16,7 @@ from scripts.githook_flows import head_target
 from scripts.githook_runner import GateInterruptedError
 from scripts.githook_stamps import GateLock
 
-from tests.githook_support import Case, Rig, case_id, log_of, make_rig, run_check
+from tests.githook_support import Case, Rig, case_id, commit_file, log_of, make_rig, run_check
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -227,7 +227,7 @@ def test_security_runs_the_three_scans_in_order_and_is_stamped_for_the_day(rig: 
     assert run_check(rig, "security") == 0
     assert rig.runner.labels == ["semgrep-test", "semgrep", "trivy"]
     tree = rig.tree()
-    assert rig.gate.store.path("security", f"{tree}.20261015").is_file()
+    assert rig.gate.store.path("security", f"{rig.gate.scoped(tree)}.20261015").is_file()
     assert rig.stamped("security", tree)
     rig.clock.advance(days=1)
     assert not rig.stamped("security", tree)
@@ -243,7 +243,7 @@ def test_the_security_stamp_uses_the_utc_day_at_the_start_of_the_run(rig: Rig) -
     west = timezone(timedelta(hours=-8))
     rig.clock.now = datetime(2026, 10, 15, 22, 0, tzinfo=west)
     assert run_check(rig, "security") == 0
-    assert rig.gate.store.path("security", f"{rig.tree()}.20261016").is_file()
+    assert rig.gate.store.path("security", f"{rig.gate.scoped(rig.tree())}.20261016").is_file()
 
 
 # --------------------------------------------------------------------------- stamps in the log
@@ -386,7 +386,8 @@ def test_missing_checks_lists_the_unstamped_ones_or_all_when_forced(rig: Rig) ->
 
 
 def test_a_stamp_for_another_tree_does_not_count(rig: Rig) -> None:
-    rig.stamp("fast", "e" * 40)
+    rig.stamp("fast", rig.tree())
+    commit_file(rig.repo.root, "other.txt")  # HEAD is another tree now
     assert ex.missing_checks(rig.gate, ["fast"], head_target(rig.gate)) == ["fast"]
 
 

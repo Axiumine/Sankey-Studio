@@ -29,7 +29,9 @@ if TYPE_CHECKING:
 FAST = ["lint", "typecheck", "caps"]
 PUSH_TIER = ["fast", "cov", "memray", "e2e"]
 PUSH_LABELS = [*FAST, "cov", "memray", "e2e"]
+PROBES = ["preflight-docker", "preflight-qodana", "preflight-rs"]
 RELEASE_LABELS = [
+    *PROBES,
     *PUSH_LABELS,
     "semgrep-test",
     "semgrep",
@@ -139,7 +141,7 @@ def test_every_check_of_the_tier_is_stamped_for_the_pushed_tree(rig: Rig) -> Non
     tree = rig.tree()
     assert go(rig, text) == 0
     assert all(rig.stamped(name, tree) for name in CHECK_ORDER)
-    assert rig.gate.store.path("security", f"{tree}.20261015").is_file()
+    assert rig.gate.store.path("security", f"{rig.gate.scoped(tree)}.20261015").is_file()
     assert not rig.stamped("fast", rig.tree("main"))
 
 
@@ -259,7 +261,7 @@ def test_the_release_checks_stamped_earlier_are_not_run_again(rig: Rig) -> None:
     names = ["fast", "cov", "memray", "e2e", "e2e-mongo", "e2e-mongo-rs", "qodana", "mutation"]
     rig.stamp_all(names, rig.tree())
     assert go(rig, text) == 0
-    assert rig.runner.labels == ["semgrep-test", "semgrep", "trivy"]
+    assert rig.runner.labels == ["preflight-docker", "semgrep-test", "semgrep", "trivy"]
 
 
 def test_a_security_stamp_of_yesterday_does_not_count_today(rig: Rig) -> None:
@@ -269,7 +271,7 @@ def test_a_security_stamp_of_yesterday_does_not_count_today(rig: Rig) -> None:
     assert rig.runner.calls == []
     rig.clock.advance(days=1)
     assert go(rig, text) == 0
-    assert rig.runner.labels == ["semgrep-test", "semgrep", "trivy"]
+    assert rig.runner.labels == ["preflight-docker", "semgrep-test", "semgrep", "trivy"]
 
 
 def test_an_interrupt_unwinds_the_push_and_frees_the_lock(rig: Rig) -> None:

@@ -648,11 +648,17 @@ patterns the app already had (focus trap, Esc, return of focus).
   `mutate-gate` as one check). The `main` tier (push plus security) exists only for
   `make gate-main`. The release tier is bound to every push of `main`, not to a tag convention:
   no tag exists, so a tag-only tier would never fire.
-* *Stamps.* A check that passed leaves a stamp keyed on the check and the tree hash in
-  `<git-common-dir>/hook-stamps/`, and the next commit or push of that tree skips it. It is written
+* *Stamps.* A check that passed leaves a stamp keyed on the check and a digest of the tree without
+  the files no check reads (Markdown outside `src/`, images under `docs/`) in
+  `<git-common-dir>/hook-stamps/`, and the next commit or push of that tree skips it, a docs-only
+  change included. It is written
   only after every step exited 0, no test was skipped and neither the tree nor
   `git status --porcelain --untracked-files=all` changed during the run. `security` also carries
   the UTC date. Each stamp stores the duration of its steps.
+* *Preflight.* A check can name quick probes of the machine (`Check.needs`: Docker answers,
+  `QODANA_TOKEN` is set, the replica set answers). They are `make preflight-*` targets, run unstamped
+  before the first long check of a run, so a push that cannot pass is refused in seconds and not after
+  `cov` and `e2e`.
 * *Inline.* `pre-push` runs the missing checks itself, sequentially, in the foreground, and stops at
   the first failure. It does so only on a clean working tree whose HEAD is the pushed commit;
   otherwise it refuses before running anything and says what to do. A retry resumes, because the

@@ -26,6 +26,8 @@ from scripts.githook_exec import (
     Target,
     describe_stamp,
     offline_refusal,
+    preflight_names,
+    run_preflight,
 )
 from scripts.githook_flows import dry_run_exit
 from scripts.githook_git import Snapshot
@@ -164,6 +166,12 @@ def run_jobs(gate: Gate, jobs: Sequence[Job]) -> int:
     """Run the jobs under the gate lock, stopping at the first failure."""
     try:
         with gate.lock():
+            code, probe = run_preflight(
+                gate, [job.check for job in jobs], pushed_target(gate, jobs[0].planned)
+            )
+            if code != 0:
+                gate.say(msg.PREFLIGHT_REFUSED.format(probe=probe, code=code))
+                return 1
             for job in jobs:
                 if gate.stamp_of(job.check, job.planned.tree) is not None:
                     gate.say(f"gate: {job.check}: stamped meanwhile, skipped")
@@ -189,6 +197,9 @@ def print_push_plan(gate: Gate, planned: Sequence[Planned], jobs: Sequence[Job])
             stamp = gate.stamp_of(name, item.tree)
             state = "RUN" if stamp is None else f"STAMPED ({describe_stamp(stamp)})"
             gate.say(f"plan:   {name} {state}")
+    probes = preflight_names([job.check for job in jobs])
+    if probes:
+        gate.say(f"plan: preflight {', '.join(probes)} (before the first check)")
     refusal = offline_refusal(gate, [job.check for job in jobs])
     if refusal is not None:
         gate.say(f"plan: would refuse: {refusal}")

@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 from scripts.githook_flows import HOOK_NAMES
-from scripts.githook_plan import CHECKS, Tier
+from scripts.githook_plan import CHECKS, PREFLIGHTS, Tier
 
 from tests.githook_support import REPO_ROOT, Case, case_id
 
@@ -161,7 +161,9 @@ def test_make_hooks_only_sets_the_hooks_path() -> None:
 
 
 def test_every_make_target_the_gate_calls_exists() -> None:
-    called = {step.argv[1] for check in CHECKS.values() for step in check.steps}
+    called = {
+        step.argv[1] for check in [*CHECKS.values(), *PREFLIGHTS.values()] for step in check.steps
+    }
     called |= {"mongo-up", "mongo-down", "mongo-absent"}
     assert called <= make_targets()
     assert called <= phony_targets()
@@ -253,7 +255,7 @@ def test_a_path_with_spaces_stays_one_argument() -> None:
 
 
 def test_every_pytest_step_of_the_gate_has_a_target_that_takes_junit() -> None:
-    for check in CHECKS.values():
+    for check in [*CHECKS.values(), *PREFLIGHTS.values()]:
         for step in check.steps:
             printed = make_dry_run("JUNIT=/r/report.xml", step.argv[1])
             assert ("--junitxml=" in printed) is step.junit, (check.name, step.argv)
@@ -275,3 +277,12 @@ def test_the_makefile_documents_the_gate_variable_once() -> None:
 def test_the_gate_wrapper_targets_need_no_other_target_first() -> None:
     for target in ("gate-commit", "gate-push", "gate-main", "gate-release", "hooks-check"):
         assert re.search(rf"^{target}:\s*$", makefile_text(), flags=re.MULTILINE), target
+
+
+def test_the_preflight_targets_probe_and_change_nothing() -> None:
+    assert "docker info" in make_dry_run("preflight-docker")
+    assert make_dry_run("preflight-qodana").strip() == "scripts/qodana.sh --check"
+    printed = make_dry_run("JUNIT=/r/report.xml", "preflight-rs")
+    assert "tests/e2e/mongo_rs/test_rs_topology.py::test_the_uri_reaches_a_replica_set" in printed
+    assert '-m "e2e and mongo_rs"' in printed
+    assert re.findall(r'--junitxml="([^"]+)"', printed) == ["/r/report.xml"]

@@ -14,6 +14,13 @@ itself in depth (see [Security model](#security-model)).
 |---|---|
 | ![Viewer with the donut tab](docs/screenshots/donut-viewer.png) | ![Compare view in dark mode](docs/screenshots/compare-dark.png) |
 
+| The library with collections and tags | Entries table with categories |
+|---|---|
+| ![Library with collections](docs/screenshots/gallery/02-library-populated.png) | ![Entries table](docs/screenshots/gallery/20-editor-entries.png) |
+
+Every other screen and section (the new-graph wizard, each editor panel and dialog, the viewer, the
+settings pages, the dark theme) is in the [screenshot gallery](docs/screenshots/gallery/README.md).
+
 ## Contents
 
 * [Features](#features)
@@ -405,12 +412,18 @@ its `make` target, one at a time.
 | `pre-push` | push of any ref except `main` and tags | the messages of the new commits, then `fast`, `cov`, `memray`, `e2e` |
 | `pre-push` | push whose remote ref is `refs/heads/main` or `refs/tags/*` | the same, plus `security` (Semgrep, Trivy), `e2e-mongo`, `e2e-mongo-rs` (your replica set), `qodana` and `mutation` |
 
-* **Stamps.** A check that passed on a tree leaves `hook-stamps/<check>/<tree hash>` in the git common
+* **Stamps.** A check that passed on a tree leaves `hook-stamps/<check>/<key>` in the git common
   directory (`.git/` in an ordinary clone). It is written only after every step exited 0, no test was
   skipped and the working tree did not change while the check ran. A later commit or push of the same
-  tree finds the stamp and skips the check, so each check runs once per tree. `security` stamps also
+  tree finds the stamp and skips the check, so each check runs once per tree. The key is the tree
+  without the files no check reads (Markdown outside `src/`, images under `docs/`): a README edit or a
+  new screenshot keeps every stamp, any other change voids them. `security` stamps also
   carry the UTC date, because the scanner rules and the vulnerability database change daily. A failed
   push keeps the stamps of the checks that passed, so the next push resumes where it stopped.
+* **Preflight.** Before the first long check of a run the gate probes the machine in seconds:
+  `make preflight-docker` (Docker answers), `preflight-qodana` (`QODANA_TOKEN` is set) and
+  `preflight-rs` (your replica set answers), each only when a check that needs it is still to run.
+  A failing probe refuses the push at once, before `cov` and `e2e` spend 25 minutes.
 * **A push runs the missing checks itself**, in the foreground, so it can take many minutes. Pushing
   `main` or a tag also runs the mutation run (about 19 minutes in the last local run, unverified); the figures are in
   [docs/quality.md](docs/quality.md#git-hooks). The push needs a clean working tree whose HEAD is
@@ -463,7 +476,7 @@ src/sankey_studio/
 scripts/                code caps, mutation gate, memory profile, Semgrep/Trivy/Qodana runners,
                         the git-hook gate (githook_*.py) and mongo_wait.py
 tests/                  unit tests mirroring src/, contracts/, e2e/
-docs/                   project documentation and screenshots
+docs/                   project documentation, README screenshots and a gallery of every screen
 LICENSE                 GNU General Public License, version 3
 .semgrep/rules/         custom Semgrep rules and their tests
 .githooks/              commit-msg hook and the pre-commit, pre-merge-commit and pre-push shims
