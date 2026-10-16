@@ -13,13 +13,13 @@ SHA_A = "a" * 40
 SHA_B = "b" * 40
 PUSH_TIER = ("fast", "cov", "memray", "e2e")
 MAIN_TIER = (*PUSH_TIER, "security")
-RELEASE_TIER = (*MAIN_TIER, "e2e-mongo", "qodana", "mutation")
+RELEASE_TIER = (*MAIN_TIER, "e2e-mongo", "e2e-mongo-rs", "qodana", "mutation")
 
 
 # --------------------------------------------------------------------------- the check table
 
 
-def test_the_eight_checks_run_in_this_order() -> None:
+def test_the_nine_checks_run_in_this_order() -> None:
     assert plan.CHECK_ORDER == (
         "fast",
         "cov",
@@ -27,6 +27,7 @@ def test_the_eight_checks_run_in_this_order() -> None:
         "e2e",
         "security",
         "e2e-mongo",
+        "e2e-mongo-rs",
         "qodana",
         "mutation",
     )
@@ -45,6 +46,7 @@ EXACT_STEPS = [
     Case("e2e", targets("e2e")),
     Case("security", targets("semgrep-test", "semgrep", "trivy")),
     Case("e2e-mongo", targets("e2e-mongo")),
+    Case("e2e-mongo-rs", targets("e2e-mongo-rs")),
     Case("qodana", targets("cov", "qodana")),
     Case("mutation", targets("mutate", "mutate-gate")),
 ]
@@ -65,6 +67,7 @@ JUNIT_STEPS = [
     Case("e2e", [True]),
     Case("security", [False, False, False]),
     Case("e2e-mongo", [True]),
+    Case("e2e-mongo-rs", [True]),
     Case("qodana", [True, False]),
     Case("mutation", [False, False]),
 ]
@@ -110,6 +113,8 @@ def test_check_flags_are_set_only_where_they_belong() -> None:
         "security": (True, False, True),
         "e2e-mongo": (False, True, False),
     }
+    # the replica set is the user's own: no Docker, no project Mongo, no date, no offline guard
+    assert flags["e2e-mongo-rs"] == (False, False, False)
 
 
 def test_the_project_mongo_is_the_compose_one_on_port_27117() -> None:
@@ -162,6 +167,7 @@ RESOLVE = [
     Case(("push", "cov", "cov"), PUSH_TIER),
     Case(("security", "push"), (*PUSH_TIER, "security")),
     Case(("e2e-mongo", "commit"), ("fast", "e2e-mongo")),
+    Case(("e2e-mongo-rs", "commit"), ("fast", "e2e-mongo-rs")),
 ]
 
 
@@ -182,7 +188,7 @@ def test_resolve_names_rejects_an_unknown_name_and_lists_the_valid_ones(name: st
         plan.resolve_names(["fast", name])
     assert str(caught.value) == (
         f"unknown check or tier {name!r}; use one of: fast, cov, memray, e2e, security, "
-        "e2e-mongo, qodana, mutation, commit, push, main, release"
+        "e2e-mongo, e2e-mongo-rs, qodana, mutation, commit, push, main, release"
     )
     assert isinstance(caught.value, ValueError)
 

@@ -8,6 +8,8 @@ Checks (the units that get a stamp), in the order they run:
 * ``e2e``        end-to-end suite (5 shards)
 * ``security``   semgrep-test + semgrep + trivy (the stamp key carries the UTC date)
 * ``e2e-mongo``  both real-MongoDB selections against the project-local Mongo
+* ``e2e-mongo-rs``  the same flows against the user's replica set (``SANKEY_TEST_MONGO_RS_URI``
+                    from the environment or the repo-root ``.env``, read by the tests only)
 * ``qodana``     a fresh ``make cov`` and then ``make qodana`` (before mutation: it fails sooner)
 * ``mutation``   ``make mutate`` then ``make mutate-gate`` as one unit (never a stale mutants/)
 
@@ -16,7 +18,7 @@ Tiers are cumulative groups of checks (``release`` is everything):
 * ``commit``   fast
 * ``push``     commit + cov, memray, e2e
 * ``main``     push + security
-* ``release``  main + e2e-mongo, qodana, mutation
+* ``release``  main + e2e-mongo, e2e-mongo-rs, qodana, mutation
 
 A pushed ref needs the ``release`` tier when its REMOTE name is ``refs/heads/main`` or starts
 with ``refs/tags/``, and the ``push`` tier otherwise. Deletions need nothing.
@@ -93,6 +95,9 @@ CHECKS: Final[dict[str, Check]] = {
             offline_guard=True,
         ),
         Check("e2e-mongo", (make("e2e-mongo", junit=True),), mongo=True),
+        # No Docker: the replica set is the user's own. Without its URI the tests skip, and a skip
+        # fails the check; an unreachable set fails the tests. Either way the push is refused.
+        Check("e2e-mongo-rs", (make("e2e-mongo-rs", junit=True),)),
         Check("qodana", (COV_STEP, make("qodana"))),
         Check("mutation", (make("mutate"), make("mutate-gate"))),
     )
