@@ -7,6 +7,7 @@
 import { createTable } from "../core/table.js";
 import { h } from "../core/dom.js";
 import { formatNumber } from "../core/format.js";
+import { tableDisclosure } from "./parts.js";
 
 const PAGE_SIZE = 20;
 
@@ -26,7 +27,7 @@ function columns(suffix) {
 export function createLinksTable(graph) {
   const noteSlot = h("div");
   const holder = h("div", { class: "stack stack-sm" }, noteSlot);
-  const el = h("details", { class: "table-view", "data-testid": "links-table" }, h("summary", null, "Table view of the links"), holder);
+  const el = tableDisclosure({ testid: "links-table", label: "Table view of the links" }, holder);
   let table = null;
   let latest = { entries: [], entries_total: 0 };
   let unit = "";

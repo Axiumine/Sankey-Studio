@@ -624,7 +624,7 @@ States:
 | State | What is on screen |
 |---|---|
 | Loading | a chart frame with `state-loading` ("Loading the graph") and skeletons in the layout of the finished page |
-| Ready | `stats`, optional `warnings`, tabs and charts, `links-table`, the download icon `export-menu-button` (its panel stays closed); the Sankey is drawn at once |
+| Ready | `stats`, optional `warnings`, tabs and charts, `links-table` (and `category-details` in the Donut tab), the download icon `export-menu-button` (its panel stays closed); the Sankey is drawn at once |
 | Render failed | `state-error` "The graph could not be drawn" with the server's message, `state-retry` and a link "Open in the editor" |
 | Deleted after the page opened | `state-empty` `viewer-missing` "This graph no longer exists" with "Back to the library" (reproduce by answering `GET /api/v1/graphs/<id>/render` with a 404 envelope; a URL of a graph that is already gone is the HTML not-found page) |
 | Theme reload failed | an error toast; the chart on screen stays |
@@ -656,8 +656,10 @@ Behaviour:
   `links-table`, a `<details>` "Table view of the links" that builds a sortable table of 20 rows per
   page when first opened (rows carry `data-source` and `data-target`, no test id; a note says "The
   first N of M links. The editor lists them all." when the bundle holds fewer than the graph).
-  The Donut tab holds `category-table` ("Totals by category", with a total row) and a note naming the
-  donut basis.
+  The Donut tab holds a note naming the donut basis and `category-details`, a `<details>` "Table view of
+  the categories" (closed, the same link-like summary as `links-table`) that holds `category-table`
+  ("Totals by category", with a total row). The block keeps its open or closed state when the chart is
+  redrawn (theme, display switches).
 * The Sankey is drawn without its in-figure legend row (`withoutLegend` of `core/chart.js`: the legend traces go,
   the plot takes the band back and the top margin loses it) because the `legend` list under the chart names the
   same entries; the editor chart does the same. The server figure, the exports and the compare cards keep the
@@ -1167,9 +1169,10 @@ The editor also uses the shell ids `dialog-close`, `toast`, `confirm-dialog`, `c
 | `display-donut-value` | `input[type=checkbox]` | "Show values" (Donut group, hidden without a donut); sends `donut_value` |
 | `legend` | `ul` | absent unless the colour mode is `category` or `layer` |
 | `legend-item` | `li` (repeated) | `data-kind` |
-| `category-table` | `table` | in the Donut tab, with a total row |
+| `category-table` | `table` | in the Donut tab inside `category-details` (hidden while that block is closed), with a total row |
 | `category-row` | `tr` (repeated) | `data-category`, `data-kind` |
 | `links-table` | `details` | "Table view of the links" |
+| `category-details` | `details` | "Table view of the categories"; in the Donut tab, closed until opened |
 | `export-sankey-svg` | `button` | visible on the Sankey tab only |
 | `export-sankey-png` | `button` | visible on the Sankey tab only |
 | `export-donut-svg` | `button` | visible on the Donut tab only |

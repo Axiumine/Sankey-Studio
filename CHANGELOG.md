@@ -62,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Viewer: in the Donut tab the category table sits behind a link, like the links table under the Sankey: a closed "Table view of the categories" (`<details>`, new test id `category-details`) opens `category-table`, and stays open or closed when the chart is redrawn. The donut basis note stays above it. No backend change.
 - Viewer: the export controls moved from the card beside the chart into a popover that a new download icon opens, at the right of the tab row after the display menu icon. The gear is `export-menu-button` ("Export settings"), the popover is `export-menu-panel` (non-modal, hidden until opened; Escape, a press outside or focus leaving closes it; it stays open after a download); every other `export-*` test id is unchanged but now sits inside that panel. The chart card uses the full width of the page (the right-hand column and its 1100 px breakpoint are gone). Two new test ids, no backend change.
 - Viewer: the cursor over a coloured square of the Sankey legend is the standard arrow, no longer the pointer (the legend entries do nothing when clicked); the donut legend, which toggles slices, keeps the pointer. No new test id, no backend change.
 - Viewer: the numbers strip no longer shows Nodes, Links (and its "N drawn" note) or Layers; it keeps Total in, Total out and Categories. The editor chart summary and the compare cards are unchanged. No new test id, no backend change.
