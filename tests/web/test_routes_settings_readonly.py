@@ -127,6 +127,7 @@ def test_remote_mode_with_writes_behaves_like_local_mode_but_shows_the_flags(
     listed = web.client.get(BASE).json()
     assert listed["bootstrap"] == {
         "sources_dir": str(web.config.effective_sources_dir),
+        "graphs_dir": str(web.config.graphs_dir),
         "remote_mode": True,
         "writes_allowed": True,
     }

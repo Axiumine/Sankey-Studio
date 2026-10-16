@@ -45,8 +45,9 @@ compare-shared-colours
 # w3-settings (settings page; js/settings/*.js)
 # appearance.js: the three theme cards of the page (the header owns theme-switch)
 settings-theme-option
-# storage.js: the Database field of the MongoDB storage target and the result line of "Test storage"
+# storage.js: the Database field of the MongoDB storage target, the graphs folder of the file store and the result line of "Test storage"
 settings-storage-database
+settings-storage-folder
 settings-storage-status
 # connection-row.js: the result line of "Test connection" (its latency is connection-latency)
 connection-status

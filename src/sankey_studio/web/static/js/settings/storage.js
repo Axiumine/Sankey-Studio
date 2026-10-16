@@ -38,6 +38,12 @@ function fillOptions(select, options, value) {
   select.value = options.some((item) => item.value === value) ? value : "";
 }
 
+/** The folder the "file" backend keeps the graphs in (read-only: set when the server started). */
+function folderLine(store) {
+  const path = h("code", { class: "break", "data-testid": "settings-storage-folder" }, store.settings.bootstrap.graphs_dir);
+  return h("p", { class: "hint" }, "Graphs folder: ", path);
+}
+
 function backendField(store) {
   const control = selectInput({
     options: BACKENDS,
@@ -199,6 +205,7 @@ function syncValues(store, parts) {
   const { draft } = store;
   parts.backend.control.value = draft.storage_backend;
   parts.hint.textContent = BACKEND_HINTS[draft.storage_backend];
+  parts.folder.hidden = draft.storage_backend !== "file";
   parts.mongoBlock.hidden = draft.storage_backend !== "mongo";
   if (parts.mongo.database.control.value !== draft.storage_database) {
     parts.mongo.database.control.value = draft.storage_database;
@@ -227,6 +234,7 @@ export function buildStorage(store) {
     mongo,
     migrate: migrateBox(store),
     hint: h("p", { class: "hint" }),
+    folder: folderLine(store),
     mongoBlock: h("div", { class: "stack settings-mongo-block" }, mongo.connection.el, mongo.database.el),
     reportHost: h("div", { class: "settings-report-host" }),
   };
@@ -237,6 +245,7 @@ export function buildStorage(store) {
     body: [
       parts.backend.el,
       parts.hint,
+      parts.folder,
       parts.mongoBlock,
       parts.migrate.el,
       h("div", { class: "cluster" }, test, line.el),

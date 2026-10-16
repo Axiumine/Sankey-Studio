@@ -59,6 +59,7 @@ def test_the_defaults_of_a_fresh_install(make_app: AppFactory) -> None:
     assert (body["theme"], body["max_upload_mb"], body["max_drawn_links"]) == ("system", 25, 3000)
     assert body["bootstrap"] == {
         "sources_dir": str(web.config.effective_sources_dir),
+        "graphs_dir": str(web.config.graphs_dir),
         "remote_mode": False,
         "writes_allowed": True,
     }

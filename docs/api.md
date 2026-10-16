@@ -595,12 +595,14 @@ fall back to `filename`.
  "theme": "dark",
  "default_style": { "...": "a full style, same keys as GraphDefinition.style" },
  "max_links": 200000, "max_drawn_links": 3000, "max_upload_mb": 25, "mongo_timeout_ms": 15000,
- "bootstrap": {"sources_dir": "/home/me/.local/share/sankey-studio/sources", "remote_mode": false,
-               "writes_allowed": true}}
+ "bootstrap": {"sources_dir": "/home/me/.local/share/sankey-studio/sources",
+               "graphs_dir": "/home/me/.local/share/sankey-studio/graphs",
+               "remote_mode": false, "writes_allowed": true}}
 ```
 
 `bootstrap` holds operator-level values that come from the environment or the command line and cannot be changed
-through the API.
+through the API: `sources_dir` (the managed sources folder), `graphs_dir` (`<data dir>/graphs`, where the `file`
+storage backend keeps the graph files), `remote_mode` and `writes_allowed`.
 
 **`SettingsIn`** (the `PUT` body) has the same keys, except that the items of `mongo_connections` are:
 

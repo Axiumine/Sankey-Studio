@@ -53,6 +53,7 @@ def check_defaults(live_server: LiveServer, api: httpx.Client) -> None:
     assert (settings["max_upload_mb"], settings["mongo_timeout_ms"]) == (25, 15_000)
     assert settings["bootstrap"] == {
         "sources_dir": str(live_server.sources_dir),
+        "graphs_dir": str(live_server.graphs_dir),
         "remote_mode": False,
         "writes_allowed": True,
     }
