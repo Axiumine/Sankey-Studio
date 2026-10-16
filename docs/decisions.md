@@ -55,6 +55,7 @@ Contents
 | [ADR-35](#adr-35-collections-are-a-tree-stored-beside-the-graphs) | Collections are a tree stored beside the graphs |
 | [ADR-36](#adr-36-editor-chrome) | Editor chrome |
 | [ADR-37](#adr-37-git-hooks-are-the-one-place-the-checks-run) | Git hooks are the one place the checks run |
+| [ADR-38](#adr-38-mongodb-runs-on-one-server-and-on-a-cluster) | MongoDB runs on one server and on a cluster |
 
 ## ADR-01 Storage protocol and graph ids
 
@@ -643,7 +644,7 @@ patterns the app already had (focus trap, Esc, return of focus).
 * *Tiers.* A commit and a clean `--no-ff` merge run `fast` (lint, typecheck, caps) on the index
   tree. A push runs the messages of the new commits through `commit-msg`, then `fast`, `cov`,
   `memray` and `e2e`. A push whose REMOTE ref is `refs/heads/main` or `refs/tags/*` also runs
-  `security` (semgrep-test, semgrep, trivy), `e2e-mongo`, `qodana` and `mutation` (`mutate` then
+  `security` (semgrep-test, semgrep, trivy), `e2e-mongo`, `e2e-mongo-rs`, `qodana` and `mutation` (`mutate` then
   `mutate-gate` as one check). The `main` tier (push plus security) exists only for
   `make gate-main`. The release tier is bound to every push of `main`, not to a tag convention:
   no tag exists, so a tag-only tier would never fire.
@@ -709,3 +710,49 @@ later commit and push waiting); killing only
 `pre-push` checks the committed tree. `git push --dry-run` is recognised from the command lines of
 the hook's ancestors (`/proc`); without `/proc` it runs `pre-push` for real. Several runtimes are
 unknown until the first real runs, which print and store them.
+
+## ADR-38 MongoDB runs on one server and on a cluster
+
+**Decision.** A connection string may name a standalone server, a replica set, the `mongos` routers
+of a sharded cluster or `mongodb+srv://`; the application does not branch on the topology.
+
+* URI options (`replicaSet`, `readPreference`, `w`, `retryWrites`, `authSource`, `tls`...) reach the
+  driver unchanged. `default_factory` fixes a few options and ignores the same ones in the string:
+  server selection and connect timeouts (`mongo_timeout_ms`, which the Settings page owns), the
+  socket timeout (at least 60 s), the pool (8 per host, idle and wait timeouts), `tz_aware` and
+  `appName`. `tlsCAFile`, client certificates and non-SCRAM logins stay refused (ADR-16).
+* The library stores (`sankey_studio_graphs`, `sankey_studio_collections`) open their database
+  through `mongo.primary_database`: they read what they have just written (a save then a load, a
+  delete then an import). Source collections keep the URI's read preference: reading from secondaries
+  is the point of setting it, and the data may lag by the replication delay.
+* Nothing uses sessions or transactions, so a standalone server (no retryable writes, no
+  transactions) behaves like a cluster. The multi-document writes are `update_many` calls: the
+  write-back and "move graphs" scope them by an `_id` list, the folder re-parent and delete by
+  `parent_id` or `folder_id`. The driver does not retry them and they are not atomic across
+  documents: after a failover the person is told to try again, and repeating one is safe (a document
+  already changed no longer matches the filter). A refused update can leave the documents before it
+  changed.
+* `mongo_errors` words a failover instead of a bare class name: `NotPrimaryError` ("no primary right
+  now"), `AutoReconnect` and `NetworkTimeout` ("interrupted ...; a write in flight may have been
+  applied"), `WriteConcernError` and
+  `WTimeoutError` ("not confirmed by enough members; it may have been applied"). Messages still carry
+  the connection name and the class name only. `ServerSelectionTimeoutError` stays "unreachable".
+* "Test connection" of a saved connection pings with `primaryPreferred`, so a replica set electing a
+  primary is not reported as down while a secondary answers. Testing a new or edited storage
+  connection also creates the indexes on the primary, so it still needs one.
+* A refused `update_many` (a validator, a shard key that may not change) is `write_rejected`, like a
+  refused insert, instead of a 502.
+
+**Why.** The code already worked on a cluster by the driver's defaults, but nothing proved it and
+one defect hid behind it: with `readPreference=secondary*` in the saved URI a bundle import after a
+delete read stale folders. The suite `make e2e-mongo-rs` (marker `mongo_rs`, `docs/e2e.md`) now
+runs every real-Mongo flow, and the same flows with `readPreference=secondaryPreferred`, against a
+replica set you run yourself. The release gate runs it as the `e2e-mongo-rs` check (no Docker: the
+cluster is the user's), so a push of `main` or a tag needs that cluster reachable; without its URI
+the tests skip and a skip fails the check, like every other skip.
+
+**Accepted risks.** The application never shards its own collections; sharding
+`sankey_studio_collections` would break the unique `(parent_id, name_key)` index. `list_databases`
+and `list_collection_names` (the pickers) need a primary whatever the preference. A private CA works
+only through the system trust store (`SSL_CERT_FILE`, `SSL_CERT_DIR`). No failover is exercised
+against a real cluster: the suite never steps a member down.

@@ -96,6 +96,24 @@ def test_a_new_connection_is_typed_in_a_password_field_saved_and_never_shown_aga
     assert page_leaks(settings, "hunter") == []
 
 
+def test_a_new_connection_string_is_explained_for_one_server_a_replica_set_and_atlas(
+    settings: SettingsPage,
+) -> None:
+    settings.goto()
+    settings.tid("connection-add").click()
+    card = settings.connection()
+    expect(card).to_contain_text("One server: mongodb://user:password@host:27017/.")
+    expect(card).to_contain_text(
+        "Replica set: list the members and name the set, "
+        "mongodb://user:password@h1:27017,h2:27017,h3:27017/?replicaSet=rs0."
+    )
+    expect(card).to_contain_text("Atlas: mongodb+srv://user:password@cluster.example.com/.")
+    expect(card.get_by_test_id("connection-uri")).to_have_attribute(
+        "placeholder", "mongodb://user:password@host:27017"
+    )
+    assert settings.page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+
+
 # ------------------------------------------------------------------------------ keep and replace
 
 

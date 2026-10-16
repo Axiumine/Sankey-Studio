@@ -902,7 +902,7 @@ case. `no_consent` and `too_many` reach HTTP only as 422 `source_edit_refused`; 
 | `limit_reached` | The source already reads its `limit` of documents, so a new one would not show up | The source already reads its limit of documents, so a new one would not show up and your change stays in this graph. |
 | `too_many_documents` | More than 1,000 documents would change | The change would touch more than 1000 documents, so your change stays in this graph. |
 | `permission_denied` | The database user may not write (or read) there | The database user may not write there, so your change stays in this graph. |
-| `write_rejected` | The database refused the new document (a duplicate key, for example) | The database refused the new document, so your change stays in this graph. |
+| `write_rejected` | The database refused the change (a duplicate key or a validation rule, for example; an update of several documents is not atomic, so some may already be changed) | The database refused the change, so your change stays in this graph. |
 | `would_recolour` | A row reorder would change colours and the pins that keep them do not fit in the style | Rows were not reordered because that would change the colours. The order is kept in this graph. |
 
 **Errors.** 403 `read_only_mode` (gates 1 and 2 on `write`), 404 `source_not_found` (the file is gone), 400 `unsafe_source` (a path the managed directory refuses), 409 `conflict` (the file changed during the edit),
