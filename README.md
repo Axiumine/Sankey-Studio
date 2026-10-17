@@ -416,8 +416,8 @@ its `make` target, one at a time.
   directory (`.git/` in an ordinary clone). It is written only after every step exited 0, no test was
   skipped and the working tree did not change while the check ran. A later commit or push of the same
   tree finds the stamp and skips the check, so each check runs once per tree. The key is the tree
-  without the files no check reads (Markdown outside `src/`, images under `docs/`): a README edit or a
-  new screenshot keeps every stamp, any other change voids them. `security` stamps also
+  without the files no check reads (Markdown outside `src/`, images under `docs/`, `LICENSE`): a
+  README edit, a new screenshot or a license edit keeps every stamp, any other change voids them. `security` stamps also
   carry the UTC date, because the scanner rules and the vulnerability database change daily. A failed
   push keeps the stamps of the checks that passed, so the next push resumes where it stopped.
 * **Preflight.** Before the first long check of a run the gate probes the machine in seconds:
