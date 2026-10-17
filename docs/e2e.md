@@ -131,6 +131,16 @@ E2E_SHARD=2/5 uv run pytest tests/e2e -m "e2e and not mongo and not mongo_rs" -p
 * **Browser.** Chrome is always headless (`--no-sandbox --disable-dev-shm-usage`, English locale), and
   a self-test pins that. There is no headed or slow-motion switch: to see what a test saw, open its
   trace.
+* **Network.** `make e2e` and `make e2e-serial` run through `scripts/netns.sh`: a user and network
+  namespace with a working loopback and nothing else (no privilege needed). Chrome aborts the requests
+  it has in flight with `net::ERR_NETWORK_CHANGED` when an interface of the machine comes or goes, and
+  a docker bridge or veth of any other project on the machine does exactly that; a page then loses a
+  script module and the test fails or the browser watch reports the console error. These suites only
+  use `127.0.0.1`, so they do not see the host network at all. Where no namespace can be made (no
+  `unshare` or `ip`, user namespaces disabled) the script says so on stderr and runs in the host
+  network as before. `make e2e-mongo` and `make e2e-mongo-rs` need the host network (the compose
+  port, the LAN) and keep it. When you run a file by hand, prefix the command with
+  `scripts/netns.sh` to get the same isolation.
 * **Parameters.** `-p no:cacheprovider` is what the make targets pass; do the same when you run shards
   by hand. `-ra` (the project default) prints the reason of every skip.
 * **JUnit.** `make e2e JUNIT=/tmp/run/report.xml` also writes one JUnit file per shard
@@ -539,6 +549,9 @@ Checklist for a test that fails now and then (run it five times in a row, alone 
   happened.
 * Downloads use `expect_download`; the first image export of a process takes longer.
 * Machine load: try `make e2e E2E_SHARDS=3`, or run the module alone.
+* `net::ERR_NETWORK_CHANGED` in a console error or a `requestfailed` line is the network of the host
+  changing under Chrome, not a bug of the app; the offline targets are shielded from it (see
+  "Network" above), so seeing it from `make e2e` means the script fell back to the host network.
 
 ## Troubleshooting
 

@@ -45,16 +45,20 @@ test:
 # (debugging); `make e2e E2E_SHARDS=1` is the same.
 E2E_SHARDS ?= 5
 E2E_PYTEST := $(PY) pytest tests/e2e -m "e2e and not mongo and not mongo_rs" -p no:cacheprovider
+# These suites only use 127.0.0.1, so they run in a network namespace of their own (scripts/netns.sh):
+# a docker interface of another project coming or going would abort Chrome's requests with
+# net::ERR_NETWORK_CHANGED. Not used by the real-MongoDB suites, which need the host network.
+NETNS := scripts/netns.sh
 
 e2e:
 	$(MAKE) --no-print-directory -O -j$(E2E_SHARDS) \
 	  $(addprefix e2e-shard-,$(shell seq 1 $(E2E_SHARDS)))
 
 e2e-shard-%:
-	E2E_SHARD=$*/$(E2E_SHARDS) $(E2E_PYTEST) $(call junit,-$*)
+	E2E_SHARD=$*/$(E2E_SHARDS) $(NETNS) $(E2E_PYTEST) $(call junit,-$*)
 
 e2e-serial:
-	$(E2E_PYTEST)
+	$(NETNS) $(E2E_PYTEST)
 
 # the same flows against a REAL MongoDB, then the mongo-marked unit tests (they skip in `make cov`).
 # Needs SANKEY_TEST_MONGO_URI, e.g. the project-local compose Mongo (`make mongo-up`):
