@@ -24,3 +24,6 @@ build/
 *.egg-info/
 data/
 .idea/
+
+# Personal task list (not part of the project)
+TODO.md
