@@ -507,7 +507,8 @@ a check. These are working rules, not technical barriers.
 
 * **Not a security boundary.** The hooks live in the clone. `git commit --no-verify`,
   `git push --no-verify`, `git -c core.hooksPath=/dev/null ...`, a fresh clone before `make hooks`
-  and a tool that does not run hooks all skip them. The project has no CI and no server-side check;
+  and a tool that does not run hooks all skip them. The project runs no CI on commits and has no server-side check
+  (its one workflow, `release.yml`, only publishes a tagged release: [release.md](release.md));
   the only hard stop would be branch protection with a required check on the remote, and it was not
   added (ADR-37). The hooks catch mistakes, not a determined person.
 * **A killed gate can leave Mongo up.** A SIGKILL skips the `finally` that runs `make mongo-down`;

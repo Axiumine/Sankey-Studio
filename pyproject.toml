@@ -11,6 +11,17 @@ readme = "README.md"
 license = "GPL-3.0-only"
 license-files = ["LICENSE"]
 authors = [{ name = "Giovanni Manzoni", email = "dev@giovannimanzoni.com" }]
+keywords = ["sankey", "diagram", "visualization", "plotly", "fastapi", "mongodb"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Web Environment",
+  "Framework :: FastAPI",
+  "Intended Audience :: End Users/Desktop",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: JavaScript",
+  "Topic :: Scientific/Engineering :: Visualization",
+]
 requires-python = ">=3.14"
 dependencies = [
   "fastapi>=0.115",
@@ -25,6 +36,14 @@ dependencies = [
   "kaleido>=1.0",
   "choreographer>=1.4",
 ]
+
+[project.urls]
+Homepage = "https://github.com/Axiumine/Sankey-Studio"
+Documentation = "https://github.com/Axiumine/Sankey-Studio/tree/main/docs"
+Source = "https://github.com/Axiumine/Sankey-Studio"
+Issues = "https://github.com/Axiumine/Sankey-Studio/issues"
+Changelog = "https://github.com/Axiumine/Sankey-Studio/blob/main/CHANGELOG.md"
+Security = "https://github.com/Axiumine/Sankey-Studio/blob/main/SECURITY.md"
 
 [project.scripts]
 sankey-studio = "sankey_studio.cli:main"
@@ -49,6 +68,19 @@ dev = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/sankey_studio"]
+
+# The source distribution carries the package, its docs and the policy files, not the tests, the
+# agent skills (.claude), the git hooks or the scanner config.
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src",
+  "/docs/*.md",
+  "/README.md",
+  "/LICENSE",
+  "/CHANGELOG.md",
+  "/SECURITY.md",
+  "/CONTRIBUTING.md",
+]
 
 # --------------------------------------------------------------------------- ruff
 [tool.ruff]

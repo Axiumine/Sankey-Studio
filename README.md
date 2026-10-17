@@ -1,5 +1,7 @@
 # Sankey Studio
 
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/15611/badge)](https://www.bestpractices.dev/projects/15611)
+
 Sankey Studio is a local web app for drawing and managing Sankey graphs. Paste or upload a CSV, point
 it at a MongoDB collection or type the flows in by hand, and watch the diagram update as you edit.
 Graphs are saved to a library on disk (or in MongoDB), can be compared side by side, and export to
@@ -8,18 +10,18 @@ donut chart. It is a Python 3.14 FastAPI application with a vanilla JavaScript f
 step, no CDN), managed with uv, and it has no login: it listens on loopback by default and defends
 itself in depth (see [Security model](#security-model)).
 
-![Editor with live preview](docs/screenshots/editor-light.png)
+![Editor with live preview](https://raw.githubusercontent.com/Axiumine/Sankey-Studio/main/docs/screenshots/editor-light.png)
 
 | Donut view of a categorised graph | Compare view, dark theme |
 |---|---|
-| ![Viewer with the donut tab](docs/screenshots/donut-viewer.png) | ![Compare view in dark mode](docs/screenshots/compare-dark.png) |
+| ![Viewer with the donut tab](https://raw.githubusercontent.com/Axiumine/Sankey-Studio/main/docs/screenshots/donut-viewer.png) | ![Compare view in dark mode](https://raw.githubusercontent.com/Axiumine/Sankey-Studio/main/docs/screenshots/compare-dark.png) |
 
 | The library with collections and tags | Entries table with categories |
 |---|---|
-| ![Library with collections](docs/screenshots/gallery/02-library-populated.png) | ![Entries table](docs/screenshots/gallery/20-editor-entries.png) |
+| ![Library with collections](https://raw.githubusercontent.com/Axiumine/Sankey-Studio/main/docs/screenshots/gallery/02-library-populated.png) | ![Entries table](https://raw.githubusercontent.com/Axiumine/Sankey-Studio/main/docs/screenshots/gallery/20-editor-entries.png) |
 
 Every other screen and section (the new-graph wizard, each editor panel and dialog, the viewer, the
-settings pages, the dark theme) is in the [screenshot gallery](docs/screenshots/gallery/README.md).
+settings pages, the dark theme) is in the [screenshot gallery](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/screenshots/gallery/README.md).
 
 ## Contents
 
@@ -67,11 +69,27 @@ settings pages, the dark theme) is in the [screenshot gallery](docs/screenshots/
 
 ## Quick start
 
+### Install from PyPI
+
+```bash
+uv tool install sankey-studio     # fetches Python 3.14 when it is missing
+sankey-studio serve               # then open http://127.0.0.1:8765
+```
+
+`pipx install --python python3.14 sankey-studio` and `python3.14 -m pip install sankey-studio` (in a
+virtual environment) work too. Upgrade with `uv tool upgrade sankey-studio` (or `pipx upgrade
+sankey-studio`) and remove with `uv tool uninstall sankey-studio` (or `pipx uninstall sankey-studio`).
+For SVG and PNG export, Chrome or Chromium must be installed; without it, the UI falls back to the
+browser's own image download. Releases are listed in the
+[changelog](https://github.com/Axiumine/Sankey-Studio/blob/main/CHANGELOG.md).
+
+### Run from a checkout
+
 Requirements: [uv](https://docs.astral.sh/uv/) and Python 3.14 (uv installs it from `.python-version`
 when it is missing). For SVG and PNG export, Chrome or Chromium must be installed; if it is not, run
 `uv run plotly_get_chrome`. Without it, the UI falls back to the browser's own image download.
 The git hooks fail on any skipped test, so a machine that pushes also needs Chrome or Chromium, `node`,
-`bash` and a Linux-style `/proc` (see [docs/quality.md](docs/quality.md#fail-closed-rules)).
+`bash` and a Linux-style `/proc` (see [docs/quality.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/quality.md#fail-closed-rules)).
 
 ```bash
 uv sync --all-extras      # install runtime and development dependencies
@@ -82,6 +100,8 @@ Then open <http://127.0.0.1:8765>. `make serve` does the same as the second comm
 `python -m sankey_studio` is equivalent to `sankey-studio`.
 
 ### Command line
+
+From a checkout (an installed package runs `sankey-studio serve` without `uv run`):
 
 ```bash
 uv run sankey-studio serve [--host HOST] [--port PORT] [--data-dir DIR] [--sources-dir DIR] \
@@ -251,7 +271,7 @@ Options in the string such as `replicaSet`, `readPreference`, `w`, `retryWrites`
   machine that runs Sankey Studio (or named by `SSL_CERT_FILE` / `SSL_CERT_DIR`).
 
 `make e2e-mongo-rs` runs the Mongo flows against a replica set you run yourself
-([docs/e2e.md](docs/e2e.md#replica-set)).
+([docs/e2e.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/e2e.md#replica-set)).
 
 For a project-local MongoDB on `127.0.0.1:27117` run `make mongo-up` (needs Docker); `make mongo-down`
 stops it.
@@ -293,10 +313,13 @@ There is no login, so the app protects itself:
   injection guard; write-back refuses formula-like new text), and the frontend never writes HTML from
   strings.
 
-Details and the reasoning are in [docs/architecture.md](docs/architecture.md#security-design) and
-[docs/decisions.md](docs/decisions.md).
+Details and the reasoning are in [docs/architecture.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/architecture.md#security-design) and
+[docs/decisions.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/decisions.md). To report a vulnerability, follow [SECURITY.md](https://github.com/Axiumine/Sankey-Studio/blob/main/SECURITY.md)
+(GitHub private vulnerability reporting, not a public issue).
 
 ## Development
+
+Contributions are welcome: read [CONTRIBUTING.md](https://github.com/Axiumine/Sankey-Studio/blob/main/CONTRIBUTING.md) first.
 
 ```bash
 make sync     # uv sync --all-extras
@@ -375,7 +398,7 @@ for that reason.
   never runs twice on the same tree ([Commit policy](#commit-policy)).
 * **GitNexus** code-intelligence index (`make gitnexus`) for impact analysis before edits.
 
-More in [docs/quality.md](docs/quality.md).
+More in [docs/quality.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/quality.md).
 
 ## Commit policy
 
@@ -426,14 +449,14 @@ its `make` target, one at a time.
   A failing probe refuses the push at once, before `cov` and `e2e` spend 25 minutes.
 * **A push runs the missing checks itself**, in the foreground, so it can take many minutes. Pushing
   `main` or a tag also runs the mutation run (about 19 minutes in the last local run, unverified); the figures are in
-  [docs/quality.md](docs/quality.md#git-hooks). The push needs a clean working tree whose HEAD is
+  [docs/quality.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/quality.md#git-hooks). The push needs a clean working tree whose HEAD is
   the pushed commit; otherwise the hook refuses before it runs anything and says what to do (check
   the branch out, commit, or `git stash -u`). One gate runs at a time, so a commit made while a push
   gate runs is refused with "another gate run holds ...".
 * **Reading a refusal.** Every line starts with `gate:`. `gate: FAILED <check> (exit N); log: <path>`
   names the log of the last run of that check (`hook-logs/<check>.log` in the git common directory);
   `gate: <check>: junit: skipped test ...` means a test was skipped, which fails the gate; the other
-  messages are listed in [docs/quality.md](docs/quality.md#reading-a-refusal).
+  messages are listed in [docs/quality.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/quality.md#reading-a-refusal).
 * **Fail closed.** A skipped test fails its check, a missing `QODANA_TOKEN` fails `qodana`, a push that
   has to run `security` is refused while an `*_OFFLINE` variable is set (it weakens the scans), and a
   busy lock or any error inside the gate refuses the commit or push. A push that only deletes a ref
@@ -445,7 +468,8 @@ its `make` target, one at a time.
   checks of a tier have a stamp, without running anything.
 * **Not a security boundary.** The hooks are local: `git commit --no-verify`, `git push --no-verify`,
   `git -c core.hooksPath=/dev/null ...` and a fresh clone without `make hooks` skip them, and the
-  project has no server-side check. They stop mistakes, not a determined person.
+  project has no server-side check (its one workflow only publishes a tagged release, see
+  [docs/release.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/release.md)). They stop mistakes, not a determined person.
 * **Rollback.** `git config --unset core.hooksPath` disables every hook of the clone; `rm -rf
   .git/hook-stamps .git/hook-logs` clears the stamps and logs (use `git rev-parse --git-common-dir`
   for the path in a linked worktree).
@@ -484,14 +508,19 @@ LICENSE                 GNU General Public License, version 3
 
 ## Docs index
 
-* [docs/architecture.md](docs/architecture.md): product, modules, data model, pipeline, storage,
+* [docs/architecture.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/architecture.md): product, modules, data model, pipeline, storage,
   rendering, security design
-* [docs/api.md](docs/api.md): the HTTP API contract, error envelope, routes, page contexts
-* [docs/ui.md](docs/ui.md): pages, states, `data-testid` reference, DOM wait signals
-* [docs/quality.md](docs/quality.md): gates, caps, coverage, mutation, scanners, commit policy
-* [docs/decisions.md](docs/decisions.md): architecture decision records
-* [docs/e2e.md](docs/e2e.md) (end-to-end tests)
-* [CHANGELOG.md](CHANGELOG.md): release notes
+* [docs/api.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/api.md): the HTTP API contract, error envelope, routes, page contexts
+* [docs/ui.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/ui.md): pages, states, `data-testid` reference, DOM wait signals
+* [docs/quality.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/quality.md): gates, caps, coverage, mutation, scanners, commit policy
+* [docs/decisions.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/decisions.md): architecture decision records
+* [docs/e2e.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/e2e.md) (end-to-end tests)
+* [docs/release.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/release.md): making a release and publishing it to PyPI
+* [CHANGELOG.md](https://github.com/Axiumine/Sankey-Studio/blob/main/CHANGELOG.md): release notes
+* [CONTRIBUTING.md](https://github.com/Axiumine/Sankey-Studio/blob/main/CONTRIBUTING.md): how to report a bug, set up, and send a change
+* [SECURITY.md](https://github.com/Axiumine/Sankey-Studio/blob/main/SECURITY.md): supported versions and how to report a vulnerability privately
+* [GOVERNANCE.md](https://github.com/Axiumine/Sankey-Studio/blob/main/GOVERNANCE.md) and [MAINTAINERS.md](https://github.com/Axiumine/Sankey-Studio/blob/main/MAINTAINERS.md): roles, decisions, access and who the maintainers are
+* [CODE_OF_CONDUCT.md](https://github.com/Axiumine/Sankey-Studio/blob/main/CODE_OF_CONDUCT.md): the Contributor Covenant 2.1 and how to report a conduct problem
 
 ## License
 
@@ -499,4 +528,4 @@ Copyright (C) 2026 Giovanni Manzoni.
 
 Sankey Studio is free software: you can redistribute it and modify it under the terms of the
 GNU General Public License, version 3, as published by the Free Software Foundation. It is
-distributed without any warranty. The full text is in [LICENSE](LICENSE).
+distributed without any warranty. The full text is in [LICENSE](https://github.com/Axiumine/Sankey-Studio/blob/main/LICENSE).

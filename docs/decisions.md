@@ -56,6 +56,7 @@ Contents
 | [ADR-36](#adr-36-editor-chrome) | Editor chrome |
 | [ADR-37](#adr-37-git-hooks-are-the-one-place-the-checks-run) | Git hooks are the one place the checks run |
 | [ADR-38](#adr-38-mongodb-runs-on-one-server-and-on-a-cluster) | MongoDB runs on one server and on a cluster |
+| [ADR-39](#adr-39-releases-are-published-to-pypi-from-a-tag) | Releases are published to PyPI from a tag |
 
 ## ADR-01 Storage protocol and graph ids
 
@@ -699,8 +700,8 @@ rule is now one sentence: tests run in the hooks, and a check that did not run i
 * `qodana` is required for `main` and tags and runs a fresh `make cov` first, because it imports
   `coverage.xml` and only warns when it is missing or stale. It runs before `mutation` so a missing
   token fails before the long mutation run.
-* The hooks are client-side only. The project has no CI and no branch protection, and none was
-  added: the hooks are a convenience gate that stops mistakes, not a security boundary.
+* The hooks are client-side only. The project runs no CI on commits and has no branch protection, and
+  none was added (the one workflow publishes a tagged release, ADR-39): the hooks are a convenience gate that stops mistakes, not a security boundary.
 
 **Accepted risks.** `--no-verify`, `core.hooksPath` overrides and a clone without `make hooks` skip
 every hook (the rules for agents forbid them; nothing enforces it). A push gate of 30+ minutes holds
@@ -762,3 +763,24 @@ the tests skip and a skip fails the check, like every other skip.
 and `list_collection_names` (the pickers) need a primary whatever the preference. A private CA works
 only through the system trust store (`SSL_CERT_FILE`, `SSL_CERT_DIR`). No failover is exercised
 against a real cluster: the suite never steps a member down.
+
+## ADR-39 Releases are published to PyPI from a tag
+
+**Decision.** A tag `vX.Y.Z` on `main` starts `.github/workflows/release.yml`, which builds the sdist
+and the wheel, checks them (`twine check --strict`, the wheel starts), uploads them to TestPyPI and,
+after the approval of the `pypi` environment, to PyPI. The upload uses PyPI trusted publishing
+(OIDC); the workflow has `id-token: write` only in the two upload jobs and `contents: read` in the
+build job, and its actions are pinned to commit SHAs.
+
+* No PyPI token exists anywhere, so there is nothing to leak from the repository, the GitHub
+  secrets or this machine. Trusted publishing also attaches Sigstore attestations to the files.
+* The workflow runs no tests. The checks stay in the git hooks (ADR-37), which run the full release
+  tier before `main` or a tag is pushed; adding CI would duplicate them and was not wanted.
+* TestPyPI first, then a manual approval, because a PyPI version can never be uploaded twice.
+* `pyproject.toml` limits the sdist to `src/`, the Markdown docs and the policy files, so the tests,
+  the agent skills and the scanner config are not published.
+
+**Accepted risks.** The tag is the trigger, so whoever can push a `v*` tag can start a release; the
+`pypi` environment's required reviewer is the second lock. The hooks that vouch for the tree are
+client-side (ADR-37), so the workflow trusts the tag's commit as the maintainer pushed it. How to
+make a release is in [release.md](release.md).
