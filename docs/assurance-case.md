@@ -173,7 +173,7 @@ OWASP Top 10 (2021), with the same meaning of Yes and Partly:
 | A03 Injection | Yes | NoSQL (T5), XSS (T9), spreadsheet formula (T10), header injection (`content_disposition`). No `subprocess` or `os.system` in `src`; Semgrep forbids `shell=True`, `os.system` and `os.popen` |
 | A04 Insecure design | Partly | Threat model above, ADR-13 to ADR-18, ADR-34, ADR-38; fail-safe defaults. The threat model is the project's own and has had no external review |
 | A05 Security misconfiguration | Yes | OpenAPI, Swagger and ReDoc disabled in `create_app`; `server_header=False`; no CORS; security headers on every answer except the plain-text 400 for a refused `Host`, which comes from the outermost host check; `*` hosts only in remote mode |
-| A06 Vulnerable components | Partly | Trivy on `uv.lock` (T14), HIGH and CRITICAL findings that have a fix only; Dependabot alerts. No scheduled version-update pull requests |
+| A06 Vulnerable components | Partly | Trivy on `uv.lock` (T14), HIGH and CRITICAL findings that have a fix only; Dependabot alerts and security updates (`dependabot.yml` sets `open-pull-requests-limit: 0`, so no routine update pull requests) |
 | A07 Identification and authentication failures | Not applicable by design | There is no login (product requirement). The risk is documented, not removed (T3) |
 | A08 Software and data integrity failures | Partly | No unsafe deserialisation (T13); SHA-pinned actions, attestations, trusted publishing (T15); an import drops saved consent. No branch or tag protection, and build tools are not pinned |
 | A09 Logging and monitoring failures | Partly | One INFO line per source write (connection, database, collection, operation, count); API errors carry the connection name and the exception class only. No audit trail of reads, no alerting |
@@ -209,8 +209,8 @@ Other weaknesses:
   [quality.md](quality.md#scanners).
 * **GitHub settings.** Secret scanning with push protection and Dependabot alerts and security
   updates are enabled. They are repository settings, not files, so they are stated here as they were
-  when this page was written and nothing in the repository keeps them so. There is no
-  `dependabot.yml`, so no scheduled version-update pull requests. The two secret-scanning alerts so
+  when this page was written and nothing in the repository keeps them so.
+  `.github/dependabot.yml` limits Dependabot to security updates. The two secret-scanning alerts so
   far were fake credentials in test fixtures and are closed as used in tests. The default token
   permission of Actions is read-only. Branch protection, rulesets and tag protection are not used,
   and GitHub's option to require pinned action SHAs is off, so the pinning below is the

@@ -202,14 +202,16 @@ rule is a convention: no test or script checks it. At the time of writing the fi
 ### GitHub Dependabot
 
 Dependabot alerts and Dependabot security updates are switched on in the repository settings. These
-settings are on GitHub and are not part of the repository's files. There is no
-`.github/dependabot.yml`, so Dependabot opens no scheduled version-update pull requests; it only
-proposes bumps for known vulnerabilities. The lock and the lower bounds otherwise move when a
+settings are on GitHub and are not part of the repository's files. The file
+`.github/dependabot.yml` names the `uv` and `github-actions` ecosystems with
+`open-pull-requests-limit: 0`, which turns off routine version-update pull requests, so Dependabot
+proposes bumps only for known vulnerabilities. The lock and the lower bounds otherwise move when a
 maintainer moves them.
 
 Dependabot raises an alert only for packages that GitHub's dependency graph knows. GitHub's page on
 the files the graph reads lists pip and Poetry for Python and does not name `uv.lock`. The
-repository therefore does not show that Dependabot reads this project's packages: check the
+`uv` entry in `dependabot.yml` is there so that GitHub reads the lock, but the repository does not
+show that Dependabot reads this project's packages: check the
 dependency graph of the repository on GitHub, and do not read an empty list of alerts as proof that
 no package is vulnerable.
 
@@ -318,7 +320,7 @@ without uploading with the commands in [release.md](release.md#checking-a-build-
   `actions/checkout`, `astral-sh/setup-uv`, `actions/upload-artifact`, `actions/download-artifact`
   and `pypa/gh-action-pypi-publish`. A moved tag cannot change which action code runs. A pin is
   bumped by hand (new SHA and new comment in `release.yml`), and nothing in the repository watches
-  for new versions: there is no `dependabot.yml`.
+  for new versions: the `github-actions` entry in `dependabot.yml` allows security updates only.
 * **Least privilege.** The top-level `permissions` is `{}`, the build job has `contents: read`, and
   only the two upload jobs have `id-token: write`. Checkout uses `persist-credentials: false`, and
   the tag name reaches the shell through an environment variable and not by interpolation. No PyPI
@@ -351,7 +353,8 @@ Collected in one place, so nothing here is read as a stronger promise than it is
 * Build requirements, twine, the uv version in the workflow, the runner image and the Docker images
   are not locked by `uv.lock`; the images are pinned by tag, not by digest. Scanner databases and
   rule packs are fetched when a scan runs.
-* Dependabot is configured on GitHub, outside the repository, opens no routine update pull
-  requests, and the repository does not show that GitHub's dependency graph reads `uv.lock`.
+* Dependabot is switched on in GitHub's settings, outside the repository, and `dependabot.yml`
+  limits it to security updates (no routine update pull requests). The repository does not show
+  that GitHub's dependency graph reads `uv.lock`.
 * There is no written admission test beyond agreement in an issue, the licence lists and the
   no-network-assets rule.
