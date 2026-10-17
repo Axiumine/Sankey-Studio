@@ -518,6 +518,10 @@ LICENSE                 GNU General Public License, version 3
 * [docs/decisions.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/decisions.md): architecture decision records
 * [docs/e2e.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/e2e.md) (end-to-end tests)
 * [docs/release.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/release.md): making a release and publishing it to PyPI
+* [docs/roadmap.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/roadmap.md): what the project intends to do and not do (maintenance only)
+* [docs/dependencies.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/dependencies.md): how dependencies are chosen, scanned and updated
+* [docs/secrets.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/secrets.md): the project's secrets and how the app handles users' secrets
+* [docs/assurance-case.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/assurance-case.md): threats, controls, evidence and known gaps
 * [CHANGELOG.md](https://github.com/Axiumine/Sankey-Studio/blob/main/CHANGELOG.md): release notes
 * [CONTRIBUTING.md](https://github.com/Axiumine/Sankey-Studio/blob/main/CONTRIBUTING.md): how to report a bug, set up, and send a change
 * [SECURITY.md](https://github.com/Axiumine/Sankey-Studio/blob/main/SECURITY.md): supported versions and how to report a vulnerability privately

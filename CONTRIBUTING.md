@@ -11,7 +11,9 @@ a short, focused change gets reviewed fastest.
   the error envelope `{"error": {"code", "message", "details"}}`. Never paste a connection string,
   password or private data; the application masks them, so please keep them out of reports too.
 * **Report a security problem privately**, not in an issue: see [SECURITY.md](SECURITY.md).
-* **Send a pull request** for a fix, a test, a doc improvement or a feature. For anything bigger than
+* **Send a pull request** for a fix, a test, a doc improvement or a feature. The software is
+  complete, so the maintainers add no features themselves, but feature pull requests are welcome,
+  except support for SQL databases, which will not be accepted ([docs/roadmap.md](docs/roadmap.md)). For anything bigger than
   a small fix, open an issue first so we agree on the approach before you spend time on it.
 * **Improve the docs**: [README.md](README.md) and [docs/](docs/) are part of the product.
 
@@ -68,7 +70,8 @@ These are enforced by tools, so a change that breaks them cannot be merged. The 
 * **Errors.** Raise a domain error from `errors.py` with a unique stable `code` and add its mapping in
   `web/errors.py`. Messages never contain secrets, URIs or driver exception text.
 * **Dependencies.** Do not add or bump a dependency in a pull request without agreeing it in an
-  issue first (every dependency is scanned by Trivy and pinned in `uv.lock`).
+  issue first. The runtime dependencies are pinned in `uv.lock` and scanned by Trivy in the push gate
+  of `main` and tags; the details and the limits are in [docs/dependencies.md](docs/dependencies.md).
 * **Frontend.** Vanilla ES modules, no build step, no CDN. No `innerHTML`, `outerHTML`,
   `insertAdjacentHTML`, `document.write`, `eval`, `new Function`, `|safe`, inline scripts or inline
   handlers (Semgrep and the policy tests fail on them). `data-testid` names are a contract listed in

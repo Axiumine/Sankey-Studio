@@ -40,8 +40,8 @@ Never include real credentials, real connection strings or other people's data i
 * A first assessment (accepted, needs more information, or not a vulnerability, with the reason)
   within 14 days.
 * A fix for a confirmed vulnerability of medium or higher severity within 60 days of the report;
-  a critical one as soon as possible. This is a one-person project, so the dates are targets for
-  the maintainer, but a missed date will be explained in the advisory thread.
+  a critical one as soon as possible. This is a small volunteer project, so the dates are targets for
+  the maintainers, but a missed date will be explained in the advisory thread.
 * Coordinated disclosure: the fix is published together with a GitHub security advisory (and a CVE
   when it applies), and a line in [CHANGELOG.md](CHANGELOG.md). Please keep the report private until
   then. If a report is declined, you may disclose it after telling us so.
@@ -79,4 +79,5 @@ The project has no hosted CI. The maintainer's git hooks run the checks before a
 strict typing, a test suite with 100% line and branch coverage and a mutation-score gate, and, before
 `main` or a tag is pushed, Semgrep (with project rules against MongoDB writes, shell and dynamic
 code, secrets in logs and unsafe frontend patterns), Trivy on the locked dependencies, and Qodana.
-See [docs/quality.md](docs/quality.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
+See [docs/quality.md](docs/quality.md), [CONTRIBUTING.md](CONTRIBUTING.md) and the
+[assurance case](docs/assurance-case.md), which lists the threats, the controls and the known gaps.

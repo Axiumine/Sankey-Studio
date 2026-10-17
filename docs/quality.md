@@ -33,7 +33,7 @@ Contents
 | Memory | `make memray` | `limit_memory` budgets (pytest-memray) | `memray`: every pre-push |
 | Mutation | `make mutate`, `make mutate-gate` | mutmut 3.x score of at least 90 | `mutation`: pre-push of `main` and tags |
 | Semgrep | `make semgrep-test`, `make semgrep` | rule tests green, no finding in `src` and `scripts` | `security`: pre-push of `main` and tags |
-| Trivy | `make trivy` | no fixed HIGH or CRITICAL vulnerability in `uv.lock`, no secret, no misconfiguration, no forbidden licence | `security` |
+| Trivy | `make trivy` | no fixed HIGH or CRITICAL vulnerability in the runtime packages of `uv.lock`, no secret, no misconfiguration | `security` |
 | Qodana | `make qodana` | Ultimate Plus inspection; needs `QODANA_TOKEN` in a local `.env` | `qodana`: pre-push of `main` and tags; fails without the token |
 | Aggregates | `make check`, `make ci`, `make full` | `check` = lint typecheck caps cov memray; `ci` = check plus security and e2e; `full` = ci plus mutate, mutate-gate and qodana | none: the hooks call the single targets (a push of `main` runs `full` plus `e2e-mongo`) |
 
@@ -159,7 +159,9 @@ rendering) under `memray run`, prints `memray stats` and writes a flamegraph to
   with `tojson`). The project rules and the template policy tests still cover those files.
 * **Trivy** (`make trivy`) runs the pinned `aquasec/trivy` image through `scripts/trivy.sh` with
   `trivy.yaml`: vulnerabilities in `uv.lock` (HIGH and CRITICAL, fixed ones), secrets,
-  misconfigurations and forbidden licences (GPL-2.0, GPL-3.0, AGPL-3.0, SSPL-1.0). Accepted findings
+  misconfigurations. The configuration also lists forbidden licences (GPL-2.0, GPL-3.0, AGPL-3.0, SSPL-1.0), but Trivy
+  cannot detect licences in a uv lock file, and it leaves out the packages only the `dev` group needs
+  (see [dependencies.md](dependencies.md#trivy)). Accepted findings
   go in `.trivyignore` with a reason and an expiry; keep it empty unless a finding is triaged.
   `TRIVY_OFFLINE=1` reuses the cached database. Do not add or bump dependencies casually.
 * **Qodana** (`make qodana`) runs the JetBrains Ultimate Plus linter in Docker through

@@ -7,13 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-
-- `SECURITY.md` lists the supported versions after 0.1.0 (latest release and `main`) and says how a release stops being supported. `MAINTAINERS.md` and `GOVERNANCE.md` no longer say the co-owner already approves releases or owns the PyPI project.
-
 ### Added
 
+- Policy documents: [docs/roadmap.md](docs/roadmap.md) (the software is complete; maintenance only; feature pull requests welcome except SQL database support), [docs/dependencies.md](docs/dependencies.md) (how dependencies are chosen, obtained, scanned and updated, with the limits of Trivy and Dependabot), [docs/secrets.md](docs/secrets.md) (the project's secrets and the leak procedure) and [docs/assurance-case.md](docs/assurance-case.md) (threat model, controls, tests and residual risks).
 - [docs/release.md](docs/release.md#verifying-a-release) and the README explain how to verify the Sigstore attestation of a PyPI file with `pypi-attestations`.
+
+### Changed
+
+- `docs/quality.md` and `CONTRIBUTING.md` no longer say Trivy checks every dependency and every licence: it scans the runtime packages of `uv.lock` and cannot detect licences there. `SECURITY.md` no longer calls the project a one-person project.
+- `SECURITY.md` lists the supported versions after 0.1.0 (latest release and `main`) and says how a release stops being supported. `MAINTAINERS.md` and `GOVERNANCE.md` no longer say the co-owner already approves releases or owns the PyPI project.
 
 ## [0.1.0] - 2026-10-17
 
