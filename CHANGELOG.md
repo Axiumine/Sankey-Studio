@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Policy documents: [docs/roadmap.md](docs/roadmap.md) (the software is complete; maintenance only; feature pull requests welcome except SQL database support), [docs/dependencies.md](docs/dependencies.md) (how dependencies are chosen, obtained, scanned and updated, with the limits of Trivy and Dependabot), [docs/secrets.md](docs/secrets.md) (the project's secrets and the leak procedure) and [docs/assurance-case.md](docs/assurance-case.md) (threat model, controls, tests and residual risks).
 - [docs/release.md](docs/release.md#verifying-a-release) and the README explain how to verify the Sigstore attestation of a PyPI file with `pypi-attestations`.
-- `.github/dependabot.yml` (uv and github-actions, `open-pull-requests-limit: 0`): Dependabot is limited to security updates and told to read `uv.lock` and the workflow files.
+- `.github/dependabot.yml` (uv and github-actions, `open-pull-requests-limit: 0`): Dependabot is limited to security updates. GitHub's dependency graph does not read `uv.lock` (checked 2026-10-17), so it reports nothing for the Python packages; `docs/dependencies.md` says so.
 
 ### Changed
 

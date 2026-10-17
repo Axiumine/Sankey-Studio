@@ -27,7 +27,7 @@ Contents
 | Where do packages come from | PyPI, through uv. Every package in `uv.lock` has the PyPI registry as its source, except the project itself. |
 | What fixes the versions | In the maintainer's environment, `uv.lock`: exact versions with sha256 hashes. `pyproject.toml` holds lower bounds only, and an install of the published package resolves from those. |
 | Who may add or bump one | A contributor does not add or bump one in a pull request without agreeing it in an issue first ([CONTRIBUTING.md](../CONTRIBUTING.md#rules-for-code)); AI assistants are told to ask first. No test or script checks this. |
-| What scans them | Trivy scans the runtime packages of `uv.lock` in the push gate of `main` and tags, on the maintainer's machine. Qodana is configured for dependency checks but excludes `uv.lock`. GitHub Dependabot alerts and security updates are switched on, but what they cover is not confirmed (see below). |
+| What scans them | Trivy scans the runtime packages of `uv.lock` in the push gate of `main` and tags, on the maintainer's machine. Qodana is configured for dependency checks but excludes `uv.lock`. GitHub Dependabot alerts and security updates are switched on, but GitHub's dependency graph found no dependencies on 2026-10-17, so they report nothing for the Python packages (see below). |
 | What blocks a push | On a machine with the hooks enabled, a push of `main` or a tag is refused for a Trivy finding of severity HIGH or CRITICAL (a vulnerability that has a fix, a secret, a misconfiguration). Trivy does not check the licences of the packages in `uv.lock`. |
 | Is there CI | No. The only workflow publishes a tagged release. The gates are git hooks, which are client-side. |
 
@@ -148,7 +148,7 @@ These are the rules the repository states.
 |---|---|---|---|---|
 | Trivy | the maintainer's machine, in Docker | the `security` check, on a push of `main` or a tag | the runtime packages of `uv.lock`, secrets, misconfigurations | refuses the push |
 | Qodana | the maintainer's machine, in Docker; results go to Qodana Cloud | the `qodana` check, on a push of `main` or a tag | configured for a dependency licence audit and vulnerable libraries; `uv.lock` is excluded, so what it reads is unverified | a failed check refuses the push |
-| Dependabot alerts | GitHub | continuously | what GitHub's dependency graph reads; `uv.lock` is not named in GitHub's list | an alert on GitHub |
+| Dependabot alerts | GitHub | continuously | what GitHub's dependency graph reads; on 2026-10-17 it listed no dependencies, so `uv.lock` is not read | an alert on GitHub, none for the Python packages |
 | Dependabot security updates | GitHub | when an alert has a fixed version | the same | a pull request proposing the bump |
 
 ### Trivy
@@ -209,11 +209,13 @@ proposes bumps only for known vulnerabilities. The lock and the lower bounds oth
 maintainer moves them.
 
 Dependabot raises an alert only for packages that GitHub's dependency graph knows. GitHub's page on
-the files the graph reads lists pip and Poetry for Python and does not name `uv.lock`. The
-`uv` entry in `dependabot.yml` is there so that GitHub reads the lock, but the repository does not
-show that Dependabot reads this project's packages: check the
-dependency graph of the repository on GitHub, and do not read an empty list of alerts as proof that
-no package is vulnerable.
+the files the graph reads lists pip and Poetry for Python and does not name `uv.lock`. This was
+checked on 2026-10-17, after `dependabot.yml` was pushed: the repository's dependency graph page said
+"No dependencies found" and the SBOM API listed only the repository itself. So Dependabot reports
+nothing for the Python packages of this project, and an empty list of alerts is no proof that no
+package is vulnerable. The `uv` entry in `dependabot.yml` has not changed that; the `github-actions`
+entry may cover the workflow's actions once GitHub reads them. Trivy at the push gate is the only
+dependency check that sees `uv.lock`.
 
 ### Qodana
 
@@ -354,7 +356,8 @@ Collected in one place, so nothing here is read as a stronger promise than it is
   are not locked by `uv.lock`; the images are pinned by tag, not by digest. Scanner databases and
   rule packs are fetched when a scan runs.
 * Dependabot is switched on in GitHub's settings, outside the repository, and `dependabot.yml`
-  limits it to security updates (no routine update pull requests). The repository does not show
-  that GitHub's dependency graph reads `uv.lock`.
+  limits it to security updates (no routine update pull requests). GitHub's dependency graph does not
+  read `uv.lock` (checked 2026-10-17), so Dependabot reports nothing for the Python packages, and
+  there is no monitoring of the dependencies between pushes of `main` or a tag.
 * There is no written admission test beyond agreement in an issue, the licence lists and the
   no-network-assets rule.
