@@ -1,0 +1,28 @@
+# Weekly Trivy scan of the repository: the same config (trivy.yaml), image and script as `make trivy`,
+# so the dependencies of uv.lock, secrets and misconfigurations are checked between pushes. A failed run
+# means a fixed HIGH or CRITICAL finding; GitHub then e-mails the person who last changed the schedule.
+# GitHub disables scheduled workflows after 60 days without activity in the repository. See
+# docs/dependencies.md.
+name: trivy-weekly
+
+on:
+  schedule:
+    - cron: "23 5 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  trivy:
+    name: Trivy scan
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Check out main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run Trivy through the project script
+        run: scripts/trivy.sh
