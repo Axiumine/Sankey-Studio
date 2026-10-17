@@ -80,7 +80,9 @@ sankey-studio serve               # then open http://127.0.0.1:8765
 virtual environment) work too. Upgrade with `uv tool upgrade sankey-studio` (or `pipx upgrade
 sankey-studio`) and remove with `uv tool uninstall sankey-studio` (or `pipx uninstall sankey-studio`).
 For SVG and PNG export, Chrome or Chromium must be installed; without it, the UI falls back to the
-browser's own image download. Releases are listed in the
+browser's own image download. The files carry a Sigstore attestation that ties them to this
+repository; see [Verifying a release](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/release.md#verifying-a-release).
+Releases are listed in the
 [changelog](https://github.com/Axiumine/Sankey-Studio/blob/main/CHANGELOG.md).
 
 ### Run from a checkout

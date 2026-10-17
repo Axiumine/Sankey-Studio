@@ -47,6 +47,24 @@ Package name: `sankey-studio` (<https://pypi.org/project/sankey-studio/>).
    links work, and `uv tool install sankey-studio` installs the new version.
 7. Create the GitHub release for the tag (notes from the CHANGELOG section).
 
+## Verifying a release
+
+The files on PyPI carry a signed PEP 740 attestation (Sigstore) made by the release workflow, which
+ties each file to this repository, `release.yml` and the `pypi` environment. Anyone can check that
+the file they have was built there and was not changed:
+
+```bash
+uvx pypi-attestations verify pypi --repository https://github.com/Axiumine/Sankey-Studio \
+  pypi:sankey_studio-0.1.0-py3-none-any.whl
+```
+
+`OK: <file>` means the attestation is valid for that exact file and was made by that repository. The
+command fails when the file was altered (`subject does not match distribution digest`) or when
+`--repository` names another repository. Use `pypi:sankey_studio-X.Y.Z.tar.gz` for the source
+distribution. The release tag is signed too (`git tag -v vX.Y.Z`). Do not pass `--staging` for
+files from TestPyPI: they are signed with the normal Sigstore root, so verify them with
+`--provenance-file` and no `--staging`.
+
 ## Things that cannot be undone
 
 * A version number on PyPI (and on TestPyPI) is used for good: a file with the same name can never be

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- [docs/release.md](docs/release.md#verifying-a-release) and the README explain how to verify the Sigstore attestation of a PyPI file with `pypi-attestations`.
+
 ## [0.1.0] - 2026-10-17
 
 First release.
