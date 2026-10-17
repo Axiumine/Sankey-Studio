@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The two nested-JSON tests no longer depend on the stack limit of the machine: the first hosted CI run found that a host with a larger stack (a GitHub runner) decodes a 100000-deep document instead of refusing it. They now run the decoder in a thread with a 1 MiB stack, which makes the guard fire everywhere; the worst case on a big-stack host is bounded by the 1 MiB value cap (docs/assurance-case.md, T13).
 - The docs no longer call `release.yml` the only workflow or say that there is no hosted CI: five workflows exist (release, weekly Trivy, Scorecard, CodeQL and the `ci` job that runs the unit tests), nothing requires any of them to pass, and no workflow runs on `pull_request` except `ci` (README, `docs/quality.md`, `docs/decisions.md`, `docs/dependencies.md`, `docs/assurance-case.md`, `docs/secrets.md`, `docs/release.md`, `SECURITY.md`, `CLAUDE.md`, `AGENTS.md`).
 - `docs/quality.md` and `CONTRIBUTING.md` no longer say Trivy checks every dependency and every licence: it scans the runtime packages of `uv.lock` and cannot detect licences there. `SECURITY.md` no longer calls the project a one-person project.
 - `SECURITY.md` lists the supported versions after 0.1.0 (latest release and `main`) and says how a release stops being supported. `MAINTAINERS.md` and `GOVERNANCE.md` no longer say the co-owner already approves releases or owns the PyPI project.

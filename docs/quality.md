@@ -245,7 +245,9 @@ Suppression comments are rationed and checked by `tests/test_policy.py`:
 `.github/workflows/ci.yml` (job `test`, ADR-44) runs on every push to `main`, every pull request to `main`
 and on demand: `uv sync --all-extras --locked`, `make lint typecheck caps` and `make cov` (the unit suite
 with the 100% line and branch gate). It installs Node 22 for the tests of the frontend modules and uploads the JUnit and coverage
-reports as the `test-report` artifact. The wall-clock bounds of a few graph tests are four times wider
+reports as the `test-report` artifact. The two nested-JSON tests run the decoder in a 1 MiB-stack thread
+(`in_small_stack` in `tests/sources/text_support.py`), because Python's recursion guard follows the stack of
+the host and a hosted runner has a larger one. The wall-clock bounds of a few graph tests are four times wider
 when `CI` is set (`TIME_FACTOR` in `tests/graph_support.py`), because a hosted runner is slower than
 the maintainer's machine. It has `permissions: {}` at the top, `contents: read` in the job, pinned actions and no secret.
 The end-to-end suites, the memory budgets, mutation testing, the scanners and the real-MongoDB suites

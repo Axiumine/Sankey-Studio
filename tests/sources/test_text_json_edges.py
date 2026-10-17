@@ -11,7 +11,7 @@ import pytest
 
 from sankey_studio.errors import SourceError
 from sankey_studio.sources.formats.json_rows import CHUNK_CHARS, MAX_OBJECT_CHARS
-from tests.sources.text_support import inline, of_file, put
+from tests.sources.text_support import in_small_stack, inline, of_file, put
 
 if TYPE_CHECKING:
     from sankey_studio.sources.base import SourceContext
@@ -100,14 +100,14 @@ def test_the_cap_counts_from_the_start_of_the_object(source_ctx: SourceContext) 
 def test_deeply_nested_json_is_a_source_error(source_ctx: SourceContext) -> None:
     text = '{"source": ' + "[" * 100_000 + "]" * 100_000 + "}"
     with pytest.raises(SourceError) as info:
-        inline(source_ctx, text, format="json")
+        in_small_stack(lambda: inline(source_ctx, text, format="json"))
     assert str(info.value) == "inline:1: JSON is nested too deeply"
 
 
 def test_nesting_inside_a_line_is_reported_on_that_line(source_ctx: SourceContext) -> None:
     text = '{"source":"a","target":"b","value":1}\n{"x": ' + "[" * 100_000 + "}"
     with pytest.raises(SourceError, match=r"^inline:2: JSON is nested too deeply$"):
-        inline(source_ctx, text, format="json")
+        in_small_stack(lambda: inline(source_ctx, text, format="json"))
 
 
 def test_an_absurdly_long_integer_is_a_source_error(source_ctx: SourceContext) -> None:

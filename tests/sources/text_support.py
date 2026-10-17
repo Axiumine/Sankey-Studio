@@ -4,8 +4,9 @@
 
 from __future__ import annotations
 
+import threading
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, NamedTuple
+from typing import TYPE_CHECKING, Any, Final, NamedTuple
 
 import pytest
 
@@ -18,6 +19,39 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from sankey_studio.sources.base import SourceContext
+
+
+#: The stack of the thread ``in_small_stack`` uses: small enough for any decoder to run out of it.
+SMALL_STACK: Final = 1 << 20
+
+
+def in_small_stack[T](call: Callable[[], T]) -> T:
+    """Run ``call`` in a thread whose stack is 1 MiB and return (or raise) what it does.
+
+    Python guards deep recursion in C code (the JSON decoder) by the stack the thread really has.
+    The process default is 8 MiB in a shell but larger, or unlimited, on some hosts (a hosted CI
+    runner), and then a 100,000-deep document is decoded without error. A thread of a fixed small
+    size makes the guard fire the same way everywhere.
+    """
+    outcome: list[T | Exception] = []
+
+    def target() -> None:
+        try:
+            outcome.append(call())
+        except Exception as exc:  # noqa: BLE001 - handed back and raised again in the caller
+            outcome.append(exc)
+
+    previous = threading.stack_size(SMALL_STACK)
+    try:
+        worker = threading.Thread(target=target)
+        worker.start()
+        worker.join()
+    finally:
+        threading.stack_size(previous)
+    result = outcome[0]
+    if isinstance(result, Exception):
+        raise result
+    return result
 
 
 class Outcome(NamedTuple):
