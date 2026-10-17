@@ -45,7 +45,8 @@ Package name: `sankey-studio` (<https://pypi.org/project/sankey-studio/>).
 
 6. After the approval, check <https://pypi.org/project/sankey-studio/>: the description renders, the
    links work, and `uv tool install sankey-studio` installs the new version.
-7. Create the GitHub release for the tag (notes from the CHANGELOG section).
+7. Create the GitHub release for the tag (notes from the CHANGELOG section) and attach the release
+   assets ([Release assets](#release-assets)).
 
 ## Verifying a release
 
@@ -64,6 +65,30 @@ command fails when the file was altered (`subject does not match distribution di
 distribution. The release tag is signed too (`git tag -v vX.Y.Z`). Do not pass `--staging` for
 files from TestPyPI: they are signed with the normal Sigstore root, so verify them with
 `--provenance-file` and no `--staging`.
+
+## Release assets
+
+The release page carries the files that are on PyPI, so they can be fetched and checked without PyPI.
+Use PyPI's files, not a local build: a rebuild is not claimed to be byte-identical.
+
+1. Download the wheel and the sdist from the PyPI JSON (`https://pypi.org/pypi/sankey-studio/X.Y.Z/json`,
+   the `urls` list) and compare each sha256 with the `digests` entry there.
+2. Download the provenance of each file from
+   `https://pypi.org/integrity/sankey-studio/X.Y.Z/<file>/provenance` (header
+   `Accept: application/vnd.pypi.integrity.v1+json`) and turn it into a Sigstore bundle with
+   `pypi_attestations` (run it with `uv run --no-project --with pypi-attestations python -I script.py`):
+
+   ```python
+   from pypi_attestations import Provenance
+   prov = Provenance.model_validate_json(open(f"{name}.provenance.json", "rb").read())
+   bundle = prov.attestation_bundles[0].attestations[0].to_bundle()
+   open(f"{name}.sigstore.json", "w").write(bundle.to_json())
+   ```
+
+3. Verify each bundle before uploading: `Attestation.from_bundle(Bundle.from_json(...)).verify(
+   GitHubPublisher(repository="Axiumine/Sankey-Studio", workflow="release.yml", environment="pypi"),
+   Distribution.from_file(path))` must pass, and the same call with another repository must fail.
+4. `gh release upload vX.Y.Z <wheel> <sdist> <wheel>.sigstore.json <sdist>.sigstore.json`.
 
 ## Things that cannot be undone
 

@@ -146,8 +146,8 @@ tag's commit as the maintainer pushed it, because the hooks that check the tree 
 That lock is a deliberate pause, not a second person: GitHub is not set to stop a reviewer from
 approving a run they started (`prevent_self_review` is off), and repository administrators may
 bypass the environment's protection rules (the setting is on). The workflow runs no tests. Tag
-protection is optional in [release.md](release.md#one-time-setup) and is not enabled today (there
-are no rulesets and no protected branch either).
+protection is optional in [release.md](release.md#one-time-setup) and is not enabled today (the one
+ruleset protects `main` against deletion and force-push, nothing else).
 
 ## Prevention and detection
 
@@ -170,7 +170,7 @@ host). Neither is a credential. An alert on anything else is treated as a leak
 ([If a secret is exposed](#if-a-secret-is-exposed)).
 
 The git hooks are client-side only (`--no-verify`, a changed `core.hooksPath` and a fresh clone
-skip them), there is no hosted CI and `main` has no branch protection
+skip them), there is no hosted CI and `main` has no required check or review (a ruleset blocks only deletion and force-push)
 ([ADR-37](decisions.md#adr-37-git-hooks-are-the-one-place-the-checks-run)). The checks are a
 safety net for the maintainers, not a boundary.
 

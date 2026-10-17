@@ -333,9 +333,7 @@ make check    # lint, typecheck, caps, cov, memray
 | Target | What it does |
 |---|---|
 | `make sync` | `uv sync --all-extras` |
-| `make lint` | `requirements-check`, then `ruff check` and `ruff format --check` on `src tests scripts` |
-| `make requirements` | Rewrite `requirements.txt` (the locked runtime packages, with hashes) from `uv.lock` |
-| `make requirements-check` | Fail when `requirements.txt` is not what `uv export` writes from `uv.lock` (`make lint` runs it) |
+| `make lint` | `ruff check` and `ruff format --check` on `src tests scripts` |
 | `make format` | `ruff check --fix` and `ruff format` |
 | `make typecheck` | `mypy` in strict mode |
 | `make caps` | Code caps (file 500, function 50, class 300, params 4, nesting 4), ratcheted against `.code-caps-baseline.json`, run on Python 3.14 |

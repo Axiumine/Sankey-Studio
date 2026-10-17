@@ -25,7 +25,7 @@ Contents
 | Gate | Command | Threshold | Runs in the hook |
 |---|---|---|---|
 | Code caps | `make caps` | file 500 lines, function 50, class 300, parameters 4 (`self` and `cls` are free), nesting 4; every `*.py` including tests and scripts; ratcheted against `.code-caps-baseline.json` | `fast`: pre-commit, pre-merge-commit, every pre-push |
-| Lint and format | `make lint` | `ruff check` with `select = ["ALL"]` and `ruff format --check` on `src tests scripts`, after `make requirements-check` (the committed `requirements.txt` is what `uv export` writes from `uv.lock`) | `fast` |
+| Lint and format | `make lint` | `ruff check` with `select = ["ALL"]` and `ruff format --check` on `src tests scripts` | `fast` |
 | Types | `make typecheck` | `mypy --strict` on Python 3.14 | `fast` |
 | Unit tests | `make test` | `pytest -m "not memory and not e2e"`, `filterwarnings = error`, no sleeps | none: `cov` runs the same selection |
 | End-to-end | `make e2e`, `make e2e-mongo`, `make e2e-mongo-rs` | `pytest -m "e2e and not mongo and not mongo_rs"`: the real app on an ephemeral loopback port driven over HTTP and by real Chrome; `e2e-mongo` runs the same flows against a real MongoDB and then the mongo-marked unit tests; `e2e-mongo-rs` runs them against a replica set you run yourself (`SANKEY_TEST_MONGO_RS_URI`); see [e2e.md](e2e.md) | `e2e`: every pre-push. `e2e-mongo`: pre-push of `main` and tags. `e2e-mongo-rs`: pre-push of `main` and tags |
@@ -131,6 +131,9 @@ rendering) under `memray run`, prints `memray stats` and writes a flamegraph to
 
 ## Static analysis
 
+* **CodeQL** (GitHub's default setup for Python and JavaScript, a repository setting and not a file)
+  analyses the code on pushes to `main`, on pull requests and weekly; its findings appear in the
+  repository's code scanning. It is not a gate (ADR-43).
 * **ruff** with `select = ["ALL"]` (documented exceptions in `pyproject.toml`), line length 100,
   `max-args = 4`, mccabe complexity 12. Under `web/**` only the type-checking import rules and
   unused-argument checks are relaxed, because FastAPI resolves annotations at runtime.
@@ -513,8 +516,8 @@ a check. These are working rules, not technical barriers.
   and a tool that does not run hooks all skip them. The project runs no CI on commits and has no server-side check
   (its workflows publish a tagged release ([release.md](release.md)), scan the dependencies weekly and
   score the repository; none of them runs the tests);
-  the only hard stop would be branch protection with a required check on the remote, and it was not
-  added (ADR-37). The hooks catch mistakes, not a determined person.
+  the only hard stop would be a rule on the remote that requires a check or a review, and none was
+  added: the ruleset on `main` blocks deleting it and force-pushing to it, nothing more (ADR-37, ADR-43). The hooks catch mistakes, not a determined person.
 * **A killed gate can leave Mongo up.** A SIGKILL skips the `finally` that runs `make mongo-down`;
   the next `e2e-mongo` run then finds the Mongo already running and leaves it alone. Stop it with
   `make mongo-down`.

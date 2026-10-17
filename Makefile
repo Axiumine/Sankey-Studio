@@ -1,4 +1,4 @@
-.PHONY: sync lint format typecheck caps requirements requirements-check test e2e e2e-serial e2e-mongo e2e-mongo-rs cov memray profile mutate mutate-gate \
+.PHONY: sync lint format typecheck caps test e2e e2e-serial e2e-mongo e2e-mongo-rs cov memray profile mutate mutate-gate \
         semgrep semgrep-test trivy qodana security gitnexus gitnexus-status hooks hooks-check \
         gate-commit gate-push gate-main gate-release check ci full serve mongo-up mongo-down mongo-absent clean \
         preflight-docker preflight-qodana preflight-rs
@@ -16,15 +16,7 @@ sync: hooks
 	uv sync --all-extras
 
 # ---------------------------------------------------------------- static checks
-# requirements.txt is a generated copy of the locked runtime packages for GitHub's dependency graph
-# (it does not read uv.lock): `make requirements` rewrites it, `make lint` fails when it is out of date.
-requirements:
-	$(PY) python scripts/check_requirements.py --write
-
-requirements-check:
-	$(PY) python scripts/check_requirements.py
-
-lint: requirements-check
+lint:
 	$(PY) ruff check $(SRC)
 	$(PY) ruff format --check $(SRC)
 

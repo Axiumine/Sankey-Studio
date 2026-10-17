@@ -58,7 +58,9 @@ Contents
 | [ADR-38](#adr-38-mongodb-runs-on-one-server-and-on-a-cluster) | MongoDB runs on one server and on a cluster |
 | [ADR-39](#adr-39-releases-are-published-to-pypi-from-a-tag) | Releases are published to PyPI from a tag |
 | [ADR-40](#adr-40-a-weekly-trivy-scan-and-the-openssf-scorecard-run-in-github-actions) | A weekly Trivy scan and the OpenSSF Scorecard run in GitHub Actions |
-| [ADR-41](#adr-41-requirementstxt-is-a-generated-copy-of-uvlock-for-githubs-dependency-graph) | requirements.txt is a generated copy of uv.lock for GitHub's dependency graph |
+| [ADR-41](#adr-41-requirementstxt-is-a-generated-copy-of-uvlock-for-githubs-dependency-graph) | requirements.txt is a generated copy of uv.lock for GitHub's dependency graph (superseded) |
+| [ADR-42](#adr-42-uvlock-is-the-one-source-of-the-dependency-list) | uv.lock is the one source of the dependency list |
+| [ADR-43](#adr-43-codeql-a-ruleset-on-main-and-signed-release-assets) | CodeQL, a ruleset on main and signed release assets |
 
 ## ADR-01 Storage protocol and graph ids
 
@@ -702,8 +704,8 @@ rule is now one sentence: tests run in the hooks, and a check that did not run i
 * `qodana` is required for `main` and tags and runs a fresh `make cov` first, because it imports
   `coverage.xml` and only warns when it is missing or stale. It runs before `mutation` so a missing
   token fails before the long mutation run.
-* The hooks are client-side only. The project runs no CI on commits and has no branch protection, and
-  none was added (the workflows publish a tagged release, ADR-39, scan weekly and score the repository, ADR-40; none runs the
+* The hooks are client-side only. The project runs no CI on commits and requires no check or review on
+  `main` (a ruleset blocks only deletion and force-push, ADR-43), and none was added (the workflows publish a tagged release, ADR-39, scan weekly and score the repository, ADR-40; none runs the
   tests): the hooks are a convenience gate that stops mistakes, not a security boundary.
 
 **Accepted risks.** `--no-verify`, `core.hooksPath` overrides and a clone without `make hooks` skip
@@ -816,6 +818,8 @@ protection, no pull-request review, tools in `release.yml` that are not pinned.
 
 ## ADR-41 requirements.txt is a generated copy of uv.lock for GitHub's dependency graph
 
+**Superseded by [ADR-42](#adr-42-uvlock-is-the-one-source-of-the-dependency-list).**
+
 **Decision.** The repository commits `requirements.txt`, written by `make requirements` from the lock
 (`uv export --locked --no-dev --no-emit-project --format requirements-txt`). `make lint` runs
 `scripts/check_requirements.py` and fails when the file differs from a fresh export, so the `fast`
@@ -840,3 +844,46 @@ now that the graph lists the lock ([dependencies.md](dependencies.md)); if one s
 file, the Makefile targets and the script are removed together. The check runs in the maintainer's hooks, which are client-side. A
 Dependabot pull request merged on GitHub updates one of the two files only; the next local `make lint`
 fails until `make requirements` is run.
+
+## ADR-42 uv.lock is the one source of the dependency list
+
+**Decision.** The generated `requirements.txt` of [ADR-41](#adr-41-requirementstxt-is-a-generated-copy-of-uvlock-for-githubs-dependency-graph),
+its `make requirements` and `make requirements-check` targets, the `make lint` dependency on the check
+and `scripts/check_requirements.py` with its tests are removed. `uv.lock` is the only record of the
+locked packages.
+
+* After `.github/dependabot.yml` (with a `uv` entry) and `requirements.txt` were pushed together,
+  GitHub's own Dependabot job `update-uv-graph` read the lock and the dependency graph listed 76
+  packages, runtime and development. A second copy covered the runtime group only, needed a
+  check in the commit gate to stay in step, and went stale whenever a Dependabot pull request was
+  merged on GitHub.
+* The trigger was not isolated when the copy was added, so the removal is the test: the graph is
+  checked again after the push (`gh api repos/Axiumine/Sankey-Studio/dependency-graph/sbom`, the
+  Insights page). If it falls back to nothing, the copy comes back through a new decision record.
+
+**Result of the check after the removal.** To be written down in this record once the graph has been
+read (see [dependencies.md](dependencies.md#github-dependabot)).
+
+**Accepted risks.** Dependabot's coverage of `uv.lock` rests on a GitHub job that the project does not
+control and that the repository cannot test.
+
+## ADR-43 CodeQL, a ruleset on main and signed release assets
+
+**Decision.**
+
+* GitHub's CodeQL default setup analyses Python and JavaScript (a repository setting, not a file).
+  Findings appear in code scanning and are not a gate.
+* A repository ruleset, "main: no deletion, no force-push", applies to the default branch. It has
+  two rules, `deletion` and `non_fast_forward`. It does not require pull requests, reviews or status
+  checks: those would stop the maintainer's direct pushes, which is how the git-hook gate works
+  ([ADR-37](#adr-37-git-hooks-are-the-one-place-the-checks-run)).
+* After a release the GitHub release page carries the wheel and the sdist exactly as on PyPI (the
+  sha256 is compared with PyPI's) and, next to each, a Sigstore bundle `<file>.sigstore.json` made from
+  the PyPI provenance of that file and verified against the identity of `release.yml`. The procedure is in
+  [release.md](release.md#release-assets).
+
+**Accepted risks.** The ruleset can be switched off by a repository administrator, and it protects
+history, not the content of the next commit. CodeQL results depend on the languages GitHub detects and
+are read by whoever looks at the Security tab. The release assets are copies; PyPI stays the place to
+install from, and the bundle proves the file was built by this repository's workflow, not that the
+code is safe.

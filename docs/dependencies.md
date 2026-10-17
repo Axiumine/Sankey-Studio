@@ -118,14 +118,6 @@ These are the rules the repository states.
   (`fastapi>=0.115`), with no upper cap. `uv.lock` (lock format `version = 1`, `revision = 3`)
   records the exact version of every package and the sha256 hash of each of its source archives and
   wheels, so an install from the lock is checked against those hashes.
-* **`requirements.txt` is a generated copy for GitHub.** GitHub's dependency graph listed nothing from
-  `uv.lock` at first (see [GitHub Dependabot](#github-dependabot)), so the repository also commits
-  `requirements.txt`: the locked runtime packages with their hashes, written by `make requirements`
-  (`uv export --locked --no-dev --no-emit-project`, ADR-41). Nobody edits it by hand. `make lint`
-  runs `scripts/check_requirements.py`, which fails when the file differs from what `uv export`
-  writes now (comment lines are ignored, so a newer uv that words its header differently does not
-  matter), and `make lint` is part of the `fast` check of the pre-commit hook. It lists the runtime
-  packages only, as the wheel does; the `dev` group is not in it. It is not used to install anything.
 * **The hooks refuse a stale lock.** Every step of the git hooks except `make caps` (which does
   not use the project environment) runs with `UV_LOCKED=1`, so a `pyproject.toml` that no longer
   matches `uv.lock` fails the check instead of rewriting the lock in the middle of a commit
@@ -235,29 +227,15 @@ maintainer moves them.
 
 Dependabot raises an alert only for packages that GitHub's dependency graph knows. On 2026-10-17,
 after `dependabot.yml` was first pushed, the repository's dependency graph page still said "No
-dependencies found" and the SBOM API listed only the repository itself. The next push, which also added
-`requirements.txt`, made GitHub run a Dependabot job named `update-uv-graph`. Afterwards the SBOM API
-lists 76 packages (runtime and development tools), GitHub's GraphQL API lists `uv.lock`,
-`pyproject.toml`, `requirements.txt` and the three workflow files as parseable manifests, and no alert
-is open. The two changes arrived in one push, so it was not tested whether `requirements.txt` or
-`dependabot.yml` alone would have been enough. An empty list of alerts is still not proof that no
+dependencies found" and the SBOM API listed only the repository itself. The next push, which also added a generated
+`requirements.txt` (removed again afterwards, ADR-42), made GitHub run a Dependabot job named
+`update-uv-graph`. Afterwards the SBOM API listed 76 packages (runtime and development tools),
+GitHub's GraphQL API listed `uv.lock`, `pyproject.toml`, `requirements.txt` and the three workflow
+files as parseable manifests, and no alert was open. The two changes arrived in one push, so it was
+not tested which of them was needed; the copy was removed to keep one source, and the graph was
+checked again afterwards (result in ADR-42). An empty list of alerts is still not proof that no
 package is vulnerable: a vulnerability that GitHub's advisory database does not know, or that has no
 fixed version, raises no alert.
-
-### `requirements.txt` for GitHub
-
-`requirements.txt` was added because the dependency graph listed nothing from `uv.lock`: a pip
-requirements file is one GitHub reads for certain. After the push, GitHub's own `update-uv-graph` job
-read the lock as well (see above), so the file may now be redundant for the graph. It stays for two
-reasons: refreshing it costs one command, and Trivy scans it too. The weekly Trivy run of 2026-10-17
-lists `requirements.txt` (pip) and `uv.lock` (uv) as the two language files it read, with no
-vulnerability in either, so a finding in the copy is the same finding as in the lock. Qodana is told
-to skip it, like `uv.lock` (`qodana.yaml`). If the maintainers prefer one source, the file, `make
-requirements` and `scripts/check_requirements.py` can be removed together (ADR-41).
-
-A Dependabot pull request merged on GitHub changes only one of the two files and passes through no
-hook. After merging one, pull and run `uv lock` where needed and then `make requirements`; until then
-the next `make lint` fails because the copy is out of step.
 
 ### Qodana
 
@@ -281,9 +259,8 @@ a bump; the steps below put the existing rules in order.
 2. Move the version: `uv lock --upgrade-package <name>` refreshes the package in `uv.lock`, and a
    lower bound in `pyproject.toml` is edited by hand. The repository has no wrapper script or
    `make` target for this and states no rule on when to raise a lower bound.
-3. Run `make requirements` and commit `pyproject.toml`, `uv.lock` and `requirements.txt` together, with
-   the scope `deps` from the [commit policy](quality.md#commit-policy). A stale lock or a stale
-   `requirements.txt` fails the gate.
+3. Commit `pyproject.toml` and `uv.lock` together, with the scope `deps` from the
+   [commit policy](quality.md#commit-policy). A stale lock fails the gate.
 4. Update [CHANGELOG.md](../CHANGELOG.md) and the page in `docs/` that describes any behaviour that
    changed ([CONTRIBUTING.md](../CONTRIBUTING.md#making-a-change)).
 5. The change goes through the hooks like any other. The new lock changes the tree, so every check
@@ -347,8 +324,7 @@ show the form.
    at 100% ([CONTRIBUTING.md](../CONTRIBUTING.md#rules-for-tests)).
 5. A choice that shapes the design is written down as a decision record in
    [decisions.md](decisions.md) ([GOVERNANCE.md](../GOVERNANCE.md#decisions)).
-6. Run `make requirements`, then commit `pyproject.toml`, `uv.lock` and `requirements.txt` together; the
-   gates and Trivy then apply as above.
+6. Commit `pyproject.toml` and `uv.lock` together; the gates and Trivy then apply as above.
 
 **Remove or replace.** Both change `pyproject.toml` and `uv.lock` like an add, so the same
 agreement, tests and gates apply. Look for entries that were kept only for the package: a mypy
@@ -392,7 +368,8 @@ There are three workflows. `.github/workflows/release.yml` runs on a push of a `
 Collected in one place, so nothing here is read as a stronger promise than it is:
 
 * The gates are git hooks. They are client-side, skipped by `--no-verify` or a clone without
-  `make hooks`, and there is no CI that runs the tests or checks commits, and no branch protection.
+  `make hooks`, and there is no CI that runs the tests or checks commits, and no required check or review on
+  `main` (a ruleset blocks only deleting it and force-pushing to it).
 * In the hooks Trivy runs only on a push of `main` or a tag, and the weekly job (which GitHub stops after 60
   days without repository activity) adds a scan between pushes; both gate HIGH and CRITICAL findings that have a
   fix. By default it leaves out the packages that only the `dev` group needs.

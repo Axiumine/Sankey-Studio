@@ -206,7 +206,8 @@ Other weaknesses:
   lock, secrets, misconfiguration and licences) runs in the pre-push gate for `main` and tags, with
   the scanner images pinned by version tag (not by digest). Trivy reports HIGH and CRITICAL
   vulnerabilities that have a fix. `.trivyignore` has no entries. See
-  [quality.md](quality.md#scanners).
+  [quality.md](quality.md#scanners). GitHub's CodeQL default setup also analyses the Python and
+  JavaScript code, as a repository setting.
 * **GitHub settings.** Secret scanning with push protection and Dependabot alerts and security
   updates are enabled. They are repository settings, not files, so they are stated here as they were
   when this page was written and nothing in the repository keeps them so.
@@ -214,7 +215,8 @@ Other weaknesses:
   dependencies until a Dependabot graph job ran on 2026-10-17; it now lists the 76 locked packages and
   no alert is open. The two secret-scanning alerts so
   far were fake credentials in test fixtures and are closed as used in tests. The default token
-  permission of Actions is read-only. Branch protection, rulesets and tag protection are not used,
+  permission of Actions is read-only. A ruleset on `main` blocks deleting it and force-pushing to it (ADR-43); there are no required
+  checks or reviews and no tag protection,
   and GitHub's option to require pinned action SHAs is off, so the pinning below is the
   maintainer's practice, not an enforced rule.
 * **The release workflow.** `.github/workflows/release.yml` starts on a `v*` tag,
@@ -256,8 +258,8 @@ Other weaknesses:
 * **Consent is not authorisation** (ADR-34). The limit on write-back is the database user's rights.
 * **Credentials sit in clear text** in `settings.json`, protected by file modes only.
 * **The gates are client-side** (ADR-37). `--no-verify`, a changed `core.hooksPath` or a fresh clone
-  skip every hook. There is no hosted CI that runs the tests or checks commits, no branch protection (the maintainer pushes to `main`
-  directly) and no tag protection; none of the workflows runs the tests. The hook stamps do not record
+  skip every hook. There is no hosted CI that runs the tests or checks commits, no required check or review on `main` (the maintainer pushes to it directly; a ruleset
+  blocks only deletion and force-push) and no tag protection; none of the workflows runs the tests. The hook stamps do not record
   the environment (scanner images, Chrome).
 * **One maintainer in practice.** Every commit so far is by one person. A second owner has agreed to
   take over within a week of the lead maintainer becoming unavailable
