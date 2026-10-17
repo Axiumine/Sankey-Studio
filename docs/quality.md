@@ -324,10 +324,10 @@ as `e2e` in one process), `make profile` (no pass or fail), `make format` (it re
 ### Stamps
 
 * **Where.** `<common>/hook-stamps/<check>/<key>`. The key is a digest of the tree of the commit being
-  checked WITHOUT the files no check reads: Markdown outside `src/` and images under `docs/`
-  (`is_inert` in `scripts/githook_plan.py`; no test or script reads them, and one that starts to
-  must take its file type out of that rule). A README edit or a new screenshot therefore keeps every
-  stamp; any other change, a mode included, voids them. For `security` it is `<key>.<YYYYMMDD>` with the UTC date, so that stamp expires at the
+  checked WITHOUT the files no check reads: Markdown outside `src/`, images under `docs/` and the
+  root `LICENSE` (`is_inert` in `scripts/githook_plan.py`; no test or script reads them, and one
+  that starts to must take its file type out of that rule). A README edit, a new screenshot or a
+  license edit therefore keeps every stamp; any other change, a mode included, voids them. For `security` it is `<key>.<YYYYMMDD>` with the UTC date, so that stamp expires at the
   end of the UTC day (the Semgrep packs and the Trivy database change daily). A stamp is keyed on the
   tree, not on the commit: amend, rebase and cherry-pick keep their stamps when the tree is the same.
   It does not record the environment (installed packages, Docker images, Chrome); `uv.lock` is part

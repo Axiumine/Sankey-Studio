@@ -649,7 +649,7 @@ patterns the app already had (focus trap, Esc, return of focus).
   `make gate-main`. The release tier is bound to every push of `main`, not to a tag convention:
   no tag exists, so a tag-only tier would never fire.
 * *Stamps.* A check that passed leaves a stamp keyed on the check and a digest of the tree without
-  the files no check reads (Markdown outside `src/`, images under `docs/`) in
+  the files no check reads (Markdown outside `src/`, images under `docs/`, `LICENSE`) in
   `<git-common-dir>/hook-stamps/`, and the next commit or push of that tree skips it, a docs-only
   change included. It is written
   only after every step exited 0, no test was skipped and neither the tree nor

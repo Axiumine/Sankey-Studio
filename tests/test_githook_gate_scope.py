@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Giovanni Manzoni
-"""Files no check reads (Markdown, ``docs/`` images) do not void a stamp.
+"""Files no check reads (Markdown, ``docs/`` images, ``LICENSE``) do not void a stamp.
 
 A stamp is keyed by the tree of the pushed commit without those files (``scoped_key``): a README
-edit or a new screenshot leaves the key, and so every stamp, as it was. Nothing else does: code,
-tests, config, a Markdown file under ``src/``, an image anywhere but ``docs/``, a changed mode.
+edit, a new screenshot or a license edit leaves the key, and so every stamp, as it was. Nothing
+else does: code, tests, config, a Markdown file under ``src/``, an image anywhere but ``docs/``,
+a changed mode.
 """
 
 from __future__ import annotations
@@ -38,7 +39,9 @@ INERT = [
     Case("docs/diagram.svg", False, "svg is text, a test may read it"),
     Case("docs/extra.py", False, "code under docs"),
     Case("docs/screenshots/readme.txt", False, "text under docs"),
-    Case("LICENSE", False, "the license is a build input"),
+    Case("LICENSE", True, "the license text, which no check reads"),
+    Case("sub/LICENSE", False, "only the root file"),
+    Case("license", False, "the exact name"),
     Case("Makefile", False, "the Makefile"),
     Case("pyproject.toml", False, "the project file"),
     Case("scripts/tool.py", False, "code"),
@@ -104,6 +107,7 @@ DOCS_ONLY = [
     pytest.param("docs/ui.md", id="an edited doc"),
     pytest.param("docs/screenshots/gallery/01-library.png", id="a new screenshot"),
     pytest.param("deep/er/NOTES.md", id="Markdown anywhere but src"),
+    pytest.param("LICENSE", id="the license text"),
 ]
 
 

@@ -158,20 +158,23 @@ def resolve_names(names: Iterable[str]) -> tuple[str, ...]:
 
 
 #: Files no check reads, so a change to them leaves every stamp valid: Markdown anywhere but
-#: ``src/`` and the images under ``docs/``. No test or script reads either (see docs/quality.md,
-#: "Git hooks"); one that starts to must take its file type out of this rule.
+#: ``src/``, the images under ``docs/`` and the root ``LICENSE``. No test or script reads them (see
+#: docs/quality.md, "Git hooks"); one that starts to must take its file type out of this rule.
 INERT_IMAGE_SUFFIXES: Final = (".png", ".jpg", ".jpeg", ".gif", ".webp")
 INERT_IMAGE_DIR: Final = "docs/"
+INERT_FILE: Final = "LICENSE"
 SHIPPED_DIR: Final = "src/"
 
 
 def is_inert(path: str) -> bool:
-    """True for a tracked file that no check reads: Markdown outside ``src/``, ``docs/`` images."""
+    """True for a file no check reads: Markdown outside ``src/``, ``docs/`` images, ``LICENSE``."""
     lowered = path.lower()
     if lowered.startswith(SHIPPED_DIR):
         return False
-    return lowered.endswith(".md") or (
-        lowered.startswith(INERT_IMAGE_DIR) and lowered.endswith(INERT_IMAGE_SUFFIXES)
+    return (
+        path == INERT_FILE
+        or lowered.endswith(".md")
+        or (lowered.startswith(INERT_IMAGE_DIR) and lowered.endswith(INERT_IMAGE_SUFFIXES))
     )
 
 
