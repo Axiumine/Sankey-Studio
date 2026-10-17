@@ -95,7 +95,7 @@ import `web/`.
 | `graph/` | `build_graph` in six steps: intern, categories, pairs, cycles, layers, assemble |
 | `render/` | Plain-dict Plotly figures for the Sankey and the donut, legend, colours, palette, tables, number formatting |
 | `render/export/` | The only code that imports plotly and kaleido: HTML, JSON, CSV, SVG and PNG exports |
-| `storage/` | Graph and folder repositories (files and Mongo), `settings.json` store, atomic file primitives, bundles, migration, and `mongo_source_writes.py`, the only code that writes into a source collection |
+| `storage/` | Graph and folder repositories (files and Mongo), `settings.json` and `credentials.json` store, atomic file primitives, bundles, migration, and `mongo_source_writes.py`, the only code that writes into a source collection |
 | `services.py` | `Services`: the only place that wires things; the web layer talks to it |
 | `bundle.py` | `RenderBundle` and `BundleStats` |
 | `pipeline.py` | `build_graph_from_draft`, `render_bundle`, `render_compare`, `preview_entries` and the result cache (`ClearableCache` is the protocol the layers above use to empty it) |
@@ -266,10 +266,16 @@ by both backends. A reference to a collection that is gone reads as the top leve
   `folder_id` only. The storage connection needs write permission on both collections, and
   `POST /settings/storage/test` probes both. Together with the source write-back below, these are the
   only places that write to MongoDB (Semgrep waivers exist only under `storage/`).
-* **Settings** (`storage/settings_store.py`). `<data_dir>/settings.json` is written atomically with
-  mode 0600 inside a data directory created with mode 0700; a corrupt file is moved aside as
-  `.corrupt-<n>` (still 0600) and a `SettingsError` is raised. The load is cached by mtime. A missing
-  file yields defaults plus a `default` connection seeded from `SANKEY_MONGO_URI`.
+* **Settings** (`storage/settings_store.py`, `storage/credentials.py`). `<data_dir>/settings.json`
+  (everything but the connection strings) and `<data_dir>/credentials.json` (the strings, by
+  connection name, [ADR-46](decisions.md#adr-46-connection-strings-live-in-credentialsjson)) are
+  written atomically with mode 0600 inside a data directory created with mode 0700, the credentials
+  first; a corrupt `settings.json` is moved aside as `.corrupt-<n>` together with `credentials.json`
+  (still 0600) and a `SettingsError` is raised, while a broken `credentials.json` is reported and left
+  in place. The load is cached by the signature of both files, so a replaced `credentials.json`
+  applies on the next request. A missing file yields defaults plus a `default` connection seeded from
+  `SANKEY_MONGO_URI`; a `uri` still in `settings.json` (an earlier version) is used and moved on the
+  next save.
 * **Services.** `Services.graphs()` returns one cached repository per (backend, connection, database,
   resolved graphs directory), so locks are shared by every request; `Services.folders()` is cached under
   the same key, and `Stores(graphs, folders)` is the pair that the settings code probes and copies.
@@ -388,7 +394,7 @@ There is no login, so the app defends itself in every layer.
   `Content-Length`: JSON routes 8 MiB, graph import 16 MiB, upload `max_upload_mb` plus 1 MiB. List
   parameters are bounded (`ids` at most 12 for compare and 200 for export).
 * **Files.** Source files are confined to the managed sources directory, which must not equal or
-  contain the data directory, `graphs/` or `settings.json`. Access is fd-based with `O_NOFOLLOW`, a
+  contain the data directory, `graphs/`, `settings.json` or `credentials.json`. Access is fd-based with `O_NOFOLLOW`, a
   regular-file check after open and a casefolded extension allow-list (`.csv .tsv .txt .json .ndjson
   .sankey`); uploads use `O_EXCL`, a streamed size cap and sanitised names (NFC, no control or bidi
   characters, no leading dots, basename only, at most 255 bytes). Write-back replaces an EXISTING

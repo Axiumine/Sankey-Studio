@@ -60,7 +60,7 @@ def server(make_server: ServerFactory) -> LiveServer:
     return make_server(settings=mongo_settings("main"), seed_mongo=seed_flows)
 
 
-def test_the_password_never_leaves_the_settings_file(
+def test_the_password_never_leaves_the_credentials_file(
     server: LiveServer, caplog: pytest.LogCaptureFixture, capfd: pytest.CaptureFixture[str]
 ) -> None:
     caplog.set_level(logging.DEBUG)
@@ -142,9 +142,11 @@ def rotate_and_fail(server: LiveServer, api: httpx.Client, stored: dict[str, obj
 
 
 def check_stored_secret(server: LiveServer, api: httpx.Client) -> None:
-    settings_file = server.settings_file
-    assert ROTATED in settings_file.read_text()  # the one place it lives
-    assert stat.S_IMODE(settings_file.stat().st_mode) == 0o600  # private to the owner
+    secrets_file = server.credentials_file
+    assert ROTATED in secrets_file.read_text()  # the one place it lives
+    assert stat.S_IMODE(secrets_file.stat().st_mode) == 0o600  # private to the owner
+    assert ROTATED not in server.settings_file.read_text()
+    assert MONGO_PASSWORD not in server.settings_file.read_text()
     for path in server.graphs_dir.glob("*.json"):
         assert ROTATED not in path.read_text()
         assert MONGO_PASSWORD not in path.read_text()

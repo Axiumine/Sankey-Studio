@@ -37,7 +37,7 @@ function uriHint(row) {
     const shown = row.uri_masked ? `Stored: ${row.uri_masked}. ` : "";
     return `${shown}Leave this empty to keep it, or paste a new connection string to replace it.`;
   }
-  return "One server: mongodb://user:password@host:27017/. Replica set: list the members and name the set, mongodb://user:password@h1:27017,h2:27017,h3:27017/?replicaSet=rs0. Atlas: mongodb+srv://user:password@cluster.example.com/. It is saved in this app's settings file and never shown again.";
+  return "One server: mongodb://user:password@host:27017/. Replica set: list the members and name the set, mongodb://user:password@h1:27017,h2:27017,h3:27017/?replicaSet=rs0. Atlas: mongodb+srv://user:password@cluster.example.com/. It is saved in a private file in this app's data folder and never shown again.";
 }
 
 function nameHint(row, name) {

@@ -159,9 +159,11 @@ def test_guard_messages_are_exact() -> None:
 def test_sources_dir_messages_are_exact(tmp_path: Path) -> None:
     data = tmp_path / "data"
     overlap = (
-        "Value error, sources_dir must not equal or contain data_dir, graphs/ or settings.json"
+        "Value error, sources_dir must not equal or contain data_dir, graphs/, settings.json "
+        "or credentials.json"
     )
-    for candidate in (data, tmp_path, data / "graphs"):
+    files = (data / "settings.json", data / "credentials.json")
+    for candidate in (data, tmp_path, data / "graphs", *files):
         assert messages_of(data_dir=data, sources_dir=candidate) == [overlap]
     assert messages_of(data_dir=data, sources_dir=data / "graphs" / "inbox") == [
         "Value error, sources_dir must not be inside graphs/"
@@ -184,6 +186,7 @@ def test_remote_mode_adds_a_named_bind_host_to_the_allowed_hosts(tmp_path: Path)
 def test_derived_paths_and_flags(tmp_path: Path) -> None:
     config = BootstrapConfig(data_dir=tmp_path)
     assert config.settings_file == tmp_path / "settings.json"
+    assert config.credentials_file == tmp_path / "credentials.json"
     assert config.graphs_dir == tmp_path / "graphs"
     assert config.default_sources_dir == tmp_path / "sources"
     assert config.effective_sources_dir == tmp_path / "sources"

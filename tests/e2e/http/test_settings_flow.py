@@ -87,7 +87,10 @@ def test_a_saved_change_is_returned_listed_and_written_to_disk(
     on_disk = stored_settings(live_server)
     assert {key: on_disk[key] for key in LIMITS} == LIMITS
     mode = stat.S_IMODE(live_server.settings_file.stat().st_mode)
-    assert mode == 0o600  # the file may hold connection strings: owner only
+    assert mode == 0o600  # the settings file is owner-only too
+    assert (
+        stat.S_IMODE(live_server.credentials_file.stat().st_mode) == 0o600
+    )  # it holds the strings
 
 
 def test_the_upload_limit_follows_the_saved_setting_at_once(api: httpx.Client) -> None:

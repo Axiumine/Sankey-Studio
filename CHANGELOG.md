@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Tests for the split of the two files, the migration of an old `settings.json`, every way `credentials.json` can be missing, broken, unreadable or loose, the `.corrupt-<n>` pair, the two size caps and a live-server flow that replaces the file by hand.
 - Policy documents: [docs/roadmap.md](docs/roadmap.md) (the software is complete; maintenance only; feature pull requests welcome except SQL database support), [docs/dependencies.md](docs/dependencies.md) (how dependencies are chosen, obtained, scanned and updated, with the limits of Trivy and Dependabot), [docs/secrets.md](docs/secrets.md) (the project's secrets and the leak procedure) and [docs/assurance-case.md](docs/assurance-case.md) (threat model, controls, tests and residual risks).
 - [docs/release.md](docs/release.md#verifying-a-release) and the README explain how to verify the Sigstore attestation of a PyPI file with `pypi-attestations`.
 - `.github/workflows/trivy-weekly.yml`: the project's Trivy scan (same `trivy.yaml`, pinned image and `scripts/trivy.sh` as `make trivy`) every Monday and on demand, so the dependencies are checked between pushes; a fixed HIGH or CRITICAL finding fails the run. GitHub stops scheduled workflows after 60 days without repository activity ([ADR-40](docs/decisions.md#adr-40-a-weekly-trivy-scan-and-the-openssf-scorecard-run-in-github-actions), [docs/dependencies.md](docs/dependencies.md#weekly-trivy-job)).
@@ -23,10 +24,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The graph timing tests measure CPU seconds (`time.process_time()`), so a loaded machine no longer fails them, and the worst-case bound is wider.
 - The two nested-JSON tests no longer depend on the stack limit of the machine: the first hosted CI run found that a host with a larger stack (a GitHub runner) decodes a 100000-deep document instead of refusing it. They now run the decoder in a thread with a 1 MiB stack, which makes the guard fire everywhere; the worst case on a big-stack host is bounded by the 1 MiB value cap (docs/assurance-case.md, T13).
 - The docs no longer call `release.yml` the only workflow or say that there is no hosted CI: five workflows exist (release, weekly Trivy, Scorecard, CodeQL and the `ci` job that runs the unit tests), nothing requires any of them to pass, and no workflow runs on `pull_request` except `ci` (README, `docs/quality.md`, `docs/decisions.md`, `docs/dependencies.md`, `docs/assurance-case.md`, `docs/secrets.md`, `docs/release.md`, `SECURITY.md`, `CLAUDE.md`, `AGENTS.md`).
 - `docs/quality.md` and `CONTRIBUTING.md` no longer say Trivy checks every dependency and every licence: it scans the runtime packages of `uv.lock` and cannot detect licences there. `SECURITY.md` no longer calls the project a one-person project.
 - `SECURITY.md` lists the supported versions after 0.1.0 (latest release and `main`) and says how a release stops being supported. `MAINTAINERS.md` and `GOVERNANCE.md` no longer say the co-owner already approves releases or owns the PyPI project.
+- Connection strings (the MongoDB URIs with their passwords) are now stored in `<data-dir>/credentials.json` (version 1, mode 0600, written atomically before `settings.json`), apart from `settings.json`, which holds no secret any more. The Settings page works as before; replacing `credentials.json` by hand applies on the next request, without a restart. A `settings.json` from an earlier version keeps working and is migrated by the next save; downgrading afterwards is not supported (the older version moves the new `settings.json` aside). A corrupt `settings.json` is now moved aside together with `credentials.json` (`.corrupt-<n>` pair); an unusable `credentials.json` is reported (422 `settings_error`, no value in the message) and left in place; one that group or others can read is tightened to 0600 on load ([ADR-46](docs/decisions.md#adr-46-connection-strings-live-in-credentialsjson), [docs/secrets.md](docs/secrets.md#the-credentials-file)).
+- `--sources-dir` must not equal or contain `credentials.json` either (the error message lists it); `.gitignore` lists `credentials.json` and the `.corrupt-*` copies.
+- `docs/secrets.md`, `docs/architecture.md`, `docs/assurance-case.md`, `docs/ui.md`, the README, `CLAUDE.md` and `AGENTS.md` say where the strings live.
 
 ## [0.1.0] - 2026-10-17
 

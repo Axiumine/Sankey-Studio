@@ -63,6 +63,7 @@ Contents
 | [ADR-43](#adr-43-codeql-a-ruleset-on-main-and-signed-release-assets) | CodeQL, a ruleset on main and signed release assets |
 | [ADR-44](#adr-44-a-hosted-ci-job-runs-the-unit-tests) | A hosted CI job runs the unit tests |
 | [ADR-45](#adr-45-mask_uri-shows-option-values-from-an-allow-list) | mask_uri shows option values from an allow-list |
+| [ADR-46](#adr-46-connection-strings-live-in-credentialsjson) | Connection strings live in credentials.json |
 
 ## ADR-01 Storage protocol and graph ids
 
@@ -122,6 +123,9 @@ created with mode 0600.
 
 **Why.** A Mongo URI carries credentials. The UI must be able to edit a connection without ever
 seeing, storing or echoing its password.
+
+**Clarified by [ADR-46](#adr-46-connection-strings-live-in-credentialsjson).** The real values are in
+`credentials.json`, and `settings.json` holds none.
 
 ## ADR-05 Build order keeps topology category-agnostic
 
@@ -955,3 +959,16 @@ allow-list fails closed: a new option stays hidden until someone adds it.
 **Accepted risks.** A harmless new option is shown as `key=***` until it is added to
 `SAFE_URI_OPTIONS`, so a masked URI can be less informative than the real one. The list is code, kept
 in step by the table tests in `tests/test_util.py`.
+
+## ADR-46 Connection strings live in credentials.json
+
+**Decision.** The connection strings of the MongoDB connections are kept in `<data_dir>/credentials.json`, a file of their own. `settings.json` keeps the rest of each connection (name, default database) and never a `uri`.
+
+* Format, version 1: `{"version": 1, "mongo_connections": {"<connection name>": {"uri": "<string>"}}}`. The key is the connection name (the identity a connection already has); one object per name, so a later secret (a key passphrase, a token) is a new field, not a new format. `models/credentials.py` validates it with the same function as `MongoConnection.uri` (`checked_uri`).
+* `SettingsStore.save` writes `credentials.json` first and `settings.json` second, each atomically with mode 0600 in the 0700 data directory, and always both. `dump_settings` and `load_settings` keep their shape and stay the code that validates a settings document; `storage/credentials.py` splits and joins the plain dicts between them and the two files. The API, the exports and the bundles do not change (`uri_masked`, `has_secret`; a bundle never held a string).
+* Loading reads both files and caches on both signatures, so a `credentials.json` replaced by hand applies on the next request, with no restart. A `uri` still inside `settings.json` (a file of an earlier version, or a hand edit) is used and wins; a load writes nothing; the next save moves the string out. A connection with no entry, an unreadable file, a file that is not JSON or not valid, a symlink and a file of another user are reported as `settings_error` (422) naming the file and the connection and never a value; nothing is moved or overwritten. An entry with no connection is ignored and dropped by the next save. A file that group or others can reach is tightened to its owner bits. When `settings.json` itself is corrupt it is moved aside together with `credentials.json` under one `.corrupt-<n>` number, so a repair finds both halves.
+* `SANKEY_MONGO_URI` still seeds `default` while no `settings.json` exists; the first save stores it in `credentials.json`.
+
+**Why.** The OpenSSF silver criterion `crypto_credential_agility` asks for credentials in files apart from other information and replaceable without a rebuild. A copy, a backup, a bug report or a diff of the settings no longer carries a password, and an operator can rotate one with `mv` while the server runs.
+
+**Accepted risks.** The two files are not replaced together: a crash between the writes leaves new strings with old settings, which is harmless except for a connection that the save removed or renamed; the next load names it and the file has to be fixed by hand. The file is plain text: its protection is the file mode, the directory mode and the account of the person who runs the server (as in [ADR-04](#adr-04-secrets-never-leave-the-settings-store)). A version from before this record reads the new `settings.json` as invalid and moves it aside, so the change is one-way. An existing install keeps its strings in `settings.json` until its next save. There is no operator-chosen path: a mounted secret is usually a symlink (refused by `O_NOFOLLOW`) on a read-only volume, which would also need a read-only Settings page; left for a later record.

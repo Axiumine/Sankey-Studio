@@ -115,12 +115,12 @@ uv run sankey-studio serve [--host HOST] [--port PORT] [--data-dir DIR] [--sourc
 |---|---|---|---|
 | `--host HOST` | `SANKEY_HOST` | `127.0.0.1` | Address to bind. A non-loopback address needs `--allow-remote` |
 | `--port PORT` | `SANKEY_PORT` | `8765` | Port to listen on (1 to 65535) |
-| `--data-dir DIR` | `SANKEY_DATA_DIR` | `$XDG_DATA_HOME/sankey-studio` (`~/.local/share/sankey-studio`) | Holds `settings.json`, `graphs/` and the default sources folder |
-| `--sources-dir DIR` | `SANKEY_SOURCES_DIR` | `<data-dir>/sources` | Folder of managed source files; must not equal or contain the data directory, `graphs/` or `settings.json` |
+| `--data-dir DIR` | `SANKEY_DATA_DIR` | `$XDG_DATA_HOME/sankey-studio` (`~/.local/share/sankey-studio`) | Holds `settings.json`, `credentials.json`, `graphs/` and the default sources folder |
+| `--sources-dir DIR` | `SANKEY_SOURCES_DIR` | `<data-dir>/sources` | Folder of managed source files; must not equal or contain the data directory, `graphs/`, `settings.json` or `credentials.json` |
 | `--allow-remote` | `SANKEY_REMOTE_MODE` | off | Accept a non-loopback bind. There is NO authentication; the app is read-only |
 | `--allow-remote-writes` | `SANKEY_REMOTE_WRITES` | off | With `--allow-remote`: also allow changes to settings, files, graphs and collections, and writing edits back into managed files |
 | `--allow-source-writes` | `SANKEY_SOURCE_WRITES` | off | With `--allow-remote-writes`: also allow writing edits back to MongoDB sources (without it a remote server never does, even with `--allow-remote-writes`). On loopback this is always allowed |
-| (none) | `SANKEY_MONGO_URI` | unset | Seeds a connection named `default` when no `settings.json` exists yet |
+| (none) | `SANKEY_MONGO_URI` | unset | Seeds a connection named `default` when no `settings.json` exists yet (the first save stores it in `credentials.json`) |
 | (none) | `SANKEY_ALLOWED_HOSTS` | `["localhost", "127.0.0.1", "[::1]"]` | JSON array of accepted `Host` headers |
 | (none) | `SANKEY_LOG_LEVEL` | `info` | uvicorn log level: critical, error, warning, info, debug or trace |
 
@@ -234,8 +234,10 @@ server; otherwise the UI uses the browser's own download.
 
 ### Connections and storage
 
-The settings page manages named MongoDB connections. Passwords are stored in `settings.json` (mode
-0600) and are never shown again: the form displays "(unchanged)". Graphs are stored in one of two
+The settings page manages named MongoDB connections. Connection strings are stored in
+`credentials.json` (mode 0600, apart from `settings.json`; see
+[the credentials file](docs/secrets.md#the-credentials-file)) and are never shown again: the form
+displays "(unchanged)". Graphs are stored in one of two
 backends:
 
 * **Files** (default): one `<id>.json` per graph in `<data-dir>/graphs/`, written atomically.
@@ -494,7 +496,7 @@ src/sankey_studio/
                         suggest, write plan) and manual data sources; rewrite/ edits text in place
   graph/                build_graph: intern, categories, pairs, cycles, layers, assemble
   render/               Sankey and donut figures, legend, colours, palette, tables, exports
-  storage/              file and MongoDB graph and collection stores, settings.json, bundles,
+  storage/              file and MongoDB graph and collection stores, settings and credentials, bundles,
                         migration, MongoDB source write-back
   services.py           Services: wires settings, clients, storage and source context
   bundle.py             RenderBundle: everything a page needs to draw one graph
