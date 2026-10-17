@@ -1,0 +1,2 @@
+{"source": "A", "target": "B", "value": 10}
+{"source": "B", "target": "C", "value": "1,234.5"}

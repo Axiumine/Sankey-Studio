@@ -1,0 +1,1 @@
+mongodb://u%40x:p%3Aw@[::1]:27017/?tlsAllowInvalidCertificates=true&tls=true

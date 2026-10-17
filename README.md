@@ -391,6 +391,8 @@ for that reason.
 * **ruff** (all rules, formatter), **mypy** in strict mode, **pytest** with warnings as errors.
 * **memray** memory budgets (`make memray`) and a whole-pipeline profile (`make profile`).
 * **mutmut** mutation testing with a score gate.
+* **ClusterFuzzLite** fuzzing of the parsers, the rewriter, the MongoDB guards and the name validators
+  in GitHub Actions ([docs/fuzzing.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/fuzzing.md)).
 * **Semgrep** with custom rules for the project's invariants (MongoDB writes only in the library store
   and the source write-back, both under `storage/`,
   no unsafe HTML or JavaScript sinks, no secrets in logs, no outbound HTTP, ...), run in Docker.
@@ -505,7 +507,7 @@ src/sankey_studio/
   web/                  FastAPI app: middleware, security, routers/, schemas/, templates/, static/
 scripts/                code caps, mutation gate, memory profile, Semgrep/Trivy/Qodana runners,
                         the git-hook gate (githook_*.py) and mongo_wait.py
-tests/                  unit tests mirroring src/, contracts/, e2e/
+tests/                  unit tests mirroring src/, contracts/, e2e/, fuzz/ (fuzz targets)
 docs/                   project documentation, README screenshots and a gallery of every screen
 LICENSE                 GNU General Public License, version 3
 .semgrep/rules/         custom Semgrep rules and their tests

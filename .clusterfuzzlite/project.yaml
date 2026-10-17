@@ -1,0 +1,6 @@
+# Read by the OSS-Fuzz helper (infra/helper.py) only: the workflows pass language and sanitizer
+# themselves. Python targets run with the "address" sanitizer name; "undefined" would repeat the
+# same pure-Python run, and "coverage" is not supported by build.sh.
+language: python
+sanitizers:
+  - address

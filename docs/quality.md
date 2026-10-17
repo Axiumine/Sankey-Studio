@@ -16,6 +16,8 @@ Contents
 * [Scanners](#scanners)
 * [Suppression policy](#suppression-policy)
 * [Test conventions](#test-conventions)
+* [Fuzzing](#fuzzing)
+* [Hosted CI](#hosted-ci)
 * [Git hooks](#git-hooks)
 * [Commit policy](#commit-policy)
 * [Definition of done](#definition-of-done)
@@ -239,6 +241,20 @@ Suppression comments are rationed and checked by `tests/test_policy.py`:
   the hook shims and the Semgrep fixtures carry no header; `LICENSE` and `pyproject.toml` cover them.
 * Hypothesis is not installed; use parametrised tables.
 * Build a `go.Figure` from a figure dict only in tests, as a schema check.
+
+## Fuzzing
+
+The code that reads text an outsider controls (the csv, tsv, SankeyMATIC and JSON parsers, the
+source rewriter, the MongoDB filter, pipeline and URI guards, the name validators and the number
+formatter) has Atheris fuzz targets in `tests/fuzz` ([ADR-47](decisions.md#adr-47-fuzzing-runs-in-clusterfuzzlite-from-testsfuzz),
+[fuzzing.md](fuzzing.md)). Two things run them:
+
+* The unit suite (`make test`, `make cov`, the `pre-push` gate) runs `tests/fuzz/test_targets.py`: every
+  seed, 400 mutated seeds and 400 random inputs per target, and a check that each target has its
+  entry point. It needs no fuzzing engine. It keeps the targets from rotting; it is not fuzzing.
+* ClusterFuzzLite in GitHub Actions does the fuzzing: `cflite_pr.yml` for 7 minutes on a pull request
+  that touches the code the targets read, `cflite_batch.yml` for an hour every night on `main`, then a
+  corpus prune. These workflows are not part of the git hooks, and nothing requires them to pass.
 
 ## Hosted CI
 

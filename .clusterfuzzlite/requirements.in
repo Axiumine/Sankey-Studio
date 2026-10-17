@@ -1,0 +1,4 @@
+# The tools of the fuzz image only (the project's own packages come from uv.lock, see the
+# Dockerfile). atheris 3.1.0 is the first release with a CPython 3.14 wheel and ships no sdist.
+atheris==3.1.0
+pyinstaller==6.22.3

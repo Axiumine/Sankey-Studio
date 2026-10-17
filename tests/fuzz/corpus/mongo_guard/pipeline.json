@@ -1,0 +1,1 @@
+[{"$match": {"year": 2025}}, {"$group": {"_id": "$kind", "n": {"$sum": "$amount"}}}, {"$sort": {"n": -1}}, {"$limit": 20}]

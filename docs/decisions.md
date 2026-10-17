@@ -64,6 +64,7 @@ Contents
 | [ADR-44](#adr-44-a-hosted-ci-job-runs-the-unit-tests) | A hosted CI job runs the unit tests |
 | [ADR-45](#adr-45-mask_uri-shows-option-values-from-an-allow-list) | mask_uri shows option values from an allow-list |
 | [ADR-46](#adr-46-connection-strings-live-in-credentialsjson) | Connection strings live in credentials.json |
+| [ADR-47](#adr-47-fuzzing-runs-in-clusterfuzzlite-from-testsfuzz) | Fuzzing runs in ClusterFuzzLite from tests/fuzz |
 
 ## ADR-01 Storage protocol and graph ids
 
@@ -972,3 +973,19 @@ in step by the table tests in `tests/test_util.py`.
 **Why.** The OpenSSF silver criterion `crypto_credential_agility` asks for credentials in files apart from other information and replaceable without a rebuild. A copy, a backup, a bug report or a diff of the settings no longer carries a password, and an operator can rotate one with `mv` while the server runs.
 
 **Accepted risks.** The two files are not replaced together: a crash between the writes leaves new strings with old settings, which is harmless except for a connection that the save removed or renamed; the next load names it and the file has to be fixed by hand. The file is plain text: its protection is the file mode, the directory mode and the account of the person who runs the server (as in [ADR-04](#adr-04-secrets-never-leave-the-settings-store)). A version from before this record reads the new `settings.json` as invalid and moves it aside, so the change is one-way. An existing install keeps its strings in `settings.json` until its next save. There is no operator-chosen path: a mounted secret is usually a symlink (refused by `O_NOFOLLOW`) on a read-only volume, which would also need a read-only Settings page; left for a later record.
+
+## ADR-47 Fuzzing runs in ClusterFuzzLite from tests/fuzz
+
+**Context.** The code that reads text from outside (four source formats, the rewriter behind the write-back, the MongoDB filter, pipeline and URI guards, the name validators, the number formatter) is where a malformed input does the most harm, and the unit, mutation and end-to-end tests only try the inputs someone thought of. The OpenSSF criterion `dynamic_analysis` and the Scorecard check `Fuzzing` ask for fuzzing too. The project needs CPython 3.14 (PEP 758 syntax), and the OSS-Fuzz Python image ships 3.11.
+
+**Decision.**
+
+* The targets live in `tests/fuzz` (not a top-level directory), so lint, types, caps, the licence-header test and the policy tests apply to them unchanged. Seven Atheris entry points (`<name>_fuzzer.py`) call plain functions in `text_targets.py` and `guard_targets.py`; `targets.py` is the registry. A target accepts the errors the code is documented to raise and checks an oracle on what it accepts (for example: an accepted MongoDB document holds no `$where`, and the JSON reader gives the same result for every chunk size).
+* `tests/fuzz/test_targets.py` runs every seed, 400 mutated seeds and 400 random inputs per target in the normal unit suite, so the targets cannot rot between fuzzing runs.
+* ClusterFuzzLite runs them in GitHub Actions: 7 minutes on a pull request that touches the code they read, one hour every night on `main`, then a corpus prune. The corpus is kept as a workflow artifact. Neither workflow is in the git hooks or required.
+* `.clusterfuzzlite/Dockerfile` starts from the OSS-Fuzz Python builder (by digest), installs CPython 3.14.7 and the project's runtime packages from `uv.lock` with uv, and the two fuzzing tools (`atheris` 3.1.0, the first release with a 3.14 wheel, and `pyinstaller`) by hash from `.clusterfuzzlite/requirements.txt`. `build.sh` turns each entry point into a PyInstaller one-file binary, so the runner needs no Python 3.14. The targets are pure Python, so no sanitizer runtime is preloaded and `address` is only the name of the run; `coverage` is refused.
+* Nothing is added to `pyproject.toml` or `uv.lock` except a mypy override for `atheris`; only the entry points import it, and a test checks that.
+
+**Why.** Fuzzing runs on GitHub's machines, not in the maintainer's hooks, and does not slow a commit or a push. Keeping the code in `tests/fuzz` means no new rule or exception for it.
+
+**Accepted risks.** A second dependency list (the fuzz tools and two image digests) sits next to ADR-42; it is hash-pinned and Dependabot reads it (security updates only), but a bump is by hand. `atheris` lags new CPython releases, so a Python upgrade can break the image until it catches up. The image runs as root, as the OSS-Fuzz builders do (`AVD-DS-0002` in `.trivyignore`, expiry 2027-10-18). The ClusterFuzzLite actions fix their own `:v1` images by tag, not by the action's commit. The image is not built in the git hooks, so the first run on GitHub is its first real build and the first pull request fixes whatever the runner shows. A fuzzer finds nothing it cannot reach: the targets prove only that these inputs are handled, not that the code has no bug.

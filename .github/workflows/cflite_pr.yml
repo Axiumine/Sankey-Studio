@@ -1,0 +1,48 @@
+# ClusterFuzzLite on pull requests: the fuzz targets in tests/fuzz run for a few minutes on a pull
+# request that touches the code they read (code-change mode). A crash fails the job and the input
+# that caused it is uploaded as an artifact. The image is .clusterfuzzlite/Dockerfile; see
+# docs/fuzzing.md. The hosted job ci.yml does not run these targets.
+name: cflite-pr
+
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "src/**"
+      - "tests/fuzz/**"
+      - ".clusterfuzzlite/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/cflite_pr.yml"
+
+permissions: {}
+
+concurrency:
+  group: cflite-pr-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fuzz:
+    name: Fuzz the parsers
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Build the fuzz targets
+        id: build
+        uses: google/clusterfuzzlite/actions/build_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1 # v1
+        with:
+          language: python
+          sanitizer: address
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run the fuzz targets
+        id: run
+        uses: google/clusterfuzzlite/actions/run_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1 # v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          fuzz-seconds: 420
+          mode: code-change
+          sanitizer: address

@@ -214,13 +214,16 @@ CVE-YYYY-NNNN exp:YYYY-MM-DD   # why this is not exploitable here
 
 Every entry needs the reason and the expiry, and the file stays empty unless a finding is triaged.
 `exp:` is Trivy's own syntax: after that date the finding is reported again. The reason-and-expiry
-rule is a convention: no test or script checks it. At the time of writing the file has no entries.
+rule is a convention: no test or script checks it. At the time of writing the file has one entry:
+`AVD-DS-0002`, the missing `USER` of `.clusterfuzzlite/Dockerfile` (the OSS-Fuzz builder image runs as
+root by contract; expiry 2027-10-18).
 
 ### GitHub Dependabot
 
 Dependabot alerts and Dependabot security updates are switched on in the repository settings. These
 settings are on GitHub and are not part of the repository's files. The file
-`.github/dependabot.yml` names the `uv` and `github-actions` ecosystems with
+`.github/dependabot.yml` names the `uv` and `github-actions` ecosystems, and the `pip` and `docker`
+ecosystems for `/.clusterfuzzlite` (the fuzz image, see below), all with
 `open-pull-requests-limit: 0`, which turns off routine version-update pull requests, so Dependabot
 proposes bumps only for known vulnerabilities. The lock and the lower bounds otherwise move when a
 maintainer moves them.
@@ -339,7 +342,8 @@ without uploading with the commands in [release.md](release.md#checking-a-build-
 
 ## The workflows' own dependencies
 
-There are five workflows. `.github/workflows/release.yml` runs on a push of a `v*` tag
+There are seven workflows. `cflite_pr.yml` and `cflite_batch.yml` run the fuzz targets
+([ADR-47](decisions.md#adr-47-fuzzing-runs-in-clusterfuzzlite-from-testsfuzz)). `.github/workflows/release.yml` runs on a push of a `v*` tag
 ([ADR-39](decisions.md#adr-39-releases-are-published-to-pypi-from-a-tag)); `trivy-weekly.yml` and
 `scorecard.yml` run on a schedule, and the Scorecard also on a push to `main`
 ([ADR-40](decisions.md#adr-40-a-weekly-trivy-scan-and-the-openssf-scorecard-run-in-github-actions));
@@ -352,6 +356,16 @@ There are five workflows. `.github/workflows/release.yml` runs on a push of a `v
   cannot change which action code runs. A pin is bumped by hand (new SHA and new comment in the
   workflow file), and nothing in the repository watches
   for new versions: the `github-actions` entry in `dependabot.yml` allows security updates only.
+* **The fuzz image is a second pin list.** The ClusterFuzzLite actions (`google/clusterfuzzlite/actions/build_fuzzers`
+  and `run_fuzzers`) are pinned to the commit of `v1` like the other actions, but they start Docker
+  images tagged `:v1` that the commit does not fix. `.clusterfuzzlite/Dockerfile` pins its base image
+  (`gcr.io/oss-fuzz-base/base-builder-python`) and `uv` by digest and installs CPython 3.14.7. The project's
+  runtime packages come from `uv.lock` (`uv sync --frozen --no-dev`, hash-checked), so the lock stays the one
+  source of the application's dependencies (ADR-42). The fuzzing tools (`atheris`, `pyinstaller`) are listed in
+  `.clusterfuzzlite/requirements.in` and pinned by hash in `.clusterfuzzlite/requirements.txt`, made with
+  `uv pip compile --generate-hashes`; they are not in `pyproject.toml` or `uv.lock`, and the application never
+  imports them. Dependabot reads that file and the Dockerfile (security updates only). The image runs as root,
+  as the OSS-Fuzz builders do.
 * **Least privilege.** The top-level `permissions` is `{}`, the build job has `contents: read`, and
   only the two upload jobs have `id-token: write`. Checkout uses `persist-credentials: false`, and
   the tag name reaches the shell through an environment variable and not by interpolation. No PyPI

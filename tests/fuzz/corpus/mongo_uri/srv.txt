@@ -1,0 +1,1 @@
+mongodb+srv://user:example@cluster0.example.net/flows?retryWrites=true

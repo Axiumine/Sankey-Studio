@@ -1,0 +1,1 @@
+mongodb://user:example@localhost:27017/flows?replicaSet=rs0&tls=true&appName=sankey

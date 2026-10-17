@@ -182,6 +182,12 @@ warn_required_dynamic_aliases = true
 module = ["plotly.*", "kaleido.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+# atheris is installed only in the ClusterFuzzLite image (.clusterfuzzlite/), never in the project
+# environment, and ships no stubs; only the tests/fuzz/*_fuzzer.py entry points import it.
+module = ["atheris"]
+ignore_missing_imports = true
+
 # --------------------------------------------------------------------------- pytest
 [tool.pytest.ini_options]
 testpaths = ["tests"]
