@@ -9,7 +9,9 @@ do what, and what happens if the lead maintainer is not available. The people ar
 * **Lead maintainer** (owner). Decides what goes into the project and what does not, reviews and
   merges changes, makes releases (see [docs/release.md](docs/release.md)), triages security reports
   ([SECURITY.md](SECURITY.md)) and answers issues.
-* **Co-owner and successor.** Has the same access as the lead maintainer. Keeps the project
+* **Co-owner and successor.** Has the same access to the GitHub organization and repository as the lead
+  maintainer (access to the PyPI project and to the approval of a release is added separately, see
+  [docs/release.md](docs/release.md)). Keeps the project
   running if the lead maintainer cannot: answers security reports, merges and releases fixes. The
   co-owner has agreed to take the project over within a week of the lead maintainer becoming
   unavailable, and the project is GPL-3.0-only, so anyone may also fork it.

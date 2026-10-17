@@ -6,8 +6,15 @@ expect.
 
 ## Supported versions
 
-Sankey Studio has no tagged releases yet. Only the latest commit on the `main` branch is supported;
-fixes land there and nowhere else. Once releases exist, the latest release will be supported as well.
+| Version | Supported |
+|---|---|
+| Latest release (0.1.x) | yes |
+| `main` (the next release) | yes |
+| Older releases | no |
+
+While the project is 0.x only the latest release is supported: a fix lands on `main` and ships as a new
+patch release. When a newer minor release is published, the previous one stops receiving security
+fixes; that is announced in the release notes and in [CHANGELOG.md](CHANGELOG.md).
 
 ## Reporting a vulnerability
 
