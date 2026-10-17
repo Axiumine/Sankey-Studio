@@ -35,6 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--sources-dir` must not equal or contain `credentials.json` either (the error message lists it); `.gitignore` lists `credentials.json` and the `.corrupt-*` copies.
 - `docs/secrets.md`, `docs/architecture.md`, `docs/assurance-case.md`, `docs/ui.md`, the README, `CLAUDE.md` and `AGENTS.md` say where the strings live.
 
+### Fixed
+
+- The JSON reader treated a first read that held only the byte order mark as the end of the input, so the document read as empty. With the production chunk of 65,536 characters this needs a document that is exactly one BOM, so no real input was affected; the first ClusterFuzzLite run on a pull request found it with a chunk size of 1 (the `json_stream` differential target). The crash input is now a seed (`tests/fuzz/corpus/json_stream/bom_alone_in_chunk.txt`) and a unit test covers it.
+
 ## [0.1.0] - 2026-10-17
 
 First release.

@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, NamedTuple
 import pytest
 
 from sankey_studio.errors import SourceError
+from sankey_studio.sources.formats import json_rows
 from sankey_studio.sources.formats.json_rows import CHUNK_CHARS, MAX_OBJECT_CHARS
 from tests.sources.text_support import in_small_stack, inline, of_file, put
 
@@ -155,6 +156,23 @@ def test_a_bom_at_the_start_of_a_later_chunk_is_data(source_ctx: SourceContext) 
     assert text[CHUNK_CHARS] == "\ufeff"
     out = inline(source_ctx, text, format="json")
     assert out.rows == [("ab\ufeffcd", "t", 1.0, None)]
+
+
+BOM_FIRST_CHUNK = [
+    ("﻿" + json.dumps(objects(2)), [("s0", "t0", 1.0, None), ("s1", "t1", 2.0, None)]),
+    ("﻿" + json.dumps(objects(1)[0]), [("s0", "t0", 1.0, None)]),
+    ("﻿", []),
+]
+
+
+@pytest.mark.parametrize(("text", "rows"), BOM_FIRST_CHUNK)
+def test_a_first_chunk_of_only_the_bom_does_not_end_the_input(
+    source_ctx: SourceContext, monkeypatch: pytest.MonkeyPatch, text: str, rows: list[object]
+) -> None:
+    monkeypatch.setattr(json_rows, "CHUNK_CHARS", 1)  # the BOM alone fills the first read
+    out = inline(source_ctx, text, format="json")
+    assert out.rows == rows
+    assert out.warnings == []
 
 
 def test_a_bom_is_only_dropped_at_the_start(source_ctx: SourceContext) -> None:

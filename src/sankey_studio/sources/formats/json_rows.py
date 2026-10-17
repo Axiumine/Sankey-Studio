@@ -68,11 +68,11 @@ class _Scanner:
         except UnicodeDecodeError:
             line = self._line + self._buf.count("\n")  # the failing block continues the buffer
             raise decode_error(self._label, line, self._stream.encoding) from None
+        self._eof = not chunk  # judged before the BOM goes: a chunk of only the BOM is not the end
         if self._first:
             chunk, self._first = chunk.removeprefix(BOM), False
-        self._eof = not chunk
         self._buf += chunk
-        return bool(chunk)
+        return not self._eof
 
     def _consume(self, count: int) -> None:
         self._line += self._buf.count("\n", self._pos, self._pos + count)
