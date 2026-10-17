@@ -33,7 +33,7 @@ Contents
 * The checks that guard against secrets are Trivy, Semgrep (the registry pack `p/secrets` and two
   project rules), unit and end-to-end tests that scan responses and logs for a test password, and
   GitHub secret scanning with push protection. Trivy and Semgrep run in the git hooks, which are
-  client-side and can be bypassed, and only for a push of `main` or a tag. There is no hosted CI.
+  client-side and can be bypassed, and only for a push of `main` or a tag. The hosted CI runs only the unit tests.
   See [Limits](#limits).
 * The application keeps the connection strings of its users in `settings.json` (always mode 0600,
   in a directory it creates with mode 0700) and never returns them or writes them to its own log
@@ -170,7 +170,7 @@ host). Neither is a credential. An alert on anything else is treated as a leak
 ([If a secret is exposed](#if-a-secret-is-exposed)).
 
 The git hooks are client-side only (`--no-verify`, a changed `core.hooksPath` and a fresh clone
-skip them), there is no hosted CI and `main` has no required check or review (a ruleset blocks only deletion and force-push)
+skip them), the hosted CI runs only the unit tests and `main` has no required check or review (a ruleset blocks only deletion and force-push)
 ([ADR-37](decisions.md#adr-37-git-hooks-are-the-one-place-the-checks-run)). The checks are a
 safety net for the maintainers, not a boundary.
 
@@ -293,7 +293,7 @@ application.
 
 ## Limits
 
-* The scanners are a safety net, not a boundary. The hooks are client-side, there is no hosted CI,
+* The scanners are a safety net, not a boundary. The hooks are client-side, the hosted CI runs only the unit tests,
   and the gate runs Trivy's and Semgrep's secret detection only for a push of `main` or a tag (or
   when someone runs `make trivy` or `make semgrep`), over the working tree, not over the history
   and not over `.env`.

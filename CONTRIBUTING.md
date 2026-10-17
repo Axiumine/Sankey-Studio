@@ -51,7 +51,7 @@ Python 3.14 syntax such as `except A, B:` (PEP 758). The full list of `make` tar
 
 The maintainer runs the slow gates (`cov`, `memray`, `e2e`, `security`, `mutation`) from the git hooks
 before merging, so a pull request does not need to pass all of them before review, but it must not
-break `make lint typecheck caps` and its own tests.
+break `make lint typecheck caps` and its own tests. The hosted `ci` job runs `make lint typecheck caps cov` on every pull request.
 
 ## Rules for code
 

@@ -471,8 +471,8 @@ its `make` target, one at a time.
   checks of a tier have a stamp, without running anything.
 * **Not a security boundary.** The hooks are local: `git commit --no-verify`, `git push --no-verify`,
   `git -c core.hooksPath=/dev/null ...` and a fresh clone without `make hooks` skip them, and the
-  project has no server-side check (its workflows publish a tagged release, scan the dependencies weekly and
-  score the repository; none runs the tests, see
+  project has no server-side check (a hosted job runs the unit tests but nothing requires it, and the other workflows
+  publish a tagged release, scan the dependencies weekly, run CodeQL and score the repository, see
   [docs/dependencies.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/dependencies.md)). They stop mistakes, not a determined person.
 * **Rollback.** `git config --unset core.hooksPath` disables every hook of the clone; `rm -rf
   .git/hook-stamps .git/hook-logs` clears the stamps and logs (use `git rev-parse --git-common-dir`

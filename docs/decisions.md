@@ -61,6 +61,7 @@ Contents
 | [ADR-41](#adr-41-requirementstxt-is-a-generated-copy-of-uvlock-for-githubs-dependency-graph) | requirements.txt is a generated copy of uv.lock for GitHub's dependency graph (superseded) |
 | [ADR-42](#adr-42-uvlock-is-the-one-source-of-the-dependency-list) | uv.lock is the one source of the dependency list |
 | [ADR-43](#adr-43-codeql-a-ruleset-on-main-and-signed-release-assets) | CodeQL, a ruleset on main and signed release assets |
+| [ADR-44](#adr-44-a-hosted-ci-job-runs-the-unit-tests) | A hosted CI job runs the unit tests |
 
 ## ADR-01 Storage protocol and graph ids
 
@@ -704,9 +705,9 @@ rule is now one sentence: tests run in the hooks, and a check that did not run i
 * `qodana` is required for `main` and tags and runs a fresh `make cov` first, because it imports
   `coverage.xml` and only warns when it is missing or stale. It runs before `mutation` so a missing
   token fails before the long mutation run.
-* The hooks are client-side only. The project runs no CI on commits and requires no check or review on
-  `main` (a ruleset blocks only deletion and force-push, ADR-43), and none was added (the workflows publish a tagged release, ADR-39, scan weekly and score the repository, ADR-40; none runs the
-  tests): the hooks are a convenience gate that stops mistakes, not a security boundary.
+* The hooks are client-side only. The hosted CI (ADR-44) runs only lint, types, caps and the unit tests and nothing
+  requires it, and `main` requires no check or review (a ruleset blocks only deletion and force-push,
+  ADR-43); the hooks stay the one full gate and are a convenience gate that stops mistakes, not a security boundary.
 
 **Accepted risks.** `--no-verify`, `core.hooksPath` overrides and a clone without `make hooks` skip
 every hook (the rules for agents forbid them; nothing enforces it). A push gate of 30+ minutes holds
@@ -861,8 +862,10 @@ locked packages.
   checked again after the push (`gh api repos/Axiumine/Sankey-Studio/dependency-graph/sbom`, the
   Insights page). If it falls back to nothing, the copy comes back through a new decision record.
 
-**Result of the check after the removal.** To be written down in this record once the graph has been
-read (see [dependencies.md](dependencies.md#github-dependabot)).
+**Result of the check after the removal.** On 2026-10-17, after the removal and a new Dependabot graph
+job, the SBOM API still listed the same 76 packages and the manifests were `uv.lock`, `pyproject.toml`
+and the workflow files. So the `uv` entry of `dependabot.yml` is what makes GitHub read the lock, and the
+copy was never needed (see [dependencies.md](dependencies.md#github-dependabot)).
 
 **Accepted risks.** Dependabot's coverage of `uv.lock` rests on a GitHub job that the project does not
 control and that the repository cannot test.
@@ -871,8 +874,14 @@ control and that the repository cannot test.
 
 **Decision.**
 
-* GitHub's CodeQL default setup analyses Python and JavaScript (a repository setting, not a file).
-  Findings appear in code scanning and are not a gate.
+* `.github/workflows/codeql.yml` runs CodeQL on Python, JavaScript and the workflow files on pushes to
+  `main` and weekly. It is an explicit workflow because the OpenSSF Scorecard SAST check detects a
+  workflow that uses `github/codeql-action` and did not detect GitHub's default setup (tried first on
+  2026-10-17). Findings appear in code scanning and are not a gate. The first analysis raised eight
+  alerts, all dismissed with a reason: five test files that log fake secrets on purpose and one Semgrep
+  rule fixture ("used in tests"), the path sanitiser `sources/files/paths.py` (the containment code, T4
+  of the assurance case) and a regex on a field the model validator caps at 24 characters ("false
+  positive"; measured linear, 21 ms for 128000 characters).
 * A repository ruleset, "main: no deletion, no force-push", applies to the default branch. It has
   two rules, `deletion` and `non_fast_forward`. It does not require pull requests, reviews or status
   checks: those would stop the maintainer's direct pushes, which is how the git-hook gate works
@@ -887,3 +896,24 @@ history, not the content of the next commit. CodeQL results depend on the langua
 are read by whoever looks at the Security tab. The release assets are copies; PyPI stays the place to
 install from, and the bundle proves the file was built by this repository's workflow, not that the
 code is safe.
+
+## ADR-44 A hosted CI job runs the unit tests
+
+**Decision.** `.github/workflows/ci.yml`, job `test`, runs on every push to `main`, every pull request
+to `main` and on demand: `uv sync --all-extras --locked`, `make lint typecheck caps`, then `make cov`
+(the unit suite with the 100% line and branch gate) after installing Node 22 for the tests of the
+frontend modules. It uploads a JUnit and a coverage report. It starts
+from `permissions: {}`, has `contents: read` in the job, uses pinned actions and no secret.
+
+* Why: a test run tied to each check-in on the shared repository, with a report (the silver criterion
+  `automated_integration_testing`, the passing criterion `test_continuous_integration`), and a check
+  named `test` on pull requests, which is what the OpenSSF Scorecard CI-Tests check looks for.
+* What stays local: the browser end-to-end suites, the memory budgets, mutation testing, Semgrep, Trivy,
+  Qodana and the real-MongoDB suites. The pre-push gate stays the one full gate
+  ([ADR-37](#adr-37-git-hooks-are-the-one-place-the-checks-run)).
+
+**Accepted risks.** Nothing requires the job to pass: a required status check would stop the
+maintainer's direct pushes ([ADR-43](#adr-43-codeql-a-ruleset-on-main-and-signed-release-assets)), so the
+job reports and does not block. A pull request runs its own code on the runner with a read-only token
+and no secret (none exists to reach). The runner differs from the maintainer's machine (image, Chrome,
+kernel), so the job can fail for a reason the local gate never shows, and the other way round.

@@ -4,7 +4,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+import os
+from typing import TYPE_CHECKING, Any, Final
 
 from sankey_studio.graph import build_graph
 from sankey_studio.models import RawLink, SankeyGraph, TransformSpec
@@ -14,6 +15,10 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 BIG = 10_000_000
+
+#: The wall-clock bounds of the graph tests are set for the maintainer's machine; a hosted runner
+#: (``CI`` is set) is several times slower on one thread, so its bounds are wider.
+TIME_FACTOR: Final = 4.0 if os.environ.get("CI") else 1.0
 
 
 def make_graph(links: Iterable[RawLink], **transform: Any) -> SankeyGraph:

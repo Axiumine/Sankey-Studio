@@ -206,8 +206,8 @@ Other weaknesses:
   lock, secrets, misconfiguration and licences) runs in the pre-push gate for `main` and tags, with
   the scanner images pinned by version tag (not by digest). Trivy reports HIGH and CRITICAL
   vulnerabilities that have a fix. `.trivyignore` has no entries. See
-  [quality.md](quality.md#scanners). GitHub's CodeQL default setup also analyses the Python and
-  JavaScript code, as a repository setting.
+  [quality.md](quality.md#scanners). The `codeql.yml` workflow also analyses the Python and
+  JavaScript code and the workflow files (ADR-43).
 * **GitHub settings.** Secret scanning with push protection and Dependabot alerts and security
   updates are enabled. They are repository settings, not files, so they are stated here as they were
   when this page was written and nothing in the repository keeps them so.
@@ -258,8 +258,8 @@ Other weaknesses:
 * **Consent is not authorisation** (ADR-34). The limit on write-back is the database user's rights.
 * **Credentials sit in clear text** in `settings.json`, protected by file modes only.
 * **The gates are client-side** (ADR-37). `--no-verify`, a changed `core.hooksPath` or a fresh clone
-  skip every hook. There is no hosted CI that runs the tests or checks commits, no required check or review on `main` (the maintainer pushes to it directly; a ruleset
-  blocks only deletion and force-push) and no tag protection; none of the workflows runs the tests. The hook stamps do not record
+  skip every hook. The hosted CI (ADR-44) runs lint, types, caps and the unit tests but nothing requires it, there is no required check or review on `main` (the maintainer pushes to it directly; a ruleset
+  blocks only deletion and force-push) and no tag protection; the release workflow runs no tests. The hook stamps do not record
   the environment (scanner images, Chrome).
 * **One maintainer in practice.** Every commit so far is by one person. A second owner has agreed to
   take over within a week of the lead maintainer becoming unavailable

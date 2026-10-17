@@ -66,6 +66,24 @@ distribution. The release tag is signed too (`git tag -v vX.Y.Z`). Do not pass `
 files from TestPyPI: they are signed with the normal Sigstore root, so verify them with
 `--provenance-file` and no `--staging`.
 
+## Rebuilding a release
+
+The files on PyPI can be rebuilt from the tag and compared byte for byte. This was checked for 0.1.0 on
+2026-10-17 on another machine than the one that built the release (uv 0.12.17, hatchling 1.32.4):
+
+```bash
+mkdir /tmp/rebuild && git archive vX.Y.Z | tar -x -C /tmp/rebuild
+cd /tmp/rebuild && env -u SOURCE_DATE_EPOCH uv build --out-dir ../rebuild-out
+sha256sum ../rebuild-out/*   # compare with the digests on https://pypi.org/pypi/sankey-studio/X.Y.Z/json
+```
+
+The wheel and the sdist were identical to the PyPI files, and two builds in a row were identical to each
+other. Leave `SOURCE_DATE_EPOCH` unset, as the release workflow does: another value changes the
+timestamps in the archives but not their contents. The build tool `hatchling>=1.27` is resolved when the
+package is built and is not locked, so a future hatchling that writes the archives differently can change
+the hashes without any change to the source; if the hashes differ, compare the member lists and the
+contents of the two archives first.
+
 ## Release assets
 
 The release page carries the files that are on PyPI, so they can be fetched and checked without PyPI.

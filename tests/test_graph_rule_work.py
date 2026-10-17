@@ -13,7 +13,7 @@ import pytest
 from sankey_studio.errors import GraphTooLargeError
 from sankey_studio.graph import categories
 from sankey_studio.graph.categories import MAX_RULE_WORK, check_rule_work
-from tests.graph_support import make_graph, rows
+from tests.graph_support import TIME_FACTOR, make_graph, rows
 
 if TYPE_CHECKING:
     from sankey_studio.models import RawLink
@@ -124,7 +124,7 @@ def test_two_hundred_rules_over_a_hundred_thousand_names_are_refused_without_mat
     started = time.perf_counter()
     with pytest.raises(GraphTooLargeError) as caught:
         make_graph(links, category_rules=rules)
-    assert time.perf_counter() - started < 3.0
+    assert time.perf_counter() - started < 3.0 * TIME_FACTOR
     assert caught.value.message == (
         "The category rules are too expensive for this graph (200 rules over 100002 distinct "
         "node names); remove rules or narrow the data"
@@ -139,7 +139,7 @@ def test_the_worst_accepted_build_is_bounded() -> None:
     rules = [{"pattern": f"x{i}*", "category": f"c{i}"} for i in range(200)]
     started = time.perf_counter()
     graph = make_graph(links, category_rules=rules)
-    assert time.perf_counter() - started < 10.0
+    assert time.perf_counter() - started < 10.0 * TIME_FACTOR
     assert graph.n_links == 50_000
     assert graph.categories == ()
 
@@ -152,4 +152,4 @@ def test_the_reported_case_two_hundred_rules_over_two_hundred_thousand_links_fai
     started = time.perf_counter()
     with pytest.raises(GraphTooLargeError, match="400000 distinct node names"):
         make_graph(links, category_rules=rules)
-    assert time.perf_counter() - started < 5.0
+    assert time.perf_counter() - started < 5.0 * TIME_FACTOR

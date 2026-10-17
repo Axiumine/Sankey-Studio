@@ -14,7 +14,7 @@ from sankey_studio.errors import GraphTooLargeError, SourceError
 from sankey_studio.graph import build_graph
 from sankey_studio.models import MAX_CATEGORIES, RawLink, TransformSpec
 from sankey_studio.sources.base import Diagnostics
-from tests.graph_support import make_graph, rows
+from tests.graph_support import TIME_FACTOR, make_graph, rows
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -156,6 +156,6 @@ def test_two_hundred_thousand_links_build_in_under_three_seconds() -> None:
     ]
     started = time.perf_counter()
     graph = make_graph(links)
-    assert time.perf_counter() - started < 3.0
+    assert time.perf_counter() - started < 3.0 * TIME_FACTOR
     assert graph.n_links > 150_000
     assert len(graph.categories) == 9

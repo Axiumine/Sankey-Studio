@@ -131,9 +131,9 @@ rendering) under `memray run`, prints `memray stats` and writes a flamegraph to
 
 ## Static analysis
 
-* **CodeQL** (GitHub's default setup for Python and JavaScript, a repository setting and not a file)
-  analyses the code on pushes to `main`, on pull requests and weekly; its findings appear in the
-  repository's code scanning. It is not a gate (ADR-43).
+* **CodeQL** (`.github/workflows/codeql.yml`: Python, JavaScript and the workflow files) runs on pushes
+  to `main` and weekly; its findings appear in the repository's code scanning. It is not a gate
+  (ADR-43). Its first analysis raised eight alerts, all dismissed with a reason in code scanning.
 * **ruff** with `select = ["ALL"]` (documented exceptions in `pyproject.toml`), line length 100,
   `max-args = 4`, mccabe complexity 12. Under `web/**` only the type-checking import rules and
   unused-argument checks are relaxed, because FastAPI resolves annotations at runtime.
@@ -239,6 +239,18 @@ Suppression comments are rationed and checked by `tests/test_policy.py`:
   the hook shims and the Semgrep fixtures carry no header; `LICENSE` and `pyproject.toml` cover them.
 * Hypothesis is not installed; use parametrised tables.
 * Build a `go.Figure` from a figure dict only in tests, as a schema check.
+
+## Hosted CI
+
+`.github/workflows/ci.yml` (job `test`, ADR-44) runs on every push to `main`, every pull request to `main`
+and on demand: `uv sync --all-extras --locked`, `make lint typecheck caps` and `make cov` (the unit suite
+with the 100% line and branch gate). It installs Node 22 for the tests of the frontend modules and uploads the JUnit and coverage
+reports as the `test-report` artifact. The wall-clock bounds of a few graph tests are four times wider
+when `CI` is set (`TIME_FACTOR` in `tests/graph_support.py`), because a hosted runner is slower than
+the maintainer's machine. It has `permissions: {}` at the top, `contents: read` in the job, pinned actions and no secret.
+The end-to-end suites, the memory budgets, mutation testing, the scanners and the real-MongoDB suites
+are not part of it: they stay in the git hooks. Nothing requires the job to pass (a required status check
+would stop the maintainer's direct pushes, ADR-43), so it reports and does not block.
 
 ## Git hooks
 
@@ -513,9 +525,10 @@ a check. These are working rules, not technical barriers.
 
 * **Not a security boundary.** The hooks live in the clone. `git commit --no-verify`,
   `git push --no-verify`, `git -c core.hooksPath=/dev/null ...`, a fresh clone before `make hooks`
-  and a tool that does not run hooks all skip them. The project runs no CI on commits and has no server-side check
-  (its workflows publish a tagged release ([release.md](release.md)), scan the dependencies weekly and
-  score the repository; none of them runs the tests);
+  and a tool that does not run hooks all skip them. The hosted CI (`ci.yml`, [Hosted CI](#hosted-ci)) runs lint, types, caps and the unit tests but nothing
+  requires it to pass, and the project has no other server-side check (the other workflows publish a
+  tagged release ([release.md](release.md)), scan the dependencies weekly, run CodeQL and score the
+  repository);
   the only hard stop would be a rule on the remote that requires a check or a review, and none was
   added: the ruleset on `main` blocks deleting it and force-pushing to it, nothing more (ADR-37, ADR-43). The hooks catch mistakes, not a determined person.
 * **A killed gate can leave Mongo up.** A SIGKILL skips the `finally` that runs `make mongo-down`;

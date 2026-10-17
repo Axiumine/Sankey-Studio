@@ -12,7 +12,7 @@ import pytest
 
 from sankey_studio.errors import GraphBuildError
 from sankey_studio.graph.cycles import cycle_message
-from tests.graph_support import make_graph, pair_totals, rows
+from tests.graph_support import TIME_FACTOR, make_graph, pair_totals, rows
 
 if TYPE_CHECKING:
     from sankey_studio.models import RawLink
@@ -124,7 +124,7 @@ def test_cycle_detection_does_not_recurse_at_100k_nodes() -> None:
     assert graph.n_nodes == 100_000
     assert max(graph.node_layers) == 99_999
     assert graph.warnings == ("Removed 1 link(s) that closed a cycle",)
-    assert time.perf_counter() - started < 10.0
+    assert time.perf_counter() - started < 10.0 * TIME_FACTOR
 
 
 def test_layers_at_100k_nodes_are_iterative_too() -> None:
