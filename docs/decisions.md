@@ -795,10 +795,11 @@ pinned image as `make trivy`) every Monday and on demand. `.github/workflows/sco
 OpenSSF Scorecard on a push to `main`, weekly and when branch protection changes, publishes the result
 to scorecard.dev (the README badge) and uploads the SARIF report to code scanning.
 
-* The hooks run Trivy only when `main` or a tag is pushed, and GitHub's dependency graph does not read
-  `uv.lock`, so Dependabot sees no Python packages (see [dependencies.md](dependencies.md)). The weekly
-  job is the only check of the dependencies between pushes. A fixed HIGH or CRITICAL finding fails the
-  run, and GitHub e-mails the person who last changed the schedule.
+* The hooks run Trivy only when `main` or a tag is pushed, and when the weekly job was added GitHub's
+  dependency graph listed no Python package, so Dependabot saw nothing (it lists them since a Dependabot
+  graph job ran on 2026-10-17, see [dependencies.md](dependencies.md)). The weekly job checks the
+  dependencies between pushes. A fixed HIGH or CRITICAL finding fails the run, and GitHub e-mails the
+  person who last changed the schedule.
 * The Scorecard gives an outside, repeatable score of supply-chain practices. It scores what the
   repository does, not whether the software is secure.
 * Both jobs are read-only: `permissions: {}` at the top and `contents: read` in the job. The Scorecard
@@ -820,8 +821,12 @@ protection, no pull-request review, tools in `release.yml` that are not pinned.
 `scripts/check_requirements.py` and fails when the file differs from a fresh export, so the `fast`
 check of the pre-commit hook refuses a commit with a stale copy.
 
-* GitHub's dependency graph did not read `uv.lock` (checked 2026-10-17: "No dependencies found"), so
-  Dependabot alerts and security updates saw no Python package. A pip requirements file is read.
+* GitHub's dependency graph listed nothing from `uv.lock` (checked 2026-10-17: "No dependencies found"),
+  so Dependabot alerts and security updates saw no Python package. A pip requirements file is one it
+  reads for certain. After the push GitHub's own `update-uv-graph` job read the lock as well and the
+  graph listed 76 packages; `requirements.txt` and `dependabot.yml` were pushed together, so it was not
+  tested which of them was needed. The file is kept as a second, pip-format source that Trivy also
+  scans.
 * It holds the runtime packages only, like the wheel. Dependency tools that need the `dev` group read
   `uv.lock`; GitHub's view of the development tools is out of scope.
 * Comment lines are left out of the comparison, so a different uv version cannot fail the check by
@@ -830,8 +835,8 @@ check of the pre-commit hook refuses a commit with a stale copy.
   findings to its gate.
 
 **Accepted risks.** The file is a second copy that can be out of step between a lock change and the
-next `make lint` (the check closes that at the next commit, not on GitHub). Whether the graph and
-Dependabot now see the packages is checked on GitHub after the first push and written down in
-[dependencies.md](dependencies.md). The check runs in the maintainer's hooks, which are client-side. A
+next `make lint` (the check closes that at the next commit, not on GitHub). The file may be redundant
+now that the graph lists the lock ([dependencies.md](dependencies.md)); if one source is preferred, the
+file, the Makefile targets and the script are removed together. The check runs in the maintainer's hooks, which are client-side. A
 Dependabot pull request merged on GitHub updates one of the two files only; the next local `make lint`
 fails until `make requirements` is run.

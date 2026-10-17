@@ -27,7 +27,7 @@ Contents
 | Where do packages come from | PyPI, through uv. Every package in `uv.lock` has the PyPI registry as its source, except the project itself. |
 | What fixes the versions | In the maintainer's environment, `uv.lock`: exact versions with sha256 hashes. `pyproject.toml` holds lower bounds only, and an install of the published package resolves from those. |
 | Who may add or bump one | A contributor does not add or bump one in a pull request without agreeing it in an issue first ([CONTRIBUTING.md](../CONTRIBUTING.md#rules-for-code)); AI assistants are told to ask first. No test or script checks this. |
-| What scans them | Trivy scans the runtime packages of `uv.lock` in the push gate of `main` and tags, on the maintainer's machine, and weekly in GitHub Actions. Qodana is configured for dependency checks but excludes `uv.lock`. GitHub Dependabot alerts and security updates are switched on, but GitHub's dependency graph found no dependencies on 2026-10-17, so they report nothing for the Python packages (see below). |
+| What scans them | Trivy scans the runtime packages of `uv.lock` in the push gate of `main` and tags, on the maintainer's machine, and weekly in GitHub Actions. Qodana is configured for dependency checks but excludes `uv.lock`. GitHub Dependabot alerts and security updates are switched on, and since 2026-10-17 GitHub's dependency graph lists the 76 locked packages (runtime and development), with no open alert (see below). |
 | What blocks a push | On a machine with the hooks enabled, a push of `main` or a tag is refused for a Trivy finding of severity HIGH or CRITICAL (a vulnerability that has a fix, a secret, a misconfiguration). Trivy does not check the licences of the packages in `uv.lock`. |
 | Is there CI | No CI runs the tests or checks commits. The workflows publish a tagged release, run Trivy weekly and run the OpenSSF Scorecard. The gates are git hooks, which are client-side. |
 
@@ -118,8 +118,8 @@ These are the rules the repository states.
   (`fastapi>=0.115`), with no upper cap. `uv.lock` (lock format `version = 1`, `revision = 3`)
   records the exact version of every package and the sha256 hash of each of its source archives and
   wheels, so an install from the lock is checked against those hashes.
-* **`requirements.txt` is a generated copy for GitHub.** GitHub's dependency graph does not read
-  `uv.lock` (see [GitHub Dependabot](#github-dependabot)), so the repository also commits
+* **`requirements.txt` is a generated copy for GitHub.** GitHub's dependency graph listed nothing from
+  `uv.lock` at first (see [GitHub Dependabot](#github-dependabot)), so the repository also commits
   `requirements.txt`: the locked runtime packages with their hashes, written by `make requirements`
   (`uv export --locked --no-dev --no-emit-project`, ADR-41). Nobody edits it by hand. `make lint`
   runs `scripts/check_requirements.py`, which fails when the file differs from what `uv export`
@@ -157,7 +157,7 @@ These are the rules the repository states.
 | Trivy | the maintainer's machine, in Docker | the `security` check, on a push of `main` or a tag | the runtime packages of `uv.lock`, secrets, misconfigurations | refuses the push |
 | Trivy, weekly | GitHub Actions (`trivy-weekly.yml`), same script and config | every Monday 05:23 UTC and on demand | the same | a failed run, e-mailed to the person who last changed the schedule |
 | Qodana | the maintainer's machine, in Docker; results go to Qodana Cloud | the `qodana` check, on a push of `main` or a tag | configured for a dependency licence audit and vulnerable libraries; `uv.lock` is excluded, so what it reads is unverified | a failed check refuses the push |
-| Dependabot alerts | GitHub | continuously | what GitHub's dependency graph reads; on 2026-10-17 it listed no dependencies, so `uv.lock` is not read | an alert on GitHub, none for the Python packages |
+| Dependabot alerts | GitHub | continuously | what GitHub's dependency graph lists: since 2026-10-17 the 76 locked packages, runtime and development | an alert on GitHub (none open on 2026-10-17) |
 | Dependabot security updates | GitHub | when an alert has a fixed version | the same | a pull request proposing the bump |
 
 ### Trivy
@@ -233,25 +233,27 @@ settings are on GitHub and are not part of the repository's files. The file
 proposes bumps only for known vulnerabilities. The lock and the lower bounds otherwise move when a
 maintainer moves them.
 
-Dependabot raises an alert only for packages that GitHub's dependency graph knows. GitHub's page on
-the files the graph reads lists pip and Poetry for Python and does not name `uv.lock`. This was
-checked on 2026-10-17, after `dependabot.yml` was pushed: the repository's dependency graph page said
-"No dependencies found" and the SBOM API listed only the repository itself. So Dependabot reports
-nothing for the Python packages of this project, and an empty list of alerts is no proof that no
-package is vulnerable. The `uv` entry in `dependabot.yml` has not changed that; the `github-actions`
-entry may cover the workflow's actions once GitHub reads them. Trivy at the push gate is the only
-dependency check that sees `uv.lock`.
+Dependabot raises an alert only for packages that GitHub's dependency graph knows. On 2026-10-17,
+after `dependabot.yml` was first pushed, the repository's dependency graph page still said "No
+dependencies found" and the SBOM API listed only the repository itself. The next push, which also added
+`requirements.txt`, made GitHub run a Dependabot job named `update-uv-graph`. Afterwards the SBOM API
+lists 76 packages (runtime and development tools), GitHub's GraphQL API lists `uv.lock`,
+`pyproject.toml`, `requirements.txt` and the three workflow files as parseable manifests, and no alert
+is open. The two changes arrived in one push, so it was not tested whether `requirements.txt` or
+`dependabot.yml` alone would have been enough. An empty list of alerts is still not proof that no
+package is vulnerable: a vulnerability that GitHub's advisory database does not know, or that has no
+fixed version, raises no alert.
 
 ### `requirements.txt` for GitHub
 
-Because the dependency graph does not read `uv.lock`, `requirements.txt` was added as a file GitHub
-does read (a pip requirements file). The expectation is that the repository's dependency graph, and so
-Dependabot alerts and security updates, then list the runtime packages. That has to be checked on
-GitHub after the file is pushed, and this page must say what was found: see the repository's
-Insights, Dependency graph page, or `gh api repos/Axiumine/Sankey-Studio/dependency-graph/sbom`.
-Whether Trivy also reads the file has not been checked (`trivy.yaml` and `scripts/trivy.sh` name only
-`uv.lock`); if it does, a finding in it is the same finding as in `uv.lock`. Qodana is told to skip it,
-like `uv.lock` (`qodana.yaml`).
+`requirements.txt` was added because the dependency graph listed nothing from `uv.lock`: a pip
+requirements file is one GitHub reads for certain. After the push, GitHub's own `update-uv-graph` job
+read the lock as well (see above), so the file may now be redundant for the graph. It stays for two
+reasons: refreshing it costs one command, and Trivy scans it too. The weekly Trivy run of 2026-10-17
+lists `requirements.txt` (pip) and `uv.lock` (uv) as the two language files it read, with no
+vulnerability in either, so a finding in the copy is the same finding as in the lock. Qodana is told
+to skip it, like `uv.lock` (`qodana.yaml`). If the maintainers prefer one source, the file, `make
+requirements` and `scripts/check_requirements.py` can be removed together (ADR-41).
 
 A Dependabot pull request merged on GitHub changes only one of the two files and passes through no
 hook. After merging one, pull and run `uv lock` where needed and then `make requirements`; until then
@@ -404,8 +406,9 @@ Collected in one place, so nothing here is read as a stronger promise than it is
   are not locked by `uv.lock`; the images are pinned by tag, not by digest. Scanner databases and
   rule packs are fetched when a scan runs.
 * Dependabot is switched on in GitHub's settings, outside the repository, and `dependabot.yml`
-  limits it to security updates (no routine update pull requests). GitHub's dependency graph does not
-  read `uv.lock` (checked 2026-10-17), so Dependabot reports nothing for the Python packages, and
-  there is no monitoring of the dependencies between pushes of `main` or a tag.
+  limits it to security updates (no routine update pull requests). GitHub's dependency graph lists the
+  locked packages since 2026-10-17 and no alert was open then. Between pushes of `main` or a tag the
+  dependencies are watched by Dependabot's alerts and by the weekly Trivy job, which GitHub stops after
+  60 days without repository activity (that does not stop Dependabot's alerts).
 * There is no written admission test beyond agreement in an issue, the licence lists and the
   no-network-assets rule.
