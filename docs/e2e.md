@@ -220,6 +220,10 @@ primary and at least two data-bearing members, and `MongoClients` (client cache,
 `ping`) works on it with the URI as saved. `test_rs_secondary.py` replays the Mongo, storage,
 collection and write-back flows with `readPreference=secondaryPreferred` in the URI the application
 saves (the test side keeps reading the primary): a read that follows a write must not miss it.
+A secondary lags the primary by a moment, so in that suite a write returns only once every
+data-bearing member has it: the seed (`MongoWorld.insert`, `members` = primary plus the secondaries
+the driver knows, 30 s limit) and the application's own writes (`w=<members>` added to the URI by
+`secondary_reads_uri`). A member that is down fails the write instead of letting a read race.
 It needs `SANKEY_TEST_MONGO_RS_URI`, from the environment or from the repo-root `.env` (a gitignored
 file; only that key is used or returned, because the file also holds `QODANA_TOKEN`;
 `tests/e2e/support/rs_env.py`):

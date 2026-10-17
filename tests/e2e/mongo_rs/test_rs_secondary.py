@@ -6,7 +6,9 @@ A replica-set URI may carry any read preference, and the application never overr
 still go to the primary, so a read that follows a write must not miss it: a save then a load, a
 rename with a stale revision, a folder created then listed, a write-back then the graph. The test
 side (``world.client``: seeding, counting) keeps the plain URI and reads the primary; only the
-connection the application opens is changed.
+connection the application opens is changed. A secondary lags the primary by a moment, so a write
+that is followed by a secondary read (the seed of a test, a write-back of the application) returns
+only once every data-bearing member has it: ``MongoWorld.members`` and the ``w=<n>`` of the URI.
 """
 
 from __future__ import annotations
@@ -35,7 +37,8 @@ pytestmark = pytest.mark.mongo_rs
 
 @pytest.fixture
 def secondary_env(make_server: ServerFactory, rs_world: MongoWorld) -> Iterator[FlowEnv]:
-    world = replace(rs_world, uri=secondary_reads_uri(rs_world.uri))
+    uri = secondary_reads_uri(rs_world.uri, acknowledged_by=rs_world.members)
+    world = replace(rs_world, uri=uri)
     with open_env(make_server, world) as env:
         try:
             yield env

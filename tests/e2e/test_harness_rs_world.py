@@ -51,6 +51,7 @@ def serve(world: MongoWorld, monkeypatch: pytest.MonkeyPatch) -> None:
         return world
 
     monkeypatch.setattr(rs_world_module, "real_world", fake)
+    monkeypatch.setattr(rs_world_module, "member_count", lambda _client: 1)  # mongomock has no set
 
 
 def test_the_database_is_the_one_in_the_path(monkeypatch: pytest.MonkeyPatch) -> None:

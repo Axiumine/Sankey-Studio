@@ -31,7 +31,7 @@ from typing import TYPE_CHECKING, Any, Final
 from urllib.parse import unquote, urlsplit
 
 import pytest
-from pymongo import MongoClient
+from pymongo import MongoClient, WriteConcern, timeout
 
 from sankey_studio.mongo import default_factory
 from tests.conftest import REAL_MONGO_ENV
@@ -69,6 +69,8 @@ SYSTEM_DATABASES: Final = frozenset(NOISE_DATABASES) - {NEIGHBOUR}
 MOCK_TIMEOUT_MS: Final = 500
 REAL_TIMEOUT_MS: Final = 2_000
 REAL_PING_TIMEOUT_MS: Final = 5_000
+#: How long a seed insert may wait for every member of a replica set to have it.
+REPLICATION_WAIT_S: Final = 30
 MIN_SCANNED_PASSWORD: Final = 6
 #: Other projects' MongoDBs on this machine listen here: never a target of these tests.
 FOREIGN_PORTS: Final = range(27017, 27020)
@@ -81,7 +83,9 @@ class MongoWorld:
 
     ``client`` is only ever used inside ``database`` (seed, count, drop). ``factory`` is what the
     server calls to open a connection. ``secrets`` are strings no response may contain.
-    ``outage`` (mongomock only) switches the good server off and on.
+    ``outage`` (mongomock only) switches the good server off and on. ``members`` (a replica set)
+    is the number of data-bearing members: ``insert`` then returns only once all of them have the
+    documents, so that a read from a secondary cannot miss what was just seeded.
     """
 
     uri: str = field(repr=False)  # user:password@: a failing assert prints the repr of the world
@@ -92,10 +96,17 @@ class MongoWorld:
     timeout_ms: int
     outage: Callable[[bool], None] | None = None
     keep_database: bool = False
+    members: int = 0
 
     def insert(self, collection: str, docs: Iterable[Mapping[str, Any]]) -> None:
         """Insert copies of ``docs`` into ``collection`` of ``database``."""
-        self.client[self.database][collection].insert_many([dict(doc) for doc in docs])
+        target = self.client[self.database][collection]
+        copies = [dict(doc) for doc in docs]
+        if not self.members:
+            target.insert_many(copies)
+            return
+        with timeout(REPLICATION_WAIT_S):
+            target.with_options(write_concern=WriteConcern(w=self.members)).insert_many(copies)
 
     def seed(self) -> None:
         """``builders.FLOW_DOCS`` (five documents, 3,000 in and out) in ``transfers``, once."""
