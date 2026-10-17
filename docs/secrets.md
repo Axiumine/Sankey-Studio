@@ -34,8 +34,9 @@ Contents
 * The checks that guard against secrets are Trivy, Semgrep (the registry pack `p/secrets` and two
   project rules), unit and end-to-end tests that scan responses and logs for a test password, and
   GitHub secret scanning with push protection. Trivy and Semgrep run in the git hooks, which are
-  client-side and can be bypassed, and only for a push of `main` or a tag. The hosted CI runs only the unit tests.
-  See [Limits](#limits).
+  client-side and can be bypassed, and only for a push of `main` or a tag. The hosted workflows
+  (`ci-security.yml` among them) run Semgrep and Trivy on every push to `main` and every pull request,
+  and nothing requires them to pass. See [Limits](#limits).
 * The application keeps the connection strings of its users in `credentials.json`, a file apart
   from `settings.json` (always mode 0600, in a directory it creates with mode 0700), and never
   returns them or writes them to its own log lines: the API gives `uri_masked` and `has_secret`, and
@@ -122,9 +123,12 @@ listed here and covered by [Rotation and revocation](#rotation-and-revocation):
 **Who holds what.** The two project secrets are held by the lead maintainer. The people listed in
 [MAINTAINERS.md](../MAINTAINERS.md) are the only ones with access to the repository settings, the
 organization and the PyPI project; the PyPI project and the approval of a release are the lead
-maintainer's alone for now. Contributors have no access and need none: no workflow runs on a
-pull request (the release workflow runs when a `v*` tag is pushed; the other two run on a schedule, on a push
-to `main` or when branch protection changes). Write access, two-factor authentication and
+maintainer's alone for now. Contributors have no access and need none. The workflows that run on a pull
+request (`ci.yml`, `ci-e2e.yml`, `ci-security.yml` and the fuzzing run `cflite_pr.yml`) run its code with a
+read-only token and no project secret; the MongoDB service container of the end-to-end job has no
+credentials and holds only test data. The release workflow runs when a `v*` tag is pushed; the weekly Trivy
+job, the Scorecard and CodeQL run on a schedule, on a push to `main` or when branch protection changes, and
+the mutation job runs only when someone starts it. Write access, two-factor authentication and
 removal of access are described in [GOVERNANCE.md](../GOVERNANCE.md#access); access is removed at
 once if an account may be compromised.
 
@@ -173,7 +177,7 @@ host). Neither is a credential. An alert on anything else is treated as a leak
 ([If a secret is exposed](#if-a-secret-is-exposed)).
 
 The git hooks are client-side only (`--no-verify`, a changed `core.hooksPath` and a fresh clone
-skip them), the hosted CI runs only the unit tests and `main` has no required check or review (a ruleset blocks only deletion and force-push)
+skip them), the hosted workflows report but nothing requires them and `main` has no required check or review (a ruleset blocks only deletion and force-push)
 ([ADR-37](decisions.md#adr-37-git-hooks-are-the-one-place-the-checks-run)). The checks are a
 safety net for the maintainers, not a boundary.
 
@@ -317,10 +321,11 @@ application.
 
 ## Limits
 
-* The scanners are a safety net, not a boundary. The hooks are client-side, the hosted CI runs only the unit tests,
+* The scanners are a safety net, not a boundary. The hooks are client-side, the hosted workflows are not required,
   and the gate runs Trivy's and Semgrep's secret detection only for a push of `main` or a tag (or
   when someone runs `make trivy` or `make semgrep`), over the working tree, not over the history
-  and not over `.env`.
+  and not over `.env`. The hosted `ci-security.yml` runs the same scans on every push to `main` and every
+  pull request, on a checkout of that commit, which holds no `.env` either.
 * The two Semgrep project rules match two code shapes. They do not prove that no secret reaches a
   log or an error by another route; the tests scan the routes they drive, and the maintainers' own
   changes get no second reviewer yet ([GOVERNANCE.md](../GOVERNANCE.md#changes-and-review)).

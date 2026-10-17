@@ -42,6 +42,9 @@ Contents
 The hooks fail on any skipped test, so a missing browser or database cannot turn a gate green (see
 [Fail-closed rules](#fail-closed-rules)).
 
+The hosted workflows run most of these checks too (see [Hosted CI](#hosted-ci)): the table shows what the
+hooks run, and Qodana, the replica-set suite and the gate itself stay local.
+
 Python is 3.14 managed by uv; always run tools as `uv run ...` or through `make`. The sources use
 PEP 758 syntax (`except A, B:` without parentheses), which Python 3.13 cannot parse, so never run the
 repository's scripts with a bare `python3`.
@@ -258,17 +261,81 @@ formatter) has Atheris fuzz targets in `tests/fuzz` ([ADR-47](decisions.md#adr-4
 
 ## Hosted CI
 
-`.github/workflows/ci.yml` (job `test`, ADR-44) runs on every push to `main`, every pull request to `main`
-and on demand: `uv sync --all-extras --locked`, `make lint typecheck caps` and `make cov` (the unit suite
-with the 100% line and branch gate). It installs Node 22 for the tests of the frontend modules and uploads the JUnit and coverage
-reports as the `test-report` artifact. The two nested-JSON tests run the decoder in a 1 MiB-stack thread
-(`in_small_stack` in `tests/sources/text_support.py`), because Python's recursion guard follows the stack of
-the host and a hosted runner has a larger one. The wall-clock bounds of a few graph tests are four times wider
-when `CI` is set (`TIME_FACTOR` in `tests/graph_support.py`), because a hosted runner is slower than
-the maintainer's machine. It has `permissions: {}` at the top, `contents: read` in the job, pinned actions and no secret.
-The end-to-end suites, the memory budgets, mutation testing, the scanners and the real-MongoDB suites
-are not part of it: they stay in the git hooks. Nothing requires the job to pass (a required status check
-would stop the maintainer's direct pushes, ADR-43), so it reports and does not block.
+Four workflows and one local composite action run the checks of the hooks on GitHub's runners
+([ADR-44](decisions.md#adr-44-a-hosted-ci-job-runs-the-unit-tests),
+[ADR-48](decisions.md#adr-48-hosted-ci-runs-the-browser-memory-and-mongodb-suites-and-the-scanners)). They
+call the same `make` targets as the hooks, so a rule has one definition. `ci.yml`, `ci-e2e.yml` and
+`ci-security.yml` run on every push to `main`, every pull request to `main` and on demand; `mutation.yml`
+runs only on demand. Each workflow has `permissions: {}` at the top, `contents: read` in every job,
+pinned actions, no secret and no cache, and its own concurrency group. A new run on the same pull request
+cancels the older one; a run on `main` is never cancelled.
+
+| Workflow | Job | Runs | Hook check it mirrors |
+|---|---|---|---|
+| `ci.yml` | `test` | `make lint typecheck caps`, then `make cov` (the unit suite with the 100% line and branch gate), after installing Node 22 for the tests of the frontend modules | `fast`, `cov` |
+| `ci.yml` | `memory-test` | `make memray` | `memray` |
+| `ci-e2e.yml` | `e2e (shard N of 5)` | `make e2e-shard-N E2E_SHARDS=5`, five jobs, one shard each, `fail-fast` off | `e2e` |
+| `ci-e2e.yml` | `e2e-mongo` | `make e2e-mongo` against a `mongo:8` service container on `127.0.0.1:27117` | `e2e-mongo` |
+| `ci-security.yml` | `semgrep` | `make semgrep-test`, then `make semgrep` | `security` |
+| `ci-security.yml` | `trivy` | `make trivy` | `security` |
+| `mutation.yml` | `mutation-test` | `make mutate MUTATE_CHILDREN=4`, then `make mutate-gate`; 300 minute cap | `mutation` |
+
+These never run hosted: Qodana (it needs `QODANA_TOKEN`, and no secret exists in the repository),
+`e2e-mongo-rs` (the replica set is the maintainer's private LAN cluster) and the git-hook gate itself
+(commit message rule, stamps, preflight probes). Mutation testing has no schedule: it starts only from the
+Actions tab.
+
+* **Unit job.** `test` is the job of ADR-44. The two nested-JSON tests run the decoder in a 1 MiB-stack
+  thread (`in_small_stack` in `tests/sources/text_support.py`), because Python's recursion guard follows
+  the stack of the host and a hosted runner has a larger one. The wall-clock bounds of a few graph tests
+  are four times wider when `CI` is set (`TIME_FACTOR` in `tests/graph_support.py`), because a hosted
+  runner is slower than the maintainer's machine. It has no `paths` filter: a pull request that changes
+  only documents still gets a successful run, which the Scorecard CI-Tests check needs (ADR-44).
+* **Browser and Chrome.** The `e2e` jobs use the Google Chrome of the runner image at
+  `/opt/google/chrome/chrome` through Playwright's `chrome` channel, headless and `--no-sandbox` as the
+  harness always starts it. The jobs do not run `playwright install`. A step prints the Chrome version and
+  fails with a clear message when the path is missing. The runner image, and so the Chrome version, is not
+  pinned. A step lifts the AppArmor limit on user namespaces on the throw-away runner and prints the
+  result of `scripts/netns.sh`; the notes are in [e2e.md](e2e.md#how-to-run) ("Network") and
+  [e2e.md](e2e.md#hosted-ci).
+* **MongoDB.** The service container is `mongo:8` pinned by digest (refresh it with
+  `docker buildx imagetools inspect mongo:8`), published on `127.0.0.1:27117` like `docker-compose.yml`,
+  without authentication, and held to a health check the runner waits for. Only the `mongo` marker runs.
+* **Scanners.** `ci-security.yml` calls the scripts of the hooks, which run pinned Docker images. The
+  SARIF files (`semgrep-sarif`, `trivy-sarif`) are kept as artifacts for 14 days and are not uploaded to
+  code scanning (CodeQL does that). `trivy-weekly.yml` stays: it finds a new advisory between pushes, and
+  these jobs see one only at the next push or pull request.
+* **Artifacts.** Every test job keeps its JUnit file (`test-report`, `memory-report`, `e2e-report-N`,
+  `e2e-mongo-report`; the unit job also keeps `coverage.xml`) for 14 days. A failed shard also uploads
+  `e2e-failures-N` (screenshots, traces, `problems-*.txt`) for 7 days; the mutation job keeps the
+  `.meta` files of the mutants (`mutants-meta`).
+* **Figures.** Only the unit job has a hosted measurement: about 3 minutes 40 seconds in its last run
+  before the other workflows existed (lint, types and caps about 15 seconds, `make cov` about 193
+  seconds), and a manual Trivy run took 27 seconds including the image pull. The rest has not run hosted. These are
+  estimates, to be replaced by measured figures after the first runs: 3 to 6 minutes for an `e2e` shard and
+  for `e2e-mongo`, 1 to 3 for `memory-test`, 3 to 6 for `semgrep`, 1 to 2 for `trivy`, and 60 to 120 for
+  mutation testing on 4 vCPUs (about 19 minutes locally with 8 workers).
+* **Not a gate.** Nothing requires any job to pass: a required status check would stop the maintainer's
+  direct pushes (ADR-43). A job reports, and a red job is read and fixed, not bypassed. A job can also
+  fail with no code change, for a new advisory (Trivy), a changed rule (Semgrep), a new Chrome in the
+  runner image or a registry outage. The first run of a new workflow is its first real test.
+
+### The no-skipped-test action
+
+The hooks fail a check whose JUnit report holds a skipped test, no test case or a cut-off run
+([Fail-closed rules](#fail-closed-rules)). The hosted jobs apply the same rule through the local composite
+action `.github/actions/no-skipped-tests`. It needs the repository and uv, so a job checks out and installs
+uv before it. It runs `scripts.githook_junit.check_reports` (the function the gate uses) on a directory of
+JUnit files through `uv run --no-project --python 3.14 python -`, prints each problem as an `::error::`
+line and fails the job on any. Without it, a runner without a working browser would turn every browser test
+into a skip and the job would be green.
+
+* Input `reports`: the directory that holds the `.xml` reports (`reports/junit`).
+* Input `allow`: space-separated fragments of skip reasons that are accepted; empty by default. Only job
+  `test` sets it, to `SANKEY_TEST_MONGO_URI`, the reason of the 8 mongo-marked unit tests that skip
+  without a real MongoDB. This is the allowance that `COV_STEP` has in `scripts/githook_plan.py`; `e2e-mongo`
+  runs those 8 tests, so it allows nothing.
+* Both inputs reach the shell through `env`, never through `${{ }}` inside the script.
 
 ## Git hooks
 
@@ -543,10 +610,10 @@ a check. These are working rules, not technical barriers.
 
 * **Not a security boundary.** The hooks live in the clone. `git commit --no-verify`,
   `git push --no-verify`, `git -c core.hooksPath=/dev/null ...`, a fresh clone before `make hooks`
-  and a tool that does not run hooks all skip them. The hosted CI (`ci.yml`, [Hosted CI](#hosted-ci)) runs lint, types, caps and the unit tests but nothing
-  requires it to pass, and the project has no other server-side check (the other workflows publish a
-  tagged release ([release.md](release.md)), scan the dependencies weekly, run CodeQL and score the
-  repository);
+  and a tool that does not run hooks all skip them. The hosted workflows ([Hosted CI](#hosted-ci)) run the unit, browser, memory and MongoDB suites and the
+  scanners, but nothing requires them to pass, and the project has no other server-side check (the remaining workflows
+  publish a tagged release ([release.md](release.md)), scan the dependencies weekly, run CodeQL, score the
+  repository and fuzz the parsers ([Fuzzing](#fuzzing)));
   the only hard stop would be a rule on the remote that requires a check or a review, and none was
   added: the ruleset on `main` blocks deleting it and force-pushing to it, nothing more (ADR-37, ADR-43). The hooks catch mistakes, not a determined person.
 * **A killed gate can leave Mongo up.** A SIGKILL skips the `finally` that runs `make mongo-down`;

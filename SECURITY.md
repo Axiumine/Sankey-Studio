@@ -75,9 +75,12 @@ Out of scope:
 
 ## How we look for vulnerabilities
 
-A hosted CI job runs lint, strict typing, the code caps and the unit tests on every push to `main` and every pull
-request; other workflows publish releases, run Trivy weekly, run CodeQL and run the OpenSSF Scorecard. The
-maintainer's git hooks run the full set of checks before a commit or push:
+Hosted workflows run lint, strict typing, the code caps, the unit tests with the coverage gate, the memory
+budgets, the browser and real-MongoDB end-to-end tests, Semgrep and Trivy on every push to `main` and every pull
+request (mutation testing runs there only when started by hand); other workflows publish releases, run Trivy
+weekly, run CodeQL, run the OpenSSF Scorecard and fuzz the parsers. Nothing requires any of them to pass. The
+maintainer's git hooks run the full set of checks before a commit or push, and only they run Qodana and the
+replica-set tests:
 strict typing, a test suite with 100% line and branch coverage and a mutation-score gate, and, before
 `main` or a tag is pushed, Semgrep (with project rules against MongoDB writes, shell and dynamic
 code, secrets in logs and unsafe frontend patterns), Trivy on the locked dependencies, and Qodana. CodeQL scans the Python and JavaScript code and the workflow files.

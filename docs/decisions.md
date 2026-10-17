@@ -65,6 +65,7 @@ Contents
 | [ADR-45](#adr-45-mask_uri-shows-option-values-from-an-allow-list) | mask_uri shows option values from an allow-list |
 | [ADR-46](#adr-46-connection-strings-live-in-credentialsjson) | Connection strings live in credentials.json |
 | [ADR-47](#adr-47-fuzzing-runs-in-clusterfuzzlite-from-testsfuzz) | Fuzzing runs in ClusterFuzzLite from tests/fuzz |
+| [ADR-48](#adr-48-hosted-ci-runs-the-browser-memory-and-mongodb-suites-and-the-scanners) | Hosted CI runs the browser, memory and MongoDB suites and the scanners |
 
 ## ADR-01 Storage protocol and graph ids
 
@@ -714,9 +715,11 @@ rule is now one sentence: tests run in the hooks, and a check that did not run i
 * `qodana` is required for `main` and tags and runs a fresh `make cov` first, because it imports
   `coverage.xml` and only warns when it is missing or stale. It runs before `mutation` so a missing
   token fails before the long mutation run.
-* The hooks are client-side only. The hosted CI (ADR-44) runs only lint, types, caps and the unit tests and nothing
-  requires it, and `main` requires no check or review (a ruleset blocks only deletion and force-push,
-  ADR-43); the hooks stay the one full gate and are a convenience gate that stops mistakes, not a security boundary.
+* The hooks are client-side only. The hosted workflows (ADR-44, ADR-48) run lint, types, caps, the unit,
+  browser, memory and MongoDB suites and the scanners on a clean runner, and nothing requires them;
+  `main` requires no check or review (a ruleset blocks only deletion and force-push, ADR-43). The hooks
+  stay the one full gate (Qodana, the replica-set suite and the stamps exist only there) and are a
+  convenience gate that stops mistakes, not a security boundary.
 
 **Accepted risks.** `--no-verify`, `core.hooksPath` overrides and a clone without `make hooks` skip
 every hook (the rules for agents forbid them; nothing enforces it). A push gate of 30+ minutes holds
@@ -913,6 +916,10 @@ code is safe.
 
 ## ADR-44 A hosted CI job runs the unit tests
 
+**Status.** Partly superseded by [ADR-48](#adr-48-hosted-ci-runs-the-browser-memory-and-mongodb-suites-and-the-scanners):
+the browser, memory and MongoDB suites and the scanners, which this record keeps local, now run hosted too.
+The decision below, job `test`, is unchanged.
+
 **Decision.** `.github/workflows/ci.yml`, job `test`, runs on every push to `main`, every pull request
 to `main` and on demand: `uv sync --all-extras --locked`, `make lint typecheck caps`, then `make cov`
 (the unit suite with the 100% line and branch gate) after installing Node 22 for the tests of the
@@ -920,11 +927,16 @@ frontend modules. It uploads a JUnit and a coverage report. It starts
 from `permissions: {}`, has `contents: read` in the job, uses pinned actions and no secret.
 
 * Why: a test run tied to each check-in on the shared repository, with a report (the silver criterion
-  `automated_integration_testing`, the passing criterion `test_continuous_integration`), and a check
-  named `test` on pull requests, which is what the OpenSSF Scorecard CI-Tests check looks for.
-* What stays local: the browser end-to-end suites, the memory budgets, mutation testing, Semgrep, Trivy,
-  Qodana and the real-MongoDB suites. The pre-push gate stays the one full gate
-  ([ADR-37](#adr-37-git-hooks-are-the-one-place-the-checks-run)).
+  `automated_integration_testing`, the passing criterion `test_continuous_integration`), and a
+  successful check run on the head commit of a pull request. The OpenSSF Scorecard CI-Tests check
+  accepts a completed check run with conclusion `success` whose app slug contains a keyword such as
+  `github-actions`; for a GitHub Actions job the slug is always `github-actions`, so any successful
+  job counts, whatever its name. A skipped or cancelled job does not count, so `ci.yml` has no
+  `paths` filter and a pull request that changes only documents still gets a run.
+* What stays local: Qodana, the replica-set suite (`e2e-mongo-rs`) and the hooks themselves. The
+  pre-push gate stays the one full gate
+  ([ADR-37](#adr-37-git-hooks-are-the-one-place-the-checks-run)). The other suites that this record
+  kept local run hosted since ADR-48; mutation testing runs there only when started by hand.
 
 **Accepted risks.** Nothing requires the job to pass: a required status check would stop the
 maintainer's direct pushes ([ADR-43](#adr-43-codeql-a-ruleset-on-main-and-signed-release-assets)), so the
@@ -989,3 +1001,22 @@ in step by the table tests in `tests/test_util.py`.
 **Why.** Fuzzing runs on GitHub's machines, not in the maintainer's hooks, and does not slow a commit or a push. Keeping the code in `tests/fuzz` means no new rule or exception for it.
 
 **Accepted risks.** A second dependency list (the fuzz tools and two image digests) sits next to ADR-42; it is hash-pinned and Dependabot reads it (security updates only), but a bump is by hand. `atheris` lags new CPython releases, so a Python upgrade can break the image until it catches up. The image runs as root, as the OSS-Fuzz builders do (`AVD-DS-0002` in `.trivyignore`, expiry 2027-10-18). The ClusterFuzzLite actions fix their own `:v1` images by tag, not by the action's commit. The image is not built in the git hooks, so the first run on GitHub is its first real build and the first pull request fixes whatever the runner shows. A fuzzer finds nothing it cannot reach: the targets prove only that these inputs are handled, not that the code has no bug.
+
+## ADR-48 Hosted CI runs the browser, memory and MongoDB suites and the scanners
+
+**Status.** Partly supersedes [ADR-44](#adr-44-a-hosted-ci-job-runs-the-unit-tests), which kept these checks local; its job `test` stays as it is.
+
+**Context.** ADR-44 put the unit suite on GitHub's runners and left everything else to the hooks on the maintainer's machine. The hook stamps do not record the environment (ADR-37), so a pass says nothing about a clean machine, and the browser, memory and MongoDB suites and the scanners had no report next to a push or a pull request. Hosted minutes are free for a public repository. Nothing in this record changes what is required: a required check would still stop the maintainer's direct pushes (ADR-43).
+
+**Decision.** Four workflows and one local composite action run the same `make` targets as the pre-push gate. Every workflow starts from `permissions: {}`, gives each job `contents: read`, uses only the four action commits already pinned (checkout, setup-uv, setup-node, upload-artifact), reads no secret and has no `pull_request_target`; `${{ }}` never appears inside a `run` script (matrix values and inputs go through `env`). There is no cache. `ci.yml`, `ci-e2e.yml` and `ci-security.yml` start on every push to `main`, every pull request to `main` and on demand, each with its own concurrency group that cancels an older run of the same pull request (never a run on `main`).
+
+* `ci.yml`: job `test` (lint, types, caps, `make cov`; unchanged but for the JUnit path `reports/junit/cov.xml`) and job `memory-test` (`make memray`, the same budgets as the gate).
+* `ci-e2e.yml`: job `e2e`, a matrix of five jobs that run `make e2e-shard-N E2E_SHARDS=5`, one shard per runner, `fail-fast` off, and job `e2e-mongo` (`make e2e-mongo`). The browser is the Google Chrome of the runner image at `/opt/google/chrome/chrome` (Playwright channel `chrome`, headless, `--no-sandbox` from the harness). There is no `playwright install`: a step prints the Chrome version and fails with a clear message when the path is gone, because a missing browser would otherwise turn every browser test into a skip. A step lifts `kernel.apparmor_restrict_unprivileged_userns` on the throw-away VM and prints `scripts/netns.sh ip -brief link`, so the log shows whether the private network namespace works or the script fell back to the host network ([e2e.md](e2e.md#how-to-run)). The MongoDB is a service container, `mongo:8` pinned by digest, on `127.0.0.1:27117` (the port of `docker-compose.yml`, which the e2e support code insists on instead of 27017-27019) with a `mongosh` health check the runner waits for; `scripts/mongo_wait.py` pings it before the tests, and `SANKEY_TEST_MONGO_URI` is set on the test step only. Only the `mongo` marker is selected.
+* `ci-security.yml`: job `semgrep` (`make semgrep-test`, `make semgrep`) and job `trivy` (`make trivy`), through the scripts of the hooks and their pinned Docker images. The SARIF files are kept as workflow artifacts and are not sent to code scanning (CodeQL feeds it, ADR-43). `trivy-weekly.yml` stays: it finds a new advisory between pushes.
+* `mutation.yml`: `workflow_dispatch` only. It runs `make mutate MUTATE_CHILDREN=4` and `make mutate-gate` with a 300 minute cap. It has no schedule and never runs on a push or a pull request.
+* `.github/actions/no-skipped-tests`: the rule of the hooks for the hosted jobs. It calls `scripts.githook_junit.check_reports` (the function of the gate) on the JUnit reports of the job, so a skipped test, a report with no test case and an unterminated report fail the job. Its `allow` input is empty everywhere except job `test`, which allows the skip reason `SANKEY_TEST_MONGO_URI` for the 8 mongo-marked unit tests that `e2e-mongo` runs.
+* Still local only: Qodana (it needs `QODANA_TOKEN` and no secret exists in the repository), `e2e-mongo-rs` (the maintainer's private replica set on the LAN) and the git-hook gate itself.
+
+**Why.** The same suites in a clean environment give a second, independent verdict on each push to `main` and each pull request, which the stamps of one machine cannot. The skipped-test rule is needed hosted because the browser fixture skips when no browser starts. A shard per runner costs seconds of setup and shows which shard failed; the `-j5` of `make e2e` would put five browsers on one runner's four vCPUs. A service container is waited for by the runner and needs no Docker Compose, and the digest keeps the image from changing under a run (the compose file still follows the tag `mongo:8`). The memory budgets are allocation peaks and do not depend on the speed of the machine. Mutation testing is long on a hosted runner, so it is on demand and not a schedule.
+
+**Accepted risks.** Nothing requires any job (ADR-43), so a red job does not stop a push. A pull request runs its own code on the runner with a read-only token and no secret; a first-time contributor needs approval before a run starts. The MongoDB has no authentication and holds only test data on a VM that is deleted afterwards. The sysctl change is made on a throw-away VM and lasts until it is deleted. The runner image's Chrome is not pinned, so an image update can change the browser version under an unchanged commit. The workflows had not run when this record was written: hosted figures are not measured yet, the first run is their first real test and may need fixes. The UI end-to-end files that assert geometry (bounding boxes, widths at phone size) can fail on the fonts and the Chrome of the runner while they pass locally. A slower CPU than the maintainer's machine can reach the 20 second server wait or a 10 second `expect` timeout in the harness. Semgrep and Trivy depend on rules and a database that change without a commit, so a job can turn red with no code change; their images are pulled anonymously, and a rate limit of the registry is untested. The digest of `mongo:8` is refreshed by hand, and a Docker Hub, ghcr.io or semgrep.dev outage fails a job for a reason that is not the code.

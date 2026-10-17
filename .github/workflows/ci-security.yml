@@ -1,0 +1,72 @@
+# Hosted scanners through the scripts of the git hooks (`make semgrep-test semgrep trivy`, Docker
+# images pinned in the scripts): the project's Semgrep rules and registry packs on src and scripts,
+# and Trivy on uv.lock, secrets and misconfigurations. Findings fail the job and are kept as SARIF
+# artifacts; they are not sent to code scanning (CodeQL does that) and nothing requires the jobs.
+# The weekly Trivy run (trivy-weekly.yml) stays: these jobs only see a new advisory at the next push
+# or pull request. Qodana needs a token and does not run here. See ADR-48.
+name: ci-security
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ci-security-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  semgrep:
+    name: semgrep (rule tests, then scan)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Semgrep rule tests
+        run: make semgrep-test
+
+      - name: Semgrep scan of src and scripts
+        run: make semgrep
+
+      - name: Keep the SARIF report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: semgrep-sarif
+          path: reports/semgrep.sarif
+          if-no-files-found: ignore
+          retention-days: 14
+
+  trivy:
+    name: trivy (dependencies, secrets, misconfigurations)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Check out the commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Trivy scan
+        run: make trivy
+
+      - name: Keep the SARIF report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: trivy-sarif
+          path: reports/trivy.sarif
+          if-no-files-found: ignore
+          retention-days: 14

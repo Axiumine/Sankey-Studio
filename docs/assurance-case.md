@@ -142,7 +142,7 @@ Trust boundaries:
 | T11 | A request exhausts memory, disk, connections or time (CWE-400, CWE-770) | Streaming body caps counted while the body arrives (a declared `Content-Length` over the cap is refused early, a small one is never trusted): JSON 8 MiB, import 16 MiB, upload `max_upload_mb` plus 1 MiB; caps on rows, drawn links, bundle size, record and line length, filter size and depth; four Mongo slots per connection with timeouts; one worker with `limit_concurrency` 100; a drawing cap (ADR-22) | `web/middleware.py` `BodySizeLimit`; `web/security.py` `BodyLimits`; `models/settings.py` `AppSettings`; `storage/bundle.py` `MAX_BUNDLE_GRAPHS`; `mongo.py` `MAX_CONCURRENT_PER_CONNECTION`; `cli.py` `LIMIT_CONCURRENCY` | `tests/web/test_bodies.py`, `test_bodies_stream.py`, `test_bodies_upload.py`, `test_matrix_limits.py`; `tests/test_contract_mongo_safety_limits.py`; `tests/test_cli_main.py`; `tests/test_memory.py` (marker `memory`); `tests/e2e/http/test_limits_*_flow.py` | No rate limit and no per-client quota, and no total size limit on the sources folder. A caller can keep the CPU busy with legal work inside the caps |
 | T12 | Image export is abused: huge images, parallel Chrome processes, a figure that makes Chrome fetch URLs (CWE-400, CWE-918) | No endpoint accepts figure JSON, the server builds it from a saved id or a draft; pixel, link and node caps; one export at a time with a 2 s wait; 30 s kaleido timeout; MathJax off; driver errors become fixed messages (ADR-18) | `web/routers/exports.py`; `render/export/images.py` `resolve_image`, `export_image`, `_render_image`, `map_render_error` | `tests/render/test_export_images.py`; `tests/web/test_routes_exports_images.py`; `tests/e2e/http/test_exports_images.py`, `test_exports_slot.py` | Chrome runs with kaleido's defaults; the project passes only the format, size, scale, MathJax and the timeout. A flaw in Chrome, kaleido or Plotly is outside its control |
 | T13 | A hostile data file or document (CSV, TSV, JSON, SankeyMATIC, a bundle, a BSON value) crashes or tricks the parser (CWE-502, CWE-20) | Own parsers with record, line, object and number caps, strict or lenient mode and a warning cap; no `pickle`, `marshal`, `yaml`, `eval` or `exec` in `src`; a bundle is JSON validated per graph by pydantic; Mongo values are normalised to plain types | `sources/text.py`; `sources/formats/` (`RECORD_MAX_CHARS`, `MAX_OBJECT_CHARS`, `LINE_MAX`); `sources/mongo_extract.py`; `storage/bundle.py` `import_bundle`; Semgrep `sankey-no-dynamic-code` | `tests/sources/test_text_*.py`, `test_mongo_extract*.py`; `tests/test_bundle.py`, `test_bundle_shape.py` | No fuzzing and no property-based tests: parametrised tables only. The JSON "nested too deeply" error comes from the interpreter's own C-stack guard, which follows the stack of the host: with the default 8 MiB stack a 100000-deep document is refused, but on a host with a larger or unlimited stack it is decoded (measured: a 1 MiB value nested 524000 deep took 0.08 s and about 150 MB), bounded by the 1 MiB value cap |
-| T14 | A vulnerable or malicious dependency (CWE-1395, CWE-829) | `uv.lock` with hashes; Trivy (HIGH and CRITICAL findings that have a fix) and Semgrep in the push gate for `main` and tags; a weekly Trivy job in GitHub Actions; Dependabot alerts and security updates are switched on and GitHub's dependency graph lists the locked packages (checked 2026-10-17, no open alert). See [Supply chain](#supply-chain-and-release-integrity) | `uv.lock`, `trivy.yaml`, `scripts/trivy.sh`, `scripts/semgrep.sh`, `.trivyignore` | The gate itself: `tests/test_githooks.py`, `tests/test_githook_gate_*.py` | The wheel declares version ranges, so an install resolves at install time, and the release build resolves its own build tools at build time. The scans run on the maintainer's machine |
+| T14 | A vulnerable or malicious dependency (CWE-1395, CWE-829) | `uv.lock` with hashes; Trivy (HIGH and CRITICAL findings that have a fix) and Semgrep in the push gate for `main` and tags; the same two scanners in GitHub Actions on every push to `main` and pull request (`ci-security.yml`, nothing requires them) and a weekly Trivy job; Dependabot alerts and security updates are switched on and GitHub's dependency graph lists the locked packages (checked 2026-10-17, no open alert). See [Supply chain](#supply-chain-and-release-integrity) | `uv.lock`, `trivy.yaml`, `scripts/trivy.sh`, `scripts/semgrep.sh`, `.trivyignore` | The gate itself: `tests/test_githooks.py`, `tests/test_githook_gate_*.py` | The wheel declares version ranges, so an install resolves at install time, and the release build resolves its own build tools at build time. The scans run on the maintainer's machine |
 | T15 | A counterfeit or tampered release; a stolen publishing credential (CWE-494) | Trusted publishing (no token), SHA-pinned actions, job permissions of `id-token: write` only where needed, an approval step on the `pypi` environment, Sigstore attestations, a signed tag (the workflow does not check the signature) | `.github/workflows/release.yml`, `docs/release.md` | By hand: `pypi-attestations verify` ([release.md](release.md#verifying-a-release)); the workflow runs no tests | A maintainer account takeover: the only reviewer of the `pypi` environment is the lead maintainer and self-review is not blocked; a ruleset stops a `v*` tag being deleted or moved but not created; build tools not pinned |
 
 ## Secure design principles
@@ -206,7 +206,9 @@ Other weaknesses:
   lock, secrets, misconfiguration and licences) runs in the pre-push gate for `main` and tags, with
   the scanner images pinned by version tag (not by digest). Trivy reports HIGH and CRITICAL
   vulnerabilities that have a fix. `.trivyignore` has no entries. See
-  [quality.md](quality.md#scanners). The `codeql.yml` workflow also analyses the Python and
+  [quality.md](quality.md#scanners). The `ci-security.yml` workflow runs Semgrep and Trivy through the same
+  scripts on every push to `main` and every pull request, and keeps the SARIF files as artifacts; nothing
+  requires it to pass (ADR-48). The `codeql.yml` workflow also analyses the Python and
   JavaScript code and the workflow files (ADR-43).
 * **GitHub settings.** Secret scanning with push protection and Dependabot alerts and security
   updates are enabled. They are repository settings, not files, so they are stated here as they were
@@ -231,6 +233,13 @@ Other weaknesses:
   scorecard.dev and the report to code scanning ([ADR-40](decisions.md#adr-40-a-weekly-trivy-scan-and-the-openssf-scorecard-run-in-github-actions)).
   Both use `permissions: {}` at the top, pinned actions and no secret. GitHub stops scheduled workflows
   after 60 days without activity in the repository. Neither runs the tests.
+* **Hosted test workflows.** `ci.yml`, `ci-e2e.yml` and `ci-security.yml` run on a push to `main`, on pull
+  requests and on demand; `mutation.yml` runs only on demand ([ADR-44](decisions.md#adr-44-a-hosted-ci-job-runs-the-unit-tests),
+  [ADR-48](decisions.md#adr-48-hosted-ci-runs-the-browser-memory-and-mongodb-suites-and-the-scanners)). They use
+  `permissions: {}` at the top, `contents: read` in each job, pinned actions, no secret and no cache, and none runs on
+  `pull_request_target`. A pull request therefore runs its own code on the runner with a read-only token. The
+  end-to-end job uses a MongoDB service container without authentication on the runner's loopback,
+  which holds only test data. Nothing requires any of them to pass.
 * **Build tools.** The build job does not use `uv.lock`: `hatchling` is a range in
   `pyproject.toml` (`>=1.27`), `twine` runs through `uvx`, and no `uv` version is pinned in the
   workflow or the project. The build job holds no publishing credential, and the upload jobs only
@@ -259,7 +268,7 @@ Other weaknesses:
 * **Consent is not authorisation** (ADR-34). The limit on write-back is the database user's rights.
 * **Credentials sit in clear text** in `credentials.json`, protected by file modes only.
 * **The gates are client-side** (ADR-37). `--no-verify`, a changed `core.hooksPath` or a fresh clone
-  skip every hook. The hosted CI (ADR-44) runs lint, types, caps and the unit tests but nothing requires it, there is no required check or review on `main` (the maintainer pushes to it directly; a ruleset
+  skip every hook. The hosted workflows (ADR-44, ADR-48) run lint, types, caps, the unit, browser, memory and MongoDB suites and the scanners but nothing requires them, there is no required check or review on `main` (the maintainer pushes to it directly; a ruleset
   blocks only deletion and force-push; `v*` tags are protected against deletion and moving, not creation); the release workflow runs no tests. The hook stamps do not record
   the environment (scanner images, Chrome).
 * **One maintainer in practice.** Every commit so far is by one person. A second owner has agreed to
@@ -272,12 +281,15 @@ Other weaknesses:
   takeover of that account (ADR-39 accepted risk).
 * **No external audit is claimed**, and there is **no fuzzing**. The human review of the design and
   trust boundary is recorded only through its written result (see the Evidence index).
-* **Third-party code** is trusted: Chrome and kaleido (default flags), Plotly, FastAPI, pymongo.
+* **Third-party code** is trusted: Chrome and kaleido (default flags), Plotly, FastAPI, pymongo, and in the
+  hosted jobs the Google Chrome and Docker of GitHub's runner image and the Docker images of the scanners and
+  of MongoDB.
   The scanners see known vulnerabilities only (Trivy: HIGH and CRITICAL with a fix), nothing else.
 * **Build tools** are not pinned (see Supply chain), so the release build depends on what
   `hatchling`, `twine` and `uv` are at the time of the run.
 * **Real MongoDB coverage** is thinner than the unit suite (mongomock): the marker-gated suites run
-  in the hooks of `main` and tags, and no failover is exercised against a real cluster (ADR-38).
+  in the hooks of `main` and tags and, against a standalone MongoDB 8, in the hosted `e2e-mongo` job
+  (ADR-48); the replica-set suite is local, and no failover is exercised against a real cluster (ADR-38).
 * **Content security and limits.** `style-src` allows inline styles and an exported HTML file has
   no CSP. Resource limits are caps, not quotas or rate limits.
 * **Platform.** The file-safety code relies on POSIX calls; hard links are not detected.

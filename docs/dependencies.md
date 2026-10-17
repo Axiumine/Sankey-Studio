@@ -27,9 +27,9 @@ Contents
 | Where do packages come from | PyPI, through uv. Every package in `uv.lock` has the PyPI registry as its source, except the project itself. |
 | What fixes the versions | In the maintainer's environment, `uv.lock`: exact versions with sha256 hashes. `pyproject.toml` holds lower bounds only, and an install of the published package resolves from those. |
 | Who may add or bump one | A contributor does not add or bump one in a pull request without agreeing it in an issue first ([CONTRIBUTING.md](../CONTRIBUTING.md#rules-for-code)); AI assistants are told to ask first. No test or script checks this. |
-| What scans them | Trivy scans the runtime packages of `uv.lock` in the push gate of `main` and tags, on the maintainer's machine, and weekly in GitHub Actions. Qodana is configured for dependency checks but excludes `uv.lock`. GitHub Dependabot alerts and security updates are switched on, and since 2026-10-17 GitHub's dependency graph lists the 76 locked packages (runtime and development), with no open alert (see below). |
+| What scans them | Trivy scans the runtime packages of `uv.lock` in the push gate of `main` and tags, on the maintainer's machine, and in GitHub Actions on every push to `main` and every pull request (`ci-security.yml`) and weekly (`trivy-weekly.yml`). Qodana is configured for dependency checks but excludes `uv.lock`. GitHub Dependabot alerts and security updates are switched on, and since 2026-10-17 GitHub's dependency graph lists the 76 locked packages (runtime and development), with no open alert (see below). |
 | What blocks a push | On a machine with the hooks enabled, a push of `main` or a tag is refused for a Trivy finding of severity HIGH or CRITICAL (a vulnerability that has a fix, a secret, a misconfiguration). Trivy does not check the licences of the packages in `uv.lock`. |
-| Is there CI | A hosted job (`ci.yml`) runs lint, strict types, the code caps and the unit tests on every push to `main` and every pull request, but nothing requires it to pass. Other workflows publish a tagged release, run Trivy weekly, run CodeQL and run the OpenSSF Scorecard. The full gate (end-to-end, memory, mutation, scanners, real MongoDB) is git hooks, which are client-side. |
+| Is there CI | Hosted workflows run on every push to `main` and every pull request, but nothing requires them to pass: lint, strict types, the code caps and the unit tests with the coverage gate (`ci.yml`), the memory budgets (`ci.yml`), the browser and real-MongoDB end-to-end suites (`ci-e2e.yml`) and Semgrep and Trivy (`ci-security.yml`). Mutation testing runs hosted only when started by hand (`mutation.yml`). Other workflows publish a tagged release, run Trivy weekly, run CodeQL, run the OpenSSF Scorecard and fuzz the parsers. Qodana, the replica-set suite and the gate itself run only in the git hooks, which are client-side. |
 
 ## What counts as a dependency
 
@@ -57,10 +57,12 @@ The published wheel declares exactly these ten, as lower bounds. The rest:
 * **Things that are not Python packages.** plotly.js arrives inside the plotly package. Chrome or
   Chromium is needed for image export and is installed by the user (`uv run plotly_get_chrome` can
   fetch one, see [README.md](../README.md#run-from-a-checkout)). `node` runs the `.mjs` scripts that
-  test the frontend; there is no `package.json`, no npm package and no JavaScript build step.
+  test the frontend; there is no `package.json`, no npm package and no JavaScript build step. The hosted
+  browser jobs use the Google Chrome that GitHub's runner image carries; it is neither installed nor
+  pinned by the repository.
   `make gitnexus` calls an external `gitnexus` command that the repository neither installs nor
-  pins. The scanners and the project MongoDB run as Docker images, and the release workflow uses
-  GitHub Actions; both are covered below.
+  pins. The scanners and the project MongoDB run as Docker images (the hosted jobs use them too, and a
+  MongoDB service container), and the workflows use GitHub Actions; both are covered below.
 
 ## How dependencies are selected
 
@@ -135,7 +137,9 @@ These are the rules the repository states.
 * **Outside PyPI.** The Docker images are named by tag in the scripts and not by digest:
   `aquasec/trivy:0.75.0` (`scripts/trivy.sh`), `semgrep/semgrep:1.178.0` (`scripts/semgrep.sh`),
   `jetbrains/qodana-python:2026.2` (`qodana.yaml` and `scripts/qodana.sh`) and `mongo:8`
-  (`docker-compose.yml`; this tag follows the 8.x line). A tag changes by editing the file. Nothing
+  (`docker-compose.yml`; this tag follows the 8.x line). The one exception is the MongoDB service
+  container of `ci-e2e.yml`, `mongo:8` pinned by digest (resolved on 2026-10-18, refreshed by hand), so
+  the hosted job and `docker-compose.yml` can run different 8.x builds. A tag changes by editing the file. Nothing
   in the repository watches these images, and the gate stamps do not record which image ran
   ([ADR-37](decisions.md#adr-37-git-hooks-are-the-one-place-the-checks-run)). Trivy fetches its
   vulnerability database, and Semgrep its registry rule packs (unless `SEMGREP_OFFLINE=1`), when
@@ -147,6 +151,7 @@ These are the rules the repository states.
 | Tool | Where it runs | When | Looks at | Effect |
 |---|---|---|---|---|
 | Trivy | the maintainer's machine, in Docker | the `security` check, on a push of `main` or a tag | the runtime packages of `uv.lock`, secrets, misconfigurations | refuses the push |
+| Trivy, on push and pull request | GitHub Actions (`ci-security.yml`), same script and config | every push to `main` and every pull request to `main` | the same | a failed job that nothing requires; the SARIF file is kept as an artifact |
 | Trivy, weekly | GitHub Actions (`trivy-weekly.yml`), same script and config | every Monday 05:23 UTC and on demand | the same | a failed run, e-mailed to the person who last changed the schedule |
 | Qodana | the maintainer's machine, in Docker; results go to Qodana Cloud | the `qodana` check, on a push of `main` or a tag | configured for a dependency licence audit and vulnerable libraries; `uv.lock` is excluded, so what it reads is unverified | a failed check refuses the push |
 | Dependabot alerts | GitHub | continuously | what GitHub's dependency graph lists: since 2026-10-17 the 76 locked packages, runtime and development | an alert on GitHub (none open on 2026-10-17) |
@@ -182,10 +187,12 @@ selects for a push whose remote ref is `refs/heads/main` or a tag. A commit or t
 branch does not run it. The stamp of a passed `security` check carries the UTC date, so it expires
 at the end of that day: the Trivy database changes daily
 ([quality.md](quality.md#stamps)). The hooks are client-side only (`--no-verify` skips them) and the
-hosted CI does not run Trivy, so this is a gate that stops mistakes and not a security boundary
+hosted Trivy job (`ci-security.yml`) is only a report that nothing requires, so the hook is a gate that
+stops mistakes and not a security boundary
 ([ADR-37](decisions.md#adr-37-git-hooks-are-the-one-place-the-checks-run)). In the hooks Trivy is not
-scheduled: it runs at those pushes, or when someone runs `make trivy` (or `make gate-main`). The weekly
-job below covers the time between pushes.
+scheduled: it runs at those pushes, or when someone runs `make trivy` (or `make gate-main`). The hosted job
+runs it at every push to `main` and every pull request, and the weekly job below covers the time between
+pushes.
 
 ### Weekly Trivy job
 
@@ -197,6 +204,8 @@ the runtime packages only, no licence detection for uv). It scans `main` and nee
 the person who last changed the schedule, and the run shows as failed on the Actions tab. It does not
 open a pull request or an issue. Two limits to know:
 
+* The `trivy` job of `ci-security.yml` runs the same script on every push to `main` and every pull
+  request, so a new advisory shows there only at the next push; the weekly run is what finds it in between.
 * GitHub disables a scheduled workflow after 60 days without activity in the repository. For a finished
   project that gets few commits, the weekly scan can stop without anyone noticing; a push, or enabling
   the workflow again on the Actions tab, restarts it.
@@ -239,7 +248,7 @@ not tested which of them was needed; the copy was removed to keep one source, an
 checked again afterwards: after the copy was removed and a new Dependabot job ran, it still lists the same
 76 packages from `uv.lock` and `pyproject.toml`, so the `uv` entry in `dependabot.yml` is what makes GitHub read
 the lock (ADR-42). On 2026-10-18 the SBOM API lists 79 entries: the Python packages of `uv.lock`, the GitHub
-Actions the five workflows use (the `github-actions` entry of `dependabot.yml` covers them) and the repository
+Actions the five workflows of that day used (the `github-actions` entry of `dependabot.yml` covers them) and the repository
 itself; the manifests are `uv.lock`, `pyproject.toml` and the workflow files, and no alert is open. An empty list of alerts is still not proof that no
 package is vulnerable: a vulnerability that GitHub's advisory database does not know, or that has no
 fixed version, raises no alert.
@@ -342,16 +351,21 @@ without uploading with the commands in [release.md](release.md#checking-a-build-
 
 ## The workflows' own dependencies
 
-There are seven workflows. `cflite_pr.yml` and `cflite_batch.yml` run the fuzz targets
+There are ten workflows and one local composite action. `cflite_pr.yml` and `cflite_batch.yml` run the fuzz targets
 ([ADR-47](decisions.md#adr-47-fuzzing-runs-in-clusterfuzzlite-from-testsfuzz)). `.github/workflows/release.yml` runs on a push of a `v*` tag
 ([ADR-39](decisions.md#adr-39-releases-are-published-to-pypi-from-a-tag)); `trivy-weekly.yml` and
 `scorecard.yml` run on a schedule, and the Scorecard also on a push to `main`
 ([ADR-40](decisions.md#adr-40-a-weekly-trivy-scan-and-the-openssf-scorecard-run-in-github-actions));
-`codeql.yml` runs on a push to `main` and weekly ([ADR-43](decisions.md#adr-43-codeql-a-ruleset-on-main-and-signed-release-assets));
-`ci.yml` runs on a push to `main` and on pull requests ([ADR-44](decisions.md#adr-44-a-hosted-ci-job-runs-the-unit-tests)).
+`codeql.yml` runs on a push to `main` and weekly ([ADR-43](decisions.md#adr-43-codeql-a-ruleset-on-main-and-signed-release-assets)).
+Four more run the checks of the hooks hosted ([ADR-44](decisions.md#adr-44-a-hosted-ci-job-runs-the-unit-tests),
+[ADR-48](decisions.md#adr-48-hosted-ci-runs-the-browser-memory-and-mongodb-suites-and-the-scanners),
+[quality.md](quality.md#hosted-ci)): `ci.yml` (lint, types, caps, unit tests, memory budgets), `ci-e2e.yml` (browser
+and real-MongoDB end-to-end tests) and `ci-security.yml` (Semgrep and Trivy) run on a push to `main`, on pull
+requests and on demand, and `mutation.yml` runs only on demand. The local action
+`.github/actions/no-skipped-tests` is part of the repository and needs no pin.
 
 * **Actions are pinned to full commit SHAs**, with the version in a trailing comment:
-  `actions/checkout`, `astral-sh/setup-uv`, `actions/upload-artifact`, `actions/download-artifact`,
+  `actions/checkout`, `astral-sh/setup-uv`, `actions/setup-node`, `actions/upload-artifact`, `actions/download-artifact`,
   `pypa/gh-action-pypi-publish`, `ossf/scorecard-action` and `github/codeql-action` (`init`, `analyze` and `upload-sarif`). A moved tag
   cannot change which action code runs. A pin is bumped by hand (new SHA and new comment in the
   workflow file), and nothing in the repository watches
@@ -370,8 +384,15 @@ There are seven workflows. `cflite_pr.yml` and `cflite_batch.yml` run the fuzz t
   only the two upload jobs have `id-token: write`. Checkout uses `persist-credentials: false`, and
   the tag name reaches the shell through an environment variable and not by interpolation. No PyPI
   token exists: the upload uses trusted publishing. The two scheduled workflows also start from
-  `permissions: {}`; the Trivy job has `contents: read` only, and the Scorecard job adds `actions: read`,
+  `permissions: {}`; the Trivy job has `contents: read` only, like every job of `ci.yml`, `ci-e2e.yml`,
+  `ci-security.yml` and `mutation.yml`, and the Scorecard job adds `actions: read`,
   `security-events: write` and `id-token: write` to upload its report and publish its result.
+* **The hosted test jobs fetch unpinned things too.** The runner image (`ubuntu-24.04` as GitHub keeps it)
+  supplies Google Chrome and Docker; `setup-node` is given the major version 22 only, and `setup-uv` no uv
+  version. The `semgrep`, `trivy` and `e2e-mongo` jobs pull Docker images without logging in (the scanners
+  by the tag in their scripts, MongoDB by digest), and Semgrep fetches its registry rule packs and Trivy
+  its database when they run. `uv sync --all-extras --locked` installs from `uv.lock` and fails if the lock
+  is out of date. No cache is used.
 * **Tools the build job fetches are not pinned.** `uv build` resolves `hatchling` at build time.
   `uvx twine check --strict` takes the current twine. The workflow sets no uv version for
   `setup-uv`, uses the `ubuntu-24.04` runner image as GitHub keeps it, and names only `--python
@@ -381,18 +402,19 @@ There are seven workflows. `cflite_pr.yml` and `cflite_batch.yml` run the fuzz t
   gives byte-identical files. What it does give is a signed link between the published files and
   this repository and workflow ([release.md](release.md#verifying-a-release)).
 * **The release workflow runs no tests and scans nothing.** The checks, Trivy included, run in the
-  maintainer's git hooks when the tag is pushed, and those are client-side. The tests run in `ci.yml` (unit suite) and in the hooks (all suites).
+  maintainer's git hooks when the tag is pushed, and those are client-side. The tests run in the hooks (all suites) and in the hosted `ci.yml`, `ci-e2e.yml` and `ci-security.yml` (all except Qodana and the replica-set suite).
 
 ## Limits
 
 Collected in one place, so nothing here is read as a stronger promise than it is:
 
 * The gates are git hooks. They are client-side, skipped by `--no-verify` or a clone without
-  `make hooks`, and the hosted CI runs only lint, types, caps and the unit tests and nothing requires it to pass: there is
-  no required check or review on `main` (a ruleset blocks only deleting it and force-pushing to it).
-* In the hooks Trivy runs only on a push of `main` or a tag, and the weekly job (which GitHub stops after 60
-  days without repository activity) adds a scan between pushes; both gate HIGH and CRITICAL findings that have a
-  fix. By default it leaves out the packages that only the `dev` group needs.
+  `make hooks`, and the hosted workflows (unit, browser, memory and MongoDB suites, Semgrep, Trivy) report but nothing requires
+  them to pass: there is no required check or review on `main` (a ruleset blocks only deleting it and force-pushing to it).
+* In the hooks Trivy runs only on a push of `main` or a tag; the hosted job runs it at every push to `main`
+  and pull request, and the weekly job (which GitHub stops after 60
+  days without repository activity) adds a scan between pushes; all three report HIGH and CRITICAL findings that have a
+  fix, and only the hooks can refuse a push. By default it leaves out the packages that only the `dev` group needs.
 * The repository does not show a working licence check of the Python packages in `uv.lock`: Trivy
   cannot detect them for uv, and `uv.lock` is excluded from the Qodana analysis. The licence lists
   state intent.
@@ -400,7 +422,8 @@ Collected in one place, so nothing here is read as a stronger promise than it is
   checks. A maintainer's own dependency change has no second reviewer.
 * The lock describes the maintainer's environment, not the one a user's install resolves.
 * Build requirements, twine, the uv version in the workflow, the runner image and the Docker images
-  are not locked by `uv.lock`; the images are pinned by tag, not by digest. Scanner databases and
+  are not locked by `uv.lock`; the images are pinned by tag, not by digest (the MongoDB service container of
+  `ci-e2e.yml` is pinned by digest), and the Google Chrome of the runner image is not pinned. Scanner databases and
   rule packs are fetched when a scan runs.
 * Dependabot is switched on in GitHub's settings, outside the repository, and `dependabot.yml`
   limits it to security updates (no routine update pull requests). GitHub's dependency graph lists the
