@@ -22,7 +22,9 @@ Package name: `sankey-studio` (<https://pypi.org/project/sankey-studio/>).
    try them.
 3. After the first upload, add the co-owner as an Owner of the PyPI project (project page,
    Collaborators).
-4. Optional: turn on tag protection for `v*` so only the maintainers can create release tags.
+4. A ruleset on the repository, "v* tags: no deletion, no update, no force-push", stops a release tag from
+   being deleted or moved ([ADR-43](decisions.md#adr-43-codeql-a-ruleset-on-main-and-signed-release-assets)). It does
+   not restrict who may create a `v*` tag: the reviewer of the `pypi` environment is the lock for that.
 
 ## Making a release
 

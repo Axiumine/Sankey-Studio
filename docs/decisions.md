@@ -62,6 +62,7 @@ Contents
 | [ADR-42](#adr-42-uvlock-is-the-one-source-of-the-dependency-list) | uv.lock is the one source of the dependency list |
 | [ADR-43](#adr-43-codeql-a-ruleset-on-main-and-signed-release-assets) | CodeQL, a ruleset on main and signed release assets |
 | [ADR-44](#adr-44-a-hosted-ci-job-runs-the-unit-tests) | A hosted CI job runs the unit tests |
+| [ADR-45](#adr-45-mask_uri-shows-option-values-from-an-allow-list) | mask_uri shows option values from an allow-list |
 
 ## ADR-01 Storage protocol and graph ids
 
@@ -228,6 +229,9 @@ send one of the headers) while keeping curl and scripts usable for JSON.
 percent-encoded form; an unparseable URI is fully masked. Every regex ends in `\Z`.
 
 **Why.** A mask that misses one shape leaks a password into logs or the UI.
+
+**Clarified by [ADR-45](#adr-45-mask_uri-shows-option-values-from-an-allow-list).** The sentence about keys that
+"look secret" is read as the allow-list described there.
 
 ## ADR-16 Mongo access is read-only and allow-listed
 
@@ -886,6 +890,11 @@ control and that the repository cannot test.
   two rules, `deletion` and `non_fast_forward`. It does not require pull requests, reviews or status
   checks: those would stop the maintainer's direct pushes, which is how the git-hook gate works
   ([ADR-37](#adr-37-git-hooks-are-the-one-place-the-checks-run)).
+* A second ruleset, "v* tags: no deletion, no update, no force-push", protects every tag that matches `v*`.
+  An existing release tag cannot be deleted or moved without a repository administrator switching the
+  ruleset off. It does not restrict who may create a `v*` tag (a `creation` rule would also stop the
+  maintainer, who has no bypass entry); creating one starts the release workflow, whose `pypi`
+  environment waits for the reviewer.
 * After a release the GitHub release page carries the wheel and the sdist exactly as on PyPI (the
   sha256 is compared with PyPI's) and, next to each, a Sigstore bundle `<file>.sigstore.json` made from
   the PyPI provenance of that file and verified against the identity of `release.yml`. The procedure is in
@@ -917,3 +926,32 @@ maintainer's direct pushes ([ADR-43](#adr-43-codeql-a-ruleset-on-main-and-signed
 job reports and does not block. A pull request runs its own code on the runner with a read-only token
 and no secret (none exists to reach). The runner differs from the maintainer's machine (image, Chrome,
 kernel), so the job can fail for a reason the local gate never shows, and the other way round.
+
+## ADR-45 mask_uri shows option values from an allow-list
+
+**Status.** Clarifies [ADR-15](#adr-15-uri-masking-fails-closed), which stays in force.
+
+**Decision.** ADR-15 says `util.mask_uri` "masks every query value whose key looks secret". The code
+does the safer opposite and rebuilds the URI from an allow-list:
+
+* The scheme must be `mongodb` or `mongodb+srv`; a text without it becomes `***`. Any structural doubt,
+  and any exception, gives `mongodb://***`. The function never raises.
+* User info is masked: `user:pw` becomes `user:***`, and a user info without a colon (a token in the
+  user name) becomes `***`.
+* Hosts and the database name are shown when they match plain-character patterns.
+* A query option keeps its key, and its value is shown only when the key (compared in lower case) is one of
+  the twelve in `SAFE_URI_OPTIONS` (`replicaSet`, `authSource`, `authMechanism`, `tls`, `ssl`,
+  `retryWrites`, `retryReads`, `w`, `readPreference`, `appName`, `directConnection`, `loadBalanced`) and
+  the value matches a plain pattern. Every other option, `authMechanismProperties` and
+  `tlsCertificateKeyFilePassword` included, shows `key=***`. An item whose key is unreadable is
+  dropped. Items are split on `&` and on `;`.
+* The patterns that validate a host, a user, a database, an option key and an option value are
+  anchored with `\Z` (a `$` would also match before a trailing newline). The scheme pattern is the one
+  prefix match, by design.
+
+**Why.** A deny-list of secret-looking keys fails open for the next secret-bearing option. An
+allow-list fails closed: a new option stays hidden until someone adds it.
+
+**Accepted risks.** A harmless new option is shown as `key=***` until it is added to
+`SAFE_URI_OPTIONS`, so a masked URI can be less informative than the real one. The list is code, kept
+in step by the table tests in `tests/test_util.py`.

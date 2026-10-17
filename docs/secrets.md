@@ -145,9 +145,10 @@ reviewer of the `pypi` environment is the second lock before PyPI, and that the 
 tag's commit as the maintainer pushed it, because the hooks that check the tree are client-side.
 That lock is a deliberate pause, not a second person: GitHub is not set to stop a reviewer from
 approving a run they started (`prevent_self_review` is off), and repository administrators may
-bypass the environment's protection rules (the setting is on). The workflow runs no tests. Tag
-protection is optional in [release.md](release.md#one-time-setup) and is not enabled today (the one
-ruleset protects `main` against deletion and force-push, nothing else).
+bypass the environment's protection rules (the setting is on). The workflow runs no tests. A
+ruleset stops a `v*` tag from being deleted or moved ([release.md](release.md#one-time-setup)); it does not stop
+anyone with write access from creating one. A second ruleset protects `main` against deletion and
+force-push, nothing else.
 
 ## Prevention and detection
 

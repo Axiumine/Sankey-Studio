@@ -235,7 +235,9 @@ files as parseable manifests, and no alert was open. The two changes arrived in 
 not tested which of them was needed; the copy was removed to keep one source, and the graph was
 checked again afterwards: after the copy was removed and a new Dependabot job ran, it still lists the same
 76 packages from `uv.lock` and `pyproject.toml`, so the `uv` entry in `dependabot.yml` is what makes GitHub read
-the lock (ADR-42). An empty list of alerts is still not proof that no
+the lock (ADR-42). On 2026-10-18 the SBOM API lists 79 entries: the Python packages of `uv.lock`, the GitHub
+Actions the five workflows use (the `github-actions` entry of `dependabot.yml` covers them) and the repository
+itself; the manifests are `uv.lock`, `pyproject.toml` and the workflow files, and no alert is open. An empty list of alerts is still not proof that no
 package is vulnerable: a vulnerability that GitHub's advisory database does not know, or that has no
 fixed version, raises no alert.
 
