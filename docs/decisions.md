@@ -57,6 +57,7 @@ Contents
 | [ADR-37](#adr-37-git-hooks-are-the-one-place-the-checks-run) | Git hooks are the one place the checks run |
 | [ADR-38](#adr-38-mongodb-runs-on-one-server-and-on-a-cluster) | MongoDB runs on one server and on a cluster |
 | [ADR-39](#adr-39-releases-are-published-to-pypi-from-a-tag) | Releases are published to PyPI from a tag |
+| [ADR-40](#adr-40-a-weekly-trivy-scan-and-the-openssf-scorecard-run-in-github-actions) | A weekly Trivy scan and the OpenSSF Scorecard run in GitHub Actions |
 
 ## ADR-01 Storage protocol and graph ids
 
@@ -701,7 +702,8 @@ rule is now one sentence: tests run in the hooks, and a check that did not run i
   `coverage.xml` and only warns when it is missing or stale. It runs before `mutation` so a missing
   token fails before the long mutation run.
 * The hooks are client-side only. The project runs no CI on commits and has no branch protection, and
-  none was added (the one workflow publishes a tagged release, ADR-39): the hooks are a convenience gate that stops mistakes, not a security boundary.
+  none was added (the workflows publish a tagged release, ADR-39, scan weekly and score the repository, ADR-40; none runs the
+  tests): the hooks are a convenience gate that stops mistakes, not a security boundary.
 
 **Accepted risks.** `--no-verify`, `core.hooksPath` overrides and a clone without `make hooks` skip
 every hook (the rules for agents forbid them; nothing enforces it). A push gate of 30+ minutes holds
@@ -784,3 +786,28 @@ build job, and its actions are pinned to commit SHAs.
 `pypi` environment's required reviewer is the second lock. The hooks that vouch for the tree are
 client-side (ADR-37), so the workflow trusts the tag's commit as the maintainer pushed it. How to
 make a release is in [release.md](release.md).
+
+## ADR-40 A weekly Trivy scan and the OpenSSF Scorecard run in GitHub Actions
+
+**Decision.** `.github/workflows/trivy-weekly.yml` runs `scripts/trivy.sh` (the same `trivy.yaml` and
+pinned image as `make trivy`) every Monday and on demand. `.github/workflows/scorecard.yml` runs the
+OpenSSF Scorecard on a push to `main`, weekly and when branch protection changes, publishes the result
+to scorecard.dev (the README badge) and uploads the SARIF report to code scanning.
+
+* The hooks run Trivy only when `main` or a tag is pushed, and GitHub's dependency graph does not read
+  `uv.lock`, so Dependabot sees no Python packages (see [dependencies.md](dependencies.md)). The weekly
+  job is the only check of the dependencies between pushes. A fixed HIGH or CRITICAL finding fails the
+  run, and GitHub e-mails the person who last changed the schedule.
+* The Scorecard gives an outside, repeatable score of supply-chain practices. It scores what the
+  repository does, not whether the software is secure.
+* Both jobs are read-only: `permissions: {}` at the top and `contents: read` in the job. The Scorecard
+  job adds `actions: read`, `security-events: write` (the SARIF upload) and `id-token: write`
+  (publishing the result). Every action is pinned to a commit SHA. Neither job runs the tests or looks at
+  commits or pull requests.
+
+**Accepted risks.** GitHub disables scheduled workflows after 60 days without activity in the
+repository, so a finished project loses the weekly scan until someone re-enables it or pushes. The
+Trivy job has the gate's limits: it leaves out the packages only the `dev` group needs and cannot check
+the licences of uv packages. It cannot be run from the maintainer's agents (Docker is used only through
+make), so its first run happens on GitHub. The Scorecard will show the gaps as they are: no branch
+protection, no pull-request review, tools in `release.yml` that are not pinned.

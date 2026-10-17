@@ -17,7 +17,7 @@ Contents
 * [How dependencies are updated](#how-dependencies-are-updated)
 * [When a dependency is vulnerable](#when-a-dependency-is-vulnerable)
 * [Adding, removing and replacing one](#adding-removing-and-replacing-one)
-* [The release workflow's own dependencies](#the-release-workflows-own-dependencies)
+* [The workflows' own dependencies](#the-workflows-own-dependencies)
 * [Limits](#limits)
 
 ## At a glance
@@ -27,9 +27,9 @@ Contents
 | Where do packages come from | PyPI, through uv. Every package in `uv.lock` has the PyPI registry as its source, except the project itself. |
 | What fixes the versions | In the maintainer's environment, `uv.lock`: exact versions with sha256 hashes. `pyproject.toml` holds lower bounds only, and an install of the published package resolves from those. |
 | Who may add or bump one | A contributor does not add or bump one in a pull request without agreeing it in an issue first ([CONTRIBUTING.md](../CONTRIBUTING.md#rules-for-code)); AI assistants are told to ask first. No test or script checks this. |
-| What scans them | Trivy scans the runtime packages of `uv.lock` in the push gate of `main` and tags, on the maintainer's machine. Qodana is configured for dependency checks but excludes `uv.lock`. GitHub Dependabot alerts and security updates are switched on, but GitHub's dependency graph found no dependencies on 2026-10-17, so they report nothing for the Python packages (see below). |
+| What scans them | Trivy scans the runtime packages of `uv.lock` in the push gate of `main` and tags, on the maintainer's machine, and weekly in GitHub Actions. Qodana is configured for dependency checks but excludes `uv.lock`. GitHub Dependabot alerts and security updates are switched on, but GitHub's dependency graph found no dependencies on 2026-10-17, so they report nothing for the Python packages (see below). |
 | What blocks a push | On a machine with the hooks enabled, a push of `main` or a tag is refused for a Trivy finding of severity HIGH or CRITICAL (a vulnerability that has a fix, a secret, a misconfiguration). Trivy does not check the licences of the packages in `uv.lock`. |
-| Is there CI | No. The only workflow publishes a tagged release. The gates are git hooks, which are client-side. |
+| Is there CI | No CI runs the tests or checks commits. The workflows publish a tagged release, run Trivy weekly and run the OpenSSF Scorecard. The gates are git hooks, which are client-side. |
 
 ## What counts as a dependency
 
@@ -147,6 +147,7 @@ These are the rules the repository states.
 | Tool | Where it runs | When | Looks at | Effect |
 |---|---|---|---|---|
 | Trivy | the maintainer's machine, in Docker | the `security` check, on a push of `main` or a tag | the runtime packages of `uv.lock`, secrets, misconfigurations | refuses the push |
+| Trivy, weekly | GitHub Actions (`trivy-weekly.yml`), same script and config | every Monday 05:23 UTC and on demand | the same | a failed run, e-mailed to the person who last changed the schedule |
 | Qodana | the maintainer's machine, in Docker; results go to Qodana Cloud | the `qodana` check, on a push of `main` or a tag | configured for a dependency licence audit and vulnerable libraries; `uv.lock` is excluded, so what it reads is unverified | a failed check refuses the push |
 | Dependabot alerts | GitHub | continuously | what GitHub's dependency graph reads; on 2026-10-17 it listed no dependencies, so `uv.lock` is not read | an alert on GitHub, none for the Python packages |
 | Dependabot security updates | GitHub | when an alert has a fixed version | the same | a pull request proposing the bump |
@@ -182,9 +183,25 @@ branch does not run it. The stamp of a passed `security` check carries the UTC d
 at the end of that day: the Trivy database changes daily
 ([quality.md](quality.md#stamps)). The hooks are client-side only (`--no-verify` skips them) and the
 project has no CI, so this is a gate that stops mistakes and not a security boundary
-([ADR-37](decisions.md#adr-37-git-hooks-are-the-one-place-the-checks-run)). Trivy is not scheduled:
-it runs at those pushes, or when someone runs `make trivy` (or `make gate-main`). A vulnerability
-published after the last scan is reported by Trivy only at the next such run.
+([ADR-37](decisions.md#adr-37-git-hooks-are-the-one-place-the-checks-run)). In the hooks Trivy is not
+scheduled: it runs at those pushes, or when someone runs `make trivy` (or `make gate-main`). The weekly
+job below covers the time between pushes.
+
+### Weekly Trivy job
+
+`.github/workflows/trivy-weekly.yml` runs `scripts/trivy.sh` on a GitHub runner every Monday (05:23 UTC)
+and on demand (`workflow_dispatch`): the same `trivy.yaml`, the same pinned image and the same
+`.trivyignore` as the push gate, so it has the same limits (HIGH and CRITICAL findings that have a fix,
+the runtime packages only, no licence detection for uv). It scans `main` and needs no secret: the top-level
+`permissions` is `{}` and the job has `contents: read`. A finding fails the run; GitHub then e-mails
+the person who last changed the schedule, and the run shows as failed on the Actions tab. It does not
+open a pull request or an issue. Two limits to know:
+
+* GitHub disables a scheduled workflow after 60 days without activity in the repository. For a finished
+  project that gets few commits, the weekly scan can stop without anyone noticing; a push, or enabling
+  the workflow again on the Actions tab, restarts it.
+* It cannot be run from the maintainer's agents (Docker is used only through `make`), so its first run
+  was on GitHub. Start it by hand with the Actions tab or `gh workflow run trivy-weekly.yml`.
 
 ### `.trivyignore`
 
@@ -251,7 +268,7 @@ a bump; the steps below put the existing rules in order.
 **A Dependabot pull request.** [GOVERNANCE.md](../GOVERNANCE.md#changes-and-review) describes the
 review of changes from contributors; it does not mention automated pull requests, and the
 repository has no procedure written for Dependabot pull requests. Two facts matter for it. GitHub
-runs no check on a pull request, because there is no CI. And the hooks run on a push from a machine
+runs no check on a pull request, because no CI check is set up for them. And the hooks run on a push from a machine
 that has them enabled: merging in the GitHub web interface does not pass through them. The rule
 that "the hooks decide, not a person" ([quality.md](quality.md#definition-of-done)) is met only by
 a push that went through the hooks.
@@ -313,20 +330,25 @@ override, a `filterwarnings` entry or a `.trivyignore` line.
 **The build requirement.** `hatchling` is changed in `[build-system].requires`. Check a build
 without uploading with the commands in [release.md](release.md#checking-a-build-without-uploading).
 
-## The release workflow's own dependencies
+## The workflows' own dependencies
 
-`.github/workflows/release.yml` is the only workflow, and it runs on a push of a `v*` tag
-([ADR-39](decisions.md#adr-39-releases-are-published-to-pypi-from-a-tag)).
+There are three workflows. `.github/workflows/release.yml` runs on a push of a `v*` tag
+([ADR-39](decisions.md#adr-39-releases-are-published-to-pypi-from-a-tag)); `trivy-weekly.yml` and
+`scorecard.yml` run on a schedule, and the Scorecard also on a push to `main`
+([ADR-40](decisions.md#adr-40-a-weekly-trivy-scan-and-the-openssf-scorecard-run-in-github-actions)).
 
 * **Actions are pinned to full commit SHAs**, with the version in a trailing comment:
-  `actions/checkout`, `astral-sh/setup-uv`, `actions/upload-artifact`, `actions/download-artifact`
-  and `pypa/gh-action-pypi-publish`. A moved tag cannot change which action code runs. A pin is
-  bumped by hand (new SHA and new comment in `release.yml`), and nothing in the repository watches
+  `actions/checkout`, `astral-sh/setup-uv`, `actions/upload-artifact`, `actions/download-artifact`,
+  `pypa/gh-action-pypi-publish`, `ossf/scorecard-action` and `github/codeql-action/upload-sarif`. A moved tag
+  cannot change which action code runs. A pin is bumped by hand (new SHA and new comment in the
+  workflow file), and nothing in the repository watches
   for new versions: the `github-actions` entry in `dependabot.yml` allows security updates only.
 * **Least privilege.** The top-level `permissions` is `{}`, the build job has `contents: read`, and
   only the two upload jobs have `id-token: write`. Checkout uses `persist-credentials: false`, and
   the tag name reaches the shell through an environment variable and not by interpolation. No PyPI
-  token exists: the upload uses trusted publishing.
+  token exists: the upload uses trusted publishing. The two scheduled workflows also start from
+  `permissions: {}`; the Trivy job has `contents: read` only, and the Scorecard job adds `actions: read`,
+  `security-events: write` and `id-token: write` to upload its report and publish its result.
 * **Tools the build job fetches are not pinned.** `uv build` resolves `hatchling` at build time.
   `uvx twine check --strict` takes the current twine. The workflow sets no uv version for
   `setup-uv`, uses the `ubuntu-24.04` runner image as GitHub keeps it, and names only `--python
@@ -335,16 +357,17 @@ without uploading with the commands in [release.md](release.md#checking-a-build-
   user's install would, and not from `uv.lock`. So the repository does not claim that a rebuild
   gives byte-identical files. What it does give is a signed link between the published files and
   this repository and workflow ([release.md](release.md#verifying-a-release)).
-* **The workflow runs no tests and scans nothing.** The checks, Trivy included, run in the
-  maintainer's git hooks when the tag is pushed, and those are client-side.
+* **The release workflow runs no tests and scans nothing.** The checks, Trivy included, run in the
+  maintainer's git hooks when the tag is pushed, and those are client-side. No workflow runs the tests.
 
 ## Limits
 
 Collected in one place, so nothing here is read as a stronger promise than it is:
 
 * The gates are git hooks. They are client-side, skipped by `--no-verify` or a clone without
-  `make hooks`, and there is no CI and no branch protection.
-* Trivy runs only on a push of `main` or a tag, and gates HIGH and CRITICAL findings that have a
+  `make hooks`, and there is no CI that runs the tests or checks commits, and no branch protection.
+* In the hooks Trivy runs only on a push of `main` or a tag, and the weekly job (which GitHub stops after 60
+  days without repository activity) adds a scan between pushes; both gate HIGH and CRITICAL findings that have a
   fix. By default it leaves out the packages that only the `dev` group needs.
 * The repository does not show a working licence check of the Python packages in `uv.lock`: Trivy
   cannot detect them for uv, and `uv.lock` is excluded from the Qodana analysis. The licence lists

@@ -11,10 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Policy documents: [docs/roadmap.md](docs/roadmap.md) (the software is complete; maintenance only; feature pull requests welcome except SQL database support), [docs/dependencies.md](docs/dependencies.md) (how dependencies are chosen, obtained, scanned and updated, with the limits of Trivy and Dependabot), [docs/secrets.md](docs/secrets.md) (the project's secrets and the leak procedure) and [docs/assurance-case.md](docs/assurance-case.md) (threat model, controls, tests and residual risks).
 - [docs/release.md](docs/release.md#verifying-a-release) and the README explain how to verify the Sigstore attestation of a PyPI file with `pypi-attestations`.
+- `.github/workflows/trivy-weekly.yml`: the project's Trivy scan (same `trivy.yaml`, pinned image and `scripts/trivy.sh` as `make trivy`) every Monday and on demand, so the dependencies are checked between pushes; a fixed HIGH or CRITICAL finding fails the run. GitHub stops scheduled workflows after 60 days without repository activity ([ADR-40](docs/decisions.md#adr-40-a-weekly-trivy-scan-and-the-openssf-scorecard-run-in-github-actions), [docs/dependencies.md](docs/dependencies.md#weekly-trivy-job)).
+- `.github/workflows/scorecard.yml`: the OpenSSF Scorecard on a push to `main`, weekly and when branch protection changes; the score is published to scorecard.dev (README badge) and the SARIF report goes to code scanning. Permissions `{}` at the top, actions pinned to SHAs.
 - `.github/dependabot.yml` (uv and github-actions, `open-pull-requests-limit: 0`): Dependabot is limited to security updates. GitHub's dependency graph does not read `uv.lock` (checked 2026-10-17), so it reports nothing for the Python packages; `docs/dependencies.md` says so.
 
 ### Changed
 
+- The docs no longer say that `release.yml` is the only workflow (README, `docs/quality.md`, `docs/decisions.md`, `docs/dependencies.md`, `docs/assurance-case.md`, `docs/secrets.md`, `docs/release.md`, `SECURITY.md`, `CLAUDE.md`, `AGENTS.md`): no workflow runs the tests or looks at commits and pull requests, but three exist.
 - `docs/quality.md` and `CONTRIBUTING.md` no longer say Trivy checks every dependency and every licence: it scans the runtime packages of `uv.lock` and cannot detect licences there. `SECURITY.md` no longer calls the project a one-person project.
 - `SECURITY.md` lists the supported versions after 0.1.0 (latest release and `main`) and says how a release stops being supported. `MAINTAINERS.md` and `GOVERNANCE.md` no longer say the co-owner already approves releases or owns the PyPI project.
 

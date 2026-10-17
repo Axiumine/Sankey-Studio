@@ -75,7 +75,8 @@ Out of scope:
 
 ## How we look for vulnerabilities
 
-The project has no hosted CI. The maintainer's git hooks run the checks before a commit or push:
+The project has no hosted CI that runs the tests; its workflows publish releases, run Trivy weekly and run the
+OpenSSF Scorecard. The maintainer's git hooks run the checks before a commit or push:
 strict typing, a test suite with 100% line and branch coverage and a mutation-score gate, and, before
 `main` or a tag is pushed, Semgrep (with project rules against MongoDB writes, shell and dynamic
 code, secrets in logs and unsafe frontend patterns), Trivy on the locked dependencies, and Qodana.

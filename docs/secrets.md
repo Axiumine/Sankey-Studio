@@ -120,8 +120,9 @@ listed here and covered by [Rotation and revocation](#rotation-and-revocation):
 **Who holds what.** The two project secrets are held by the lead maintainer. The people listed in
 [MAINTAINERS.md](../MAINTAINERS.md) are the only ones with access to the repository settings, the
 organization and the PyPI project; the PyPI project and the approval of a release are the lead
-maintainer's alone for now. Contributors have no access and need none: the only workflow runs when
-a `v*` tag is pushed, so a pull request starts nothing. Write access, two-factor authentication and
+maintainer's alone for now. Contributors have no access and need none: no workflow runs on a
+pull request (the release workflow runs when a `v*` tag is pushed; the other two run on a schedule, on a push
+to `main` or when branch protection changes). Write access, two-factor authentication and
 removal of access are described in [GOVERNANCE.md](../GOVERNANCE.md#access); access is removed at
 once if an account may be compromised.
 

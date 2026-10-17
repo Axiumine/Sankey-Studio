@@ -1,6 +1,7 @@
 # Sankey Studio
 
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/15611/badge)](https://www.bestpractices.dev/projects/15611)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Axiumine/Sankey-Studio/badge)](https://scorecard.dev/viewer/?uri=github.com/Axiumine/Sankey-Studio)
 
 Sankey Studio is a local web app for drawing and managing Sankey graphs. Paste or upload a CSV, point
 it at a MongoDB collection or type the flows in by hand, and watch the diagram update as you edit.
@@ -470,8 +471,9 @@ its `make` target, one at a time.
   checks of a tier have a stamp, without running anything.
 * **Not a security boundary.** The hooks are local: `git commit --no-verify`, `git push --no-verify`,
   `git -c core.hooksPath=/dev/null ...` and a fresh clone without `make hooks` skip them, and the
-  project has no server-side check (its one workflow only publishes a tagged release, see
-  [docs/release.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/release.md)). They stop mistakes, not a determined person.
+  project has no server-side check (its workflows publish a tagged release, scan the dependencies weekly and
+  score the repository; none runs the tests, see
+  [docs/dependencies.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/dependencies.md)). They stop mistakes, not a determined person.
 * **Rollback.** `git config --unset core.hooksPath` disables every hook of the clone; `rm -rf
   .git/hook-stamps .git/hook-logs` clears the stamps and logs (use `git rev-parse --git-common-dir`
   for the path in a linked worktree).

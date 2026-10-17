@@ -163,7 +163,8 @@ rendering) under `memray run`, prints `memray stats` and writes a flamegraph to
   cannot detect licences in a uv lock file, and it leaves out the packages only the `dev` group needs
   (see [dependencies.md](dependencies.md#trivy)). Accepted findings
   go in `.trivyignore` with a reason and an expiry; keep it empty unless a finding is triaged.
-  `TRIVY_OFFLINE=1` reuses the cached database. Do not add or bump dependencies casually.
+  `TRIVY_OFFLINE=1` reuses the cached database. The weekly GitHub Actions job `trivy-weekly.yml` runs the
+  same script. Do not add or bump dependencies casually.
 * **Qodana** (`make qodana`) runs the JetBrains Ultimate Plus linter in Docker through
   `scripts/qodana.sh`. It reads `QODANA_TOKEN` from a local `.env` (copy `.env.example`; `.env` is
   gitignored), keeps it in the process environment only, never prints it and uploads results to
@@ -510,7 +511,8 @@ a check. These are working rules, not technical barriers.
 * **Not a security boundary.** The hooks live in the clone. `git commit --no-verify`,
   `git push --no-verify`, `git -c core.hooksPath=/dev/null ...`, a fresh clone before `make hooks`
   and a tool that does not run hooks all skip them. The project runs no CI on commits and has no server-side check
-  (its one workflow, `release.yml`, only publishes a tagged release: [release.md](release.md));
+  (its workflows publish a tagged release ([release.md](release.md)), scan the dependencies weekly and
+  score the repository; none of them runs the tests);
   the only hard stop would be branch protection with a required check on the remote, and it was not
   added (ADR-37). The hooks catch mistakes, not a determined person.
 * **A killed gate can leave Mongo up.** A SIGKILL skips the `finally` that runs `make mongo-down`;

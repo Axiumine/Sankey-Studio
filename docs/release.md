@@ -1,7 +1,7 @@
 # Releasing
 
-A release is a version tag (`vX.Y.Z`) on `main`. Pushing the tag starts the only GitHub workflow of
-the project, `.github/workflows/release.yml`, which builds the package and uploads it to TestPyPI
+A release is a version tag (`vX.Y.Z`) on `main`. Pushing the tag starts the release workflow,
+`.github/workflows/release.yml`, which builds the package and uploads it to TestPyPI
 and then to PyPI with trusted publishing (OIDC): there is no PyPI token in the repository or in the
 GitHub settings ([ADR-39](decisions.md#adr-39-releases-are-published-to-pypi-from-a-tag)). The
 workflow runs no tests: the git hooks ran them before the tag was pushed.
