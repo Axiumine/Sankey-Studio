@@ -309,12 +309,13 @@ Actions tab.
   `e2e-mongo-report`; the unit job also keeps `coverage.xml`) for 14 days. A failed shard also uploads
   `e2e-failures-N` (screenshots, traces, `problems-*.txt`) for 7 days; the mutation job keeps the
   `.meta` files of the mutants (`mutants-meta`).
-* **Figures.** Only the unit job has a hosted measurement: about 3 minutes 40 seconds in its last run
-  before the other workflows existed (lint, types and caps about 15 seconds, `make cov` about 193
-  seconds), and a manual Trivy run took 27 seconds including the image pull. The rest has not run hosted. These are
-  estimates, to be replaced by measured figures after the first runs: 3 to 6 minutes for an `e2e` shard and
-  for `e2e-mongo`, 1 to 3 for `memory-test`, 3 to 6 for `semgrep`, 1 to 2 for `trivy`, and 60 to 120 for
-  mutation testing on 4 vCPUs (about 19 minutes locally with 8 workers).
+* **Figures.** Measured in the first two runs on pull request 1 (2026-10-18), all jobs passing: `test` 3
+  minutes 30 seconds to 3 minutes 33 seconds, `memory-test` 32 to 34 seconds, an `e2e` shard 3 minutes 6
+  seconds to 5 minutes 15 seconds (the five side by side), `e2e-mongo` about 1 minute 33 seconds,
+  `semgrep` 56 to 57 seconds, `trivy` 19 to 25 seconds, and the ClusterFuzzLite pull request job 4 minutes
+  16 seconds (failed on a finding) and 10 minutes 8 seconds (passed; it includes the image build and the
+  7 minutes of fuzzing). Mutation testing has never run hosted; expect 60 to 120 minutes on 4 vCPUs
+  (about 19 minutes locally with 8 workers), an estimate.
 * **Not a gate.** Nothing requires any job to pass: a required status check would stop the maintainer's
   direct pushes (ADR-43). A job reports, and a red job is read and fixed, not bypassed. A job can also
   fail with no code change, for a new advisory (Trivy), a changed rule (Semgrep), a new Chrome in the

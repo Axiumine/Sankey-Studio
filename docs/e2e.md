@@ -181,7 +181,11 @@ message when that path is missing, because a missing browser would otherwise ski
 `E2E_ARTIFACTS_DIR` is `reports/e2e-artifacts`; the screenshots, traces and `problems-*.txt` of a failed
 shard are uploaded as `e2e-failures-N` (7 days), the JUnit files of every shard as `e2e-report-N`
 (14 days). The `no-skipped-tests` action then applies the rule of the `pre-push` hook: a skipped test
-fails the job. Nothing requires these jobs to pass. The hosted figures are not measured yet.
+fails the job. Nothing requires these jobs to pass. In the first two runs (2026-10-18, on pull request 1) all
+five shards and `e2e-mongo` passed with no change to the tests: the runner had Google Chrome
+155.0.8059.39, the private network namespace worked once the AppArmor setting was lifted (the setting
+read 1 before and 0 after, and `netns.sh` listed only `lo`), and the geometry assertions held. A shard took
+3 minutes 6 seconds to 5 minutes 15 seconds and `e2e-mongo` about 1 minute 33 seconds.
 
 ## Real MongoDB (opt-in)
 
@@ -553,8 +557,10 @@ needs about 5 minutes (see the Makefile). The `pre-push` hook runs `make e2e` as
 every push without a stamp for the pushed tree, after `cov` and `memray`; it prints the time as
 `gate: e2e: ok in <seconds>s` and keeps it in the stamp, so the figure above is checked against real
 runs. `make e2e-mongo` has no documented budget yet; the first `main` or tag push measures it. The
-hosted figures (five shard jobs, `e2e-mongo`) are not measured yet; a hosted runner has 4 vCPUs and a
-slower core than a development machine, so expect a shard to take longer than the 3 minutes above.
+hosted figures (first two runs, 2026-10-18) are 3 minutes 6 seconds to 5 minutes 15 seconds per shard
+job and about 1 minute 33 seconds for `e2e-mongo`; a hosted runner has 4 vCPUs and a slower core than a
+development machine, but each shard has the runner to itself, so a shard takes longer than the 3 minutes
+above and the five run side by side.
 What costs time:
 
 * The shard planner counts a browser test as eight HTTP tests. An image export on the server starts
