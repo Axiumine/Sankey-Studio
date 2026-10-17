@@ -17,7 +17,7 @@ path of ``SANKEY_TEST_MONGO_RS_URI`` (``mongodb://user:pw@h1,h2,h3/<database>?re
 from __future__ import annotations
 
 from dataclasses import replace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from pymongo.errors import ConfigurationError, PyMongoError
@@ -26,18 +26,31 @@ from tests.conftest import REAL_MONGO_RS_ENV
 from tests.e2e.support.http_b_world import SYSTEM_DATABASES, real_world
 
 if TYPE_CHECKING:
+    from pymongo import MongoClient
+
     from tests.e2e.support.http_b_world import MongoWorld
 
 
 SECONDARY_READS = "readPreference=secondaryPreferred"
 
 
-def secondary_reads_uri(uri: str) -> str:
+def member_count(client: MongoClient[Any]) -> int:
+    """The data-bearing members the driver knows: the primary and its secondaries."""
+    return 1 + len(client.secondaries)
+
+
+def secondary_reads_uri(uri: str, *, acknowledged_by: int = 0) -> str:
     """``uri`` with ``readPreference=secondaryPreferred`` as the only read preference of its
-    query (one that was there is replaced: the driver warns about a duplicate option)."""
+    query (one that was there is replaced: the driver warns about a duplicate option).
+
+    With ``acknowledged_by`` (the member count) a write of the application also returns only
+    once that many members have it (``w=<n>``, in place of any ``w`` of the URI), so that a read
+    from a secondary that follows a write cannot be answered before the replica has it."""
     base, _, query = uri.partition("?")
-    options = [o for o in query.split("&") if o and not o.lower().startswith("readpreference=")]
-    return f"{base}?{'&'.join([*options, SECONDARY_READS])}"
+    replaced = ("readpreference=", "w=") if acknowledged_by else ("readpreference=",)
+    options = [o for o in query.split("&") if o and not o.lower().startswith(replaced)]
+    added = [SECONDARY_READS, *([f"w={acknowledged_by}"] if acknowledged_by else [])]
+    return f"{base}?{'&'.join([*options, *added])}"
 
 
 def real_rs_world(uri: str) -> MongoWorld:
@@ -50,7 +63,8 @@ def real_rs_world(uri: str) -> MongoWorld:
     except pytest.fail.Exception:
         world.client.close()
         raise
-    return replace(world, database=database, keep_database=True)
+    members = member_count(world.client)
+    return replace(world, database=database, keep_database=True, members=members)
 
 
 def _database_of(world: MongoWorld) -> str:
