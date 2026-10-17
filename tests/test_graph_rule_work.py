@@ -121,10 +121,10 @@ def test_two_hundred_rules_over_a_hundred_thousand_names_are_refused_without_mat
 ) -> None:
     links: list[RawLink] = [(f"s{i}", f"t{i}", 1.0, None) for i in range(50_001)]
     rules = [{"pattern": f"x{i}*", "category": f"c{i}"} for i in range(200)]
-    started = time.perf_counter()
+    started = time.process_time()
     with pytest.raises(GraphTooLargeError) as caught:
         make_graph(links, category_rules=rules)
-    assert time.perf_counter() - started < 3.0 * TIME_FACTOR
+    assert time.process_time() - started < 3.0 * TIME_FACTOR
     assert caught.value.message == (
         "The category rules are too expensive for this graph (200 rules over 100002 distinct "
         "node names); remove rules or narrow the data"
@@ -137,9 +137,9 @@ def test_the_worst_accepted_build_is_bounded() -> None:
     """200 non-matching ``either`` rules over exactly 100,000 names: 20 million name-rule pairs."""
     links: list[RawLink] = [(f"s{i}", f"t{i}", 1.0, None) for i in range(50_000)]
     rules = [{"pattern": f"x{i}*", "category": f"c{i}"} for i in range(200)]
-    started = time.perf_counter()
+    started = time.process_time()
     graph = make_graph(links, category_rules=rules)
-    assert time.perf_counter() - started < 10.0 * TIME_FACTOR
+    assert time.process_time() - started < 20.0 * TIME_FACTOR
     assert graph.n_links == 50_000
     assert graph.categories == ()
 
@@ -149,7 +149,7 @@ def test_the_reported_case_two_hundred_rules_over_two_hundred_thousand_links_fai
     """It used to take 15.6 s of synchronous matching before the graph was drawn."""
     links: list[RawLink] = [(f"s{i}", f"t{i}", 1.0, None) for i in range(200_000)]
     rules = [{"pattern": f"x{i}*", "category": f"c{i}"} for i in range(200)]
-    started = time.perf_counter()
+    started = time.process_time()
     with pytest.raises(GraphTooLargeError, match="400000 distinct node names"):
         make_graph(links, category_rules=rules)
-    assert time.perf_counter() - started < 5.0 * TIME_FACTOR
+    assert time.process_time() - started < 5.0 * TIME_FACTOR

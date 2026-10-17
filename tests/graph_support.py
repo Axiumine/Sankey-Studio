@@ -16,8 +16,9 @@ if TYPE_CHECKING:
 
 BIG = 10_000_000
 
-#: The wall-clock bounds of the graph tests are set for the maintainer's machine; a hosted runner
-#: (``CI`` is set) is several times slower on one thread, so its bounds are wider.
+#: The time bounds of the graph tests are CPU seconds of the test process (``time.process_time``),
+#: so other programs on the machine do not move them. They are set for the maintainer's machine;
+#: a hosted runner (``CI`` is set) is several times slower on one thread, so its bounds are wider.
 TIME_FACTOR: Final = 4.0 if os.environ.get("CI") else 1.0
 
 

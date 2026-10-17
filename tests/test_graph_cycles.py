@@ -116,7 +116,7 @@ def hundred_thousand_node_chain(close: bool) -> list[RawLink]:
 
 
 def test_cycle_detection_does_not_recurse_at_100k_nodes() -> None:
-    started = time.perf_counter()
+    started = time.process_time()
     with pytest.raises(GraphBuildError) as caught:
         make_graph(hundred_thousand_node_chain(close=True))
     assert "(100000 nodes)" in caught.value.message
@@ -124,7 +124,7 @@ def test_cycle_detection_does_not_recurse_at_100k_nodes() -> None:
     assert graph.n_nodes == 100_000
     assert max(graph.node_layers) == 99_999
     assert graph.warnings == ("Removed 1 link(s) that closed a cycle",)
-    assert time.perf_counter() - started < 10.0 * TIME_FACTOR
+    assert time.process_time() - started < 10.0 * TIME_FACTOR
 
 
 def test_layers_at_100k_nodes_are_iterative_too() -> None:
