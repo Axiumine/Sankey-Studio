@@ -15,10 +15,14 @@ Package name: `sankey-studio` (<https://pypi.org/project/sankey-studio/>).
    environment `pypi`. Do the same on <https://test.pypi.org/manage/account/publishing/> with
    environment `testpypi`. A pending publisher creates the project on the first upload and
    becomes a normal trusted publisher afterwards.
-2. In the repository settings, Environments, create `testpypi` and `pypi`. On `pypi` set a
-   required reviewer (yourself): the workflow then stops after the TestPyPI upload and waits for an
-   approval, which is the moment to install the TestPyPI files and try them.
-3. Optional: turn on branch and tag protection for `v*` so only the owner can create release tags.
+2. In the repository settings, Environments, create `testpypi` and `pypi`. Both deploy only from
+   tags that match `v*` (deployment tag rule). On `pypi` set a required reviewer (the lead maintainer;
+   add the co-owner as a second reviewer once they have a PyPI account): the workflow then stops after
+   the TestPyPI upload and waits for an approval, which is the moment to install the TestPyPI files and
+   try them.
+3. After the first upload, add the co-owner as an Owner of the PyPI project (project page,
+   Collaborators).
+4. Optional: turn on tag protection for `v*` so only the maintainers can create release tags.
 
 ## Making a release
 
