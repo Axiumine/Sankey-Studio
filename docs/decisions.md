@@ -58,6 +58,7 @@ Contents
 | [ADR-38](#adr-38-mongodb-runs-on-one-server-and-on-a-cluster) | MongoDB runs on one server and on a cluster |
 | [ADR-39](#adr-39-releases-are-published-to-pypi-from-a-tag) | Releases are published to PyPI from a tag |
 | [ADR-40](#adr-40-a-weekly-trivy-scan-and-the-openssf-scorecard-run-in-github-actions) | A weekly Trivy scan and the OpenSSF Scorecard run in GitHub Actions |
+| [ADR-41](#adr-41-requirementstxt-is-a-generated-copy-of-uvlock-for-githubs-dependency-graph) | requirements.txt is a generated copy of uv.lock for GitHub's dependency graph |
 
 ## ADR-01 Storage protocol and graph ids
 
@@ -811,3 +812,26 @@ Trivy job has the gate's limits: it leaves out the packages only the `dev` group
 the licences of uv packages. It cannot be run from the maintainer's agents (Docker is used only through
 make), so its first run happens on GitHub. The Scorecard will show the gaps as they are: no branch
 protection, no pull-request review, tools in `release.yml` that are not pinned.
+
+## ADR-41 requirements.txt is a generated copy of uv.lock for GitHub's dependency graph
+
+**Decision.** The repository commits `requirements.txt`, written by `make requirements` from the lock
+(`uv export --locked --no-dev --no-emit-project --format requirements-txt`). `make lint` runs
+`scripts/check_requirements.py` and fails when the file differs from a fresh export, so the `fast`
+check of the pre-commit hook refuses a commit with a stale copy.
+
+* GitHub's dependency graph did not read `uv.lock` (checked 2026-10-17: "No dependencies found"), so
+  Dependabot alerts and security updates saw no Python package. A pip requirements file is read.
+* It holds the runtime packages only, like the wheel. Dependency tools that need the `dev` group read
+  `uv.lock`; GitHub's view of the development tools is out of scope.
+* Comment lines are left out of the comparison, so a different uv version cannot fail the check by
+  rewording its header. A real difference in a package, a version or a hash does fail it.
+* Qodana skips the file (as it skips `uv.lock`) so a second copy of the same packages cannot add
+  findings to its gate.
+
+**Accepted risks.** The file is a second copy that can be out of step between a lock change and the
+next `make lint` (the check closes that at the next commit, not on GitHub). Whether the graph and
+Dependabot now see the packages is checked on GitHub after the first push and written down in
+[dependencies.md](dependencies.md). The check runs in the maintainer's hooks, which are client-side. A
+Dependabot pull request merged on GitHub updates one of the two files only; the next local `make lint`
+fails until `make requirements` is run.

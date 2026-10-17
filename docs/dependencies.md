@@ -118,6 +118,14 @@ These are the rules the repository states.
   (`fastapi>=0.115`), with no upper cap. `uv.lock` (lock format `version = 1`, `revision = 3`)
   records the exact version of every package and the sha256 hash of each of its source archives and
   wheels, so an install from the lock is checked against those hashes.
+* **`requirements.txt` is a generated copy for GitHub.** GitHub's dependency graph does not read
+  `uv.lock` (see [GitHub Dependabot](#github-dependabot)), so the repository also commits
+  `requirements.txt`: the locked runtime packages with their hashes, written by `make requirements`
+  (`uv export --locked --no-dev --no-emit-project`, ADR-41). Nobody edits it by hand. `make lint`
+  runs `scripts/check_requirements.py`, which fails when the file differs from what `uv export`
+  writes now (comment lines are ignored, so a newer uv that words its header differently does not
+  matter), and `make lint` is part of the `fast` check of the pre-commit hook. It lists the runtime
+  packages only, as the wheel does; the `dev` group is not in it. It is not used to install anything.
 * **The hooks refuse a stale lock.** Every step of the git hooks except `make caps` (which does
   not use the project environment) runs with `UV_LOCKED=1`, so a `pyproject.toml` that no longer
   matches `uv.lock` fails the check instead of rewriting the lock in the middle of a commit
@@ -234,6 +242,21 @@ package is vulnerable. The `uv` entry in `dependabot.yml` has not changed that; 
 entry may cover the workflow's actions once GitHub reads them. Trivy at the push gate is the only
 dependency check that sees `uv.lock`.
 
+### `requirements.txt` for GitHub
+
+Because the dependency graph does not read `uv.lock`, `requirements.txt` was added as a file GitHub
+does read (a pip requirements file). The expectation is that the repository's dependency graph, and so
+Dependabot alerts and security updates, then list the runtime packages. That has to be checked on
+GitHub after the file is pushed, and this page must say what was found: see the repository's
+Insights, Dependency graph page, or `gh api repos/Axiumine/Sankey-Studio/dependency-graph/sbom`.
+Whether Trivy also reads the file has not been checked (`trivy.yaml` and `scripts/trivy.sh` name only
+`uv.lock`); if it does, a finding in it is the same finding as in `uv.lock`. Qodana is told to skip it,
+like `uv.lock` (`qodana.yaml`).
+
+A Dependabot pull request merged on GitHub changes only one of the two files and passes through no
+hook. After merging one, pull and run `uv lock` where needed and then `make requirements`; until then
+the next `make lint` fails because the copy is out of step.
+
 ### Qodana
 
 `qodana.yaml` switches on the dependency licence audit (`CheckDependencyLicenses`) and the
@@ -256,8 +279,9 @@ a bump; the steps below put the existing rules in order.
 2. Move the version: `uv lock --upgrade-package <name>` refreshes the package in `uv.lock`, and a
    lower bound in `pyproject.toml` is edited by hand. The repository has no wrapper script or
    `make` target for this and states no rule on when to raise a lower bound.
-3. Commit `pyproject.toml` and `uv.lock` together, with the scope `deps` from the
-   [commit policy](quality.md#commit-policy). A stale lock fails the gate.
+3. Run `make requirements` and commit `pyproject.toml`, `uv.lock` and `requirements.txt` together, with
+   the scope `deps` from the [commit policy](quality.md#commit-policy). A stale lock or a stale
+   `requirements.txt` fails the gate.
 4. Update [CHANGELOG.md](../CHANGELOG.md) and the page in `docs/` that describes any behaviour that
    changed ([CONTRIBUTING.md](../CONTRIBUTING.md#making-a-change)).
 5. The change goes through the hooks like any other. The new lock changes the tree, so every check
@@ -321,7 +345,8 @@ show the form.
    at 100% ([CONTRIBUTING.md](../CONTRIBUTING.md#rules-for-tests)).
 5. A choice that shapes the design is written down as a decision record in
    [decisions.md](decisions.md) ([GOVERNANCE.md](../GOVERNANCE.md#decisions)).
-6. Commit `pyproject.toml` and `uv.lock` together; the gates and Trivy then apply as above.
+6. Run `make requirements`, then commit `pyproject.toml`, `uv.lock` and `requirements.txt` together; the
+   gates and Trivy then apply as above.
 
 **Remove or replace.** Both change `pyproject.toml` and `uv.lock` like an add, so the same
 agreement, tests and gates apply. Look for entries that were kept only for the package: a mypy

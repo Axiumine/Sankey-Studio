@@ -70,8 +70,9 @@ These are enforced by tools, so a change that breaks them cannot be merged. The 
 * **Errors.** Raise a domain error from `errors.py` with a unique stable `code` and add its mapping in
   `web/errors.py`. Messages never contain secrets, URIs or driver exception text.
 * **Dependencies.** Do not add or bump a dependency in a pull request without agreeing it in an
-  issue first. The runtime dependencies are pinned in `uv.lock` and scanned by Trivy in the push gate
-  of `main` and tags; the details and the limits are in [docs/dependencies.md](docs/dependencies.md).
+  issue first. After a bump run `make requirements` and commit `requirements.txt` with `uv.lock`
+  (`make lint` fails otherwise). The runtime dependencies are pinned in `uv.lock` and scanned by Trivy
+  in the push gate of `main` and tags; the details and the limits are in [docs/dependencies.md](docs/dependencies.md).
 * **Frontend.** Vanilla ES modules, no build step, no CDN. No `innerHTML`, `outerHTML`,
   `insertAdjacentHTML`, `document.write`, `eval`, `new Function`, `|safe`, inline scripts or inline
   handlers (Semgrep and the policy tests fail on them). `data-testid` names are a contract listed in
