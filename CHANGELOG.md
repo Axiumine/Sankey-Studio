@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-18
+
 ### Added
 
 - Hosted CI for the browser, memory and MongoDB suites and the scanners ([ADR-48](docs/decisions.md#adr-48-hosted-ci-runs-the-browser-memory-and-mongodb-suites-and-the-scanners), [docs/quality.md](docs/quality.md#hosted-ci), [docs/e2e.md](docs/e2e.md#hosted-ci)): `.github/workflows/ci-e2e.yml` (the end-to-end suite in five shard jobs on the Chrome of the runner image, and `make e2e-mongo` against a `mongo:8` service container pinned by digest on `127.0.0.1:27117`), `.github/workflows/ci-security.yml` (Semgrep and Trivy, SARIF kept as artifacts), a `memory-test` job in `ci.yml` (`make memray`) and `.github/workflows/mutation.yml` (mutation testing, started by hand only, no schedule). A local action, `.github/actions/no-skipped-tests`, applies the hook rule to every hosted test job: a skipped test, an empty report or a cut-off report fails the job. The JUnit file of the unit job moved to `reports/junit/cov.xml`. Nothing requires any job to pass; Qodana, the replica-set suite and the hooks stay local. The new workflows have not run yet, so no hosted figure is recorded.

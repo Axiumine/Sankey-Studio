@@ -2,7 +2,7 @@
 
 This page argues, with evidence, that Sankey Studio meets its security requirements. It is the
 maintainers' own assessment of their own work, not an external audit, and it says where the argument
-is weak ([Residual risks and known gaps](#residual-risks-and-known-gaps)). It covers release 0.1.0
+is weak ([Residual risks and known gaps](#residual-risks-and-known-gaps)). It covers release 0.2.0
 and `main`. The design is described in [architecture.md](architecture.md#security-design) and in the
 decision records in [decisions.md](decisions.md); this page does not repeat them. It connects each
 threat to a control, to the code that implements it and to the tests that exercise it. Code

@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sankey-studio"
-version = "0.1.0"
+version = "0.2.0"
 description = "Draw, store and manage Sankey graphs from text files or MongoDB, with a local web UI."
 readme = "README.md"
 license = "GPL-3.0-only"

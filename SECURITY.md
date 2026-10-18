@@ -8,7 +8,7 @@ expect.
 
 | Version | Supported |
 |---|---|
-| Latest release (0.1.x) | yes |
+| Latest release (0.2.x) | yes |
 | `main` (the next release) | yes |
 | Older releases | no |
 
