@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Giovanni Manzoni
-"""``settings_store``: the only code that handles real Mongo URIs, and the cached file store."""
+"""``settings_store``: the only code that handles real Mongo URIs, and the cached file store.
+
+It reads and writes ``settings.json`` and ``credentials.json``; the secrets file has its own tests
+in ``test_settings_credentials*.py``.
+"""
 
 from __future__ import annotations
 
@@ -214,7 +218,7 @@ def test_a_saved_file_wins_over_the_seed(tmp_path: Path) -> None:
 # --------------------------------------------------------------------------- save
 
 
-def test_save_writes_a_private_file_with_the_real_uri_in_a_private_directory(
+def test_save_writes_private_files_with_the_real_uri_in_a_private_directory(
     tmp_path: Path,
 ) -> None:
     config = config_for(tmp_path)
@@ -226,11 +230,13 @@ def test_save_writes_a_private_file_with_the_real_uri_in_a_private_directory(
     assert mode_of(config.settings_file) == 0o600
     assert stat.S_ISREG(config.settings_file.stat().st_mode)
     on_disk = json.loads(config.settings_file.read_text(encoding="utf-8"))
-    assert on_disk["mongo_connections"] == [
-        {"name": "a", "uri": SECRET_URI, "default_database": None}
-    ]
+    assert on_disk["mongo_connections"] == [{"name": "a", "default_database": None}]
+    assert mode_of(config.credentials_file) == 0o600
     assert (on_disk["theme"], on_disk["max_upload_mb"]) == ("dark", 7)
-    assert [p.name for p in config.data_dir.iterdir()] == ["settings.json"]
+    assert sorted(p.name for p in config.data_dir.iterdir()) == [
+        "credentials.json",
+        "settings.json",
+    ]
 
 
 def test_the_file_is_pretty_printed_ascii_json(tmp_path: Path) -> None:
@@ -284,7 +290,10 @@ def test_save_replaces_the_previous_content(tmp_path: Path) -> None:
     store.save(AppSettings(theme="light"))
     assert json.loads(config.settings_file.read_text())["mongo_connections"] == []
     assert store.load().theme == "light"
-    assert [p.name for p in config.data_dir.iterdir()] == ["settings.json"]
+    assert sorted(p.name for p in config.data_dir.iterdir()) == [
+        "credentials.json",
+        "settings.json",
+    ]
 
 
 def test_save_refuses_a_placeholder_secret_and_writes_nothing(tmp_path: Path) -> None:
@@ -305,6 +314,7 @@ def test_load_serves_what_save_returned_without_reading_the_file(
         raise AssertionError(msg)
 
     monkeypatch.setattr(module, "read_file_nofollow", no_read)
+    monkeypatch.setattr(module, "read_private_file", no_read)
     assert store.load() is saved
 
 

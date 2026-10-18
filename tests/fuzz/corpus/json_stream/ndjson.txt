@@ -1,0 +1,2 @@
+{"source":"A","target":"B","value":1e5}
+{"source":"B","target":"C","value":2.5E-3}

@@ -25,5 +25,10 @@ build/
 data/
 .idea/
 
+# Connection strings: the credentials file and the aside copies of the settings and of it
+credentials.json
+credentials.json.corrupt-*
+settings.json.corrupt-*
+
 # Personal task list (not part of the project)
 TODO.md

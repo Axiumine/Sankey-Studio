@@ -94,7 +94,8 @@ def test_a_rotated_secret_is_not_overwritten_by_a_writer_that_sent_none(
     answers = put_both(web, (keep, rotate) if swapped else (rotate, keep))
     assert [r.status_code for r in answers] == [200, 200]
     assert stored_uri(web) == ROTATED_URI
-    assert ROTATED_URI in web.config.settings_file.read_text()
+    assert ROTATED_URI in web.config.credentials_file.read_text()
+    assert ROTATED_URI not in web.config.settings_file.read_text()
 
 
 def test_the_answers_never_show_the_secret(web: WebApp, monkeypatch: pytest.MonkeyPatch) -> None:

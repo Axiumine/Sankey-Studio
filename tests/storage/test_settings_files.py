@@ -294,7 +294,10 @@ def test_an_fsync_failure_leaves_the_old_file_untouched(
         store.save(AppSettings(theme="light"))
     monkeypatch.undo()
     assert json.loads(config.settings_file.read_text())["theme"] == "dark"
-    assert [p.name for p in config.data_dir.iterdir()] == ["settings.json"]
+    assert sorted(p.name for p in config.data_dir.iterdir()) == [
+        "credentials.json",
+        "settings.json",
+    ]
 
 
 def test_a_replace_failure_leaves_no_temporary_file(
@@ -307,4 +310,7 @@ def test_a_replace_failure_leaves_no_temporary_file(
     with pytest.raises(SettingsError, match="Invalid cross-device link"):
         store.save(AppSettings(theme="light"))
     monkeypatch.undo()
-    assert [p.name for p in config.data_dir.iterdir()] == ["settings.json"]
+    assert sorted(p.name for p in config.data_dir.iterdir()) == [
+        "credentials.json",
+        "settings.json",
+    ]

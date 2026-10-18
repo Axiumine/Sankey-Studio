@@ -1,0 +1,1 @@
+mongodb://h1:27017,h2:27018/db?tlsCAFile=/tmp/ca&authMechanism=MONGODB-AWS

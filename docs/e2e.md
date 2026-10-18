@@ -28,7 +28,8 @@ mutated (`make cov` and `make mutate` leave it out), and it is part of `make ci`
 through `make e2e`. It is also the `e2e` check of the `pre-push` hook, which runs it before every
 push that has no stamp for the pushed tree ([quality.md](quality.md#git-hooks)). `make e2e-mongo` is
 not part of `make check`, `make ci` or `make full`, which must pass without any database; the
-`pre-push` hook runs it only for `main` and tags, against its own Mongo.
+`pre-push` hook runs it only for `main` and tags, against its own Mongo. The hosted workflow
+`ci-e2e.yml` runs both too (see [Hosted CI](#hosted-ci)).
 
 The suite has roughly 1,260 tests (`uv run pytest -m e2e tests/e2e --collect-only -q | tail -1`); about
 1,100 run in `make e2e`, about 60 need a real MongoDB and about 95 a real replica set.
@@ -140,7 +141,11 @@ E2E_SHARD=2/5 uv run pytest tests/e2e -m "e2e and not mongo and not mongo_rs" -p
   `unshare` or `ip`, user namespaces disabled) the script says so on stderr and runs in the host
   network as before. `make e2e-mongo` and `make e2e-mongo-rs` need the host network (the compose
   port, the LAN) and keep it. When you run a file by hand, prefix the command with
-  `scripts/netns.sh` to get the same isolation.
+  `scripts/netns.sh` to get the same isolation. Ubuntu 24.04 lets an unprivileged process create a user
+  namespace but removes its capabilities (an AppArmor rule), so `ip link set lo up` fails inside it and
+  the script falls back to the host network. The hosted job lifts that rule on its throw-away runner
+  (`kernel.apparmor_restrict_unprivileged_userns=0`) and prints `scripts/netns.sh ip -brief link`: only
+  `lo` in that output means the namespace works, `eth0` and the note on stderr mean the fallback.
 * **Parameters.** `-p no:cacheprovider` is what the make targets pass; do the same when you run shards
   by hand. `-ra` (the project default) prints the reason of every skip.
 * **JUnit.** `make e2e JUNIT=/tmp/run/report.xml` also writes one JUnit file per shard
@@ -163,6 +168,24 @@ Open a trace with `uv run playwright show-trace .e2e-artifacts/<test-id>/trace-0
 pytest node id with every run of characters outside `A-Za-z0-9_.-` replaced by `_`, cut to its last
 150 characters. Passing tests leave nothing behind. The tests that save screenshots for a human (theme
 review) write to `.e2e-artifacts/ui-b-review/`.
+
+### Hosted CI
+
+`.github/workflows/ci-e2e.yml` runs the suite on GitHub's runners on every push to `main`, every pull
+request to `main` and on demand ([ADR-48](decisions.md#adr-48-hosted-ci-runs-the-browser-memory-and-mongodb-suites-and-the-scanners),
+[quality.md](quality.md#hosted-ci)). Job `e2e` is a matrix of five jobs, one runner each, that run
+`make e2e-shard-N E2E_SHARDS=5` (the same shard planner, so the five jobs cover every test once). The
+browser is the Google Chrome that the runner image carries at `/opt/google/chrome/chrome`, found by the
+Playwright channel `chrome`; the job does not run `playwright install`, and a step stops it with a clear
+message when that path is missing, because a missing browser would otherwise skip every browser test.
+`E2E_ARTIFACTS_DIR` is `reports/e2e-artifacts`; the screenshots, traces and `problems-*.txt` of a failed
+shard are uploaded as `e2e-failures-N` (7 days), the JUnit files of every shard as `e2e-report-N`
+(14 days). The `no-skipped-tests` action then applies the rule of the `pre-push` hook: a skipped test
+fails the job. Nothing requires these jobs to pass. In the first two runs (2026-10-18, on pull request 1) all
+five shards and `e2e-mongo` passed with no change to the tests: the runner had Google Chrome
+155.0.8059.39, the private network namespace worked once the AppArmor setting was lifted (the setting
+read 1 before and 0 after, and `netns.sh` listed only `lo`), and the geometry assertions held. A shard took
+3 minutes 6 seconds to 5 minutes 15 seconds and `e2e-mongo` about 1 minute 33 seconds.
 
 ## Real MongoDB (opt-in)
 
@@ -207,6 +230,13 @@ make mongo-down
   it started the Mongo itself (a container of yours that is still booting is waited for and left
   running). A skipped test fails the check, so the
   "unset" case above cannot pass silently.
+* **On GitHub.** Job `e2e-mongo` of `ci-e2e.yml` starts `mongo:8` pinned by digest as a service
+  container on `127.0.0.1:27117`, the port of `docker-compose.yml` (so the refusal above still has
+  nothing to refuse). The runner waits for the container's health check (`mongosh --quiet --eval 1`)
+  before the first step, `scripts/mongo_wait.py` pings the port, and `make e2e-mongo` runs with
+  `SANKEY_TEST_MONGO_URI=mongodb://127.0.0.1:27117` on that step only. The MongoDB has no
+  authentication and holds only test data. It selects the `mongo` marker; the replica-set suite
+  (`mongo_rs`) never runs there. The job uses the host network and no browser.
 * **A new real-Mongo test** carries `@pytest.mark.mongo` and takes `real_env` (from
   `tests/e2e/mongo/conftest.py`) or `real_mongo_uri`. Without the mark `tests/conftest.py` removes the
   variable and a tripwire refuses to construct a real `pymongo.MongoClient`.
@@ -526,7 +556,11 @@ HTTP round trips), so five shards share the machine without getting in each othe
 needs about 5 minutes (see the Makefile). The `pre-push` hook runs `make e2e` as the `e2e` check of
 every push without a stamp for the pushed tree, after `cov` and `memray`; it prints the time as
 `gate: e2e: ok in <seconds>s` and keeps it in the stamp, so the figure above is checked against real
-runs. `make e2e-mongo` has no documented budget yet; the first `main` or tag push measures it.
+runs. `make e2e-mongo` has no documented budget yet; the first `main` or tag push measures it. The
+hosted figures (first two runs, 2026-10-18) are 3 minutes 6 seconds to 5 minutes 15 seconds per shard
+job and about 1 minute 33 seconds for `e2e-mongo`; a hosted runner has 4 vCPUs and a slower core than a
+development machine, but each shard has the runner to itself, so a shard takes longer than the 3 minutes
+above and the five run side by side.
 What costs time:
 
 * The shard planner counts a browser test as eight HTTP tests. An image export on the server starts
@@ -575,4 +609,7 @@ Checklist for a test that fails now and then (run it five times in a row, alone 
 | `SANKEY_TEST_MONGO_URI is set but the server did not answer` | The container is not up yet. Run `make mongo-up`, wait a few seconds, run again |
 | `needs /proc` skips | The process-counting tests need Linux's `/proc`; they skip elsewhere by design |
 | A mongomock call is missing or has another signature | mongomock lacks `list_databases(nameOnly=True, maxTimeMS=...)` and `database.list_collection_names(maxTimeMS=...)`, which the inspect routes call. `E2EMongoClient` (`support/mongo.py`) adds both; the `unreachable` switch (`server.mongo.unreachable = True`) simulates an outage without waiting for `mongo_timeout_ms`. For a gap beyond these, test the pure code in the unit suite or use the `mongo` mark ([quality.md](quality.md#test-conventions)) |
+| Hosted only: a geometry assertion fails (a bounding box, `scrollWidth`, a width at phone size) while it passes on your machine | The runner has other system fonts and another Chrome version. Open the `e2e-failures-N` artifact of the job (`page-*.png`, `problems-*.txt`, the trace) and make the assertion independent of the font; do not widen it blindly |
+| Hosted only: `no Google Chrome at /opt/google/chrome/chrome` | The runner image no longer carries Chrome. Add `uv run playwright install --with-deps chromium` to the browser step of `ci-e2e.yml` (the harness then falls back to Chromium); without a browser every browser test would skip and the `no-skipped-tests` step would fail the job anyway |
+| Hosted only: `timed out after 20s waiting for the server` or `Timeout 10000ms exceeded` on a slow runner | The runner is slower than a development machine. Read the trace first; if the time is the cause, scale `ACTION_TIMEOUT_MS` and `EXPECT_TIMEOUT_MS` in `tests/e2e/support/browser.py` when `CI` is set, as `TIME_FACTOR` does in `tests/graph_support.py` |
 | Old screenshots or traces confuse you | `rm -rf .e2e-artifacts`; `make clean` does not remove it |

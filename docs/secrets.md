@@ -17,6 +17,7 @@ Contents
 * [Prevention and detection](#prevention-and-detection)
 * [What must never be committed or logged](#what-must-never-be-committed-or-logged)
 * [How the application handles MongoDB URIs](#how-the-application-handles-mongodb-uris)
+  * [The credentials file](#the-credentials-file)
 * [Rotation and revocation](#rotation-and-revocation)
 * [If a secret is exposed](#if-a-secret-is-exposed)
 * [Limits](#limits)
@@ -33,12 +34,14 @@ Contents
 * The checks that guard against secrets are Trivy, Semgrep (the registry pack `p/secrets` and two
   project rules), unit and end-to-end tests that scan responses and logs for a test password, and
   GitHub secret scanning with push protection. Trivy and Semgrep run in the git hooks, which are
-  client-side and can be bypassed, and only for a push of `main` or a tag. The hosted CI runs only the unit tests.
-  See [Limits](#limits).
-* The application keeps the connection strings of its users in `settings.json` (always mode 0600,
-  in a directory it creates with mode 0700) and never returns them or writes them to its own log
-  lines: the API gives `uri_masked` and `has_secret`, and the application's log lines carry the
-  connection name only.
+  client-side and can be bypassed, and only for a push of `main` or a tag. The hosted workflows
+  (`ci-security.yml` among them) run Semgrep and Trivy on every push to `main` and every pull request,
+  and nothing requires them to pass. See [Limits](#limits).
+* The application keeps the connection strings of its users in `credentials.json`, a file apart
+  from `settings.json` (always mode 0600, in a directory it creates with mode 0700), and never
+  returns them or writes them to its own log lines: the API gives `uri_masked` and `has_secret`, and
+  the application's log lines carry the connection name only. The file can be replaced while the
+  server runs ([The credentials file](#the-credentials-file)).
 * There is no rotation schedule. A secret is replaced when it is exposed or suspected to be.
 
 ## Inventory
@@ -120,9 +123,12 @@ listed here and covered by [Rotation and revocation](#rotation-and-revocation):
 **Who holds what.** The two project secrets are held by the lead maintainer. The people listed in
 [MAINTAINERS.md](../MAINTAINERS.md) are the only ones with access to the repository settings, the
 organization and the PyPI project; the PyPI project and the approval of a release are the lead
-maintainer's alone for now. Contributors have no access and need none: no workflow runs on a
-pull request (the release workflow runs when a `v*` tag is pushed; the other two run on a schedule, on a push
-to `main` or when branch protection changes). Write access, two-factor authentication and
+maintainer's alone for now. Contributors have no access and need none. The workflows that run on a pull
+request (`ci.yml`, `ci-e2e.yml`, `ci-security.yml` and the fuzzing run `cflite_pr.yml`) run its code with a
+read-only token and no project secret; the MongoDB service container of the end-to-end job has no
+credentials and holds only test data. The release workflow runs when a `v*` tag is pushed; the weekly Trivy
+job, the Scorecard and CodeQL run on a schedule, on a push to `main` or when branch protection changes, and
+the mutation job runs only when someone starts it. Write access, two-factor authentication and
 removal of access are described in [GOVERNANCE.md](../GOVERNANCE.md#access); access is removed at
 once if an account may be compromised.
 
@@ -145,15 +151,16 @@ reviewer of the `pypi` environment is the second lock before PyPI, and that the 
 tag's commit as the maintainer pushed it, because the hooks that check the tree are client-side.
 That lock is a deliberate pause, not a second person: GitHub is not set to stop a reviewer from
 approving a run they started (`prevent_self_review` is off), and repository administrators may
-bypass the environment's protection rules (the setting is on). The workflow runs no tests. Tag
-protection is optional in [release.md](release.md#one-time-setup) and is not enabled today (the one
-ruleset protects `main` against deletion and force-push, nothing else).
+bypass the environment's protection rules (the setting is on). The workflow runs no tests. A
+ruleset stops a `v*` tag from being deleted or moved ([release.md](release.md#one-time-setup)); it does not stop
+anyone with write access from creating one. A second ruleset protects `main` against deletion and
+force-push, nothing else.
 
 ## Prevention and detection
 
 | Layer | Where it runs | What it covers | What it does not cover |
 |---|---|---|---|
-| `.gitignore` | Every clone | `.env` and `.env.*` (not `.env.example`), and `data/` | Other file names (there are no patterns for key or certificate files, and a `settings.json` outside `data/` is not ignored) and `git add -f` |
+| `.gitignore` | Every clone | `.env` and `.env.*` (not `.env.example`), `data/`, and `credentials.json` with the `.corrupt-<n>` copies of it and of `settings.json` | Other file names (there are no patterns for key or certificate files, and a `settings.json` outside `data/` is not ignored) and `git add -f` |
 | Trivy secret scan (`make trivy`, [Scanners](quality.md#scanners)) | The `security` check of a push of `main` or a tag, in the maintainer's hooks | Files of the working tree, with HIGH and CRITICAL findings failing the check | Git history, pushes of other branches, commits (`pre-commit` runs lint, types and caps only), and `.env`, which is skipped on purpose |
 | Semgrep registry packs, among them `p/secrets` (`make semgrep`) | Same `security` check, on `src` and `scripts` | The patterns of those packs | Tests, docs and history; the packs need the network and are dropped by `SEMGREP_OFFLINE=1`, which the gate refuses |
 | Semgrep `sankey-no-secret-in-logs` | Same `security` check, on `src` and `scripts` | A call of `debug`, `info`, `warning`, `warn`, `error`, `exception`, `critical` or `log` that is given `get_secret_value()` directly or inside an f-string | Other ways of reaching a log |
@@ -170,7 +177,7 @@ host). Neither is a credential. An alert on anything else is treated as a leak
 ([If a secret is exposed](#if-a-secret-is-exposed)).
 
 The git hooks are client-side only (`--no-verify`, a changed `core.hooksPath` and a fresh clone
-skip them), the hosted CI runs only the unit tests and `main` has no required check or review (a ruleset blocks only deletion and force-push)
+skip them), the hosted workflows report but nothing requires them and `main` has no required check or review (a ruleset blocks only deletion and force-push)
 ([ADR-37](decisions.md#adr-37-git-hooks-are-the-one-place-the-checks-run)). The checks are a
 safety net for the maintainers, not a boundary.
 
@@ -182,8 +189,9 @@ commit message or a test fixture:
 * the value of `QODANA_TOKEN` or `SANKEY_TEST_MONGO_RS_URI`, or any other token or password;
 * a MongoDB connection string that carries credentials, whether it belongs to a maintainer, a user
   or a test database, and including one that only looks fake but is real;
-* a `settings.json`, a `settings.json.corrupt-<n>` copy, or a copy of a data directory or of a
-  backup of it (they hold connection strings in plain text);
+* a `credentials.json`, a `credentials.json.corrupt-<n>` copy, a `settings.json` from an earlier
+  version (it can still hold connection strings), or a copy of a data directory or of a backup of
+  it (they hold connection strings in plain text);
 * a private key, a certificate with its key, or an SSH key.
 
 Never logged, never put in an error message, an API response, an export or a saved graph:
@@ -200,8 +208,8 @@ password. The application treats them as secrets in every layer:
 | Rule | Where it is enforced |
 |---|---|
 | A connection URI is a pydantic `SecretStr`. `repr`, `str` and `model_dump()` show a placeholder, never the value, and the validator refuses a masked placeholder, so a round trip through the UI cannot overwrite the real value. The same validator refuses URI options that read local files, load code or weaken TLS (for example `tlsCAFile`), naming the option key and never its value. `SANKEY_MONGO_URI` is a `SecretStr` too | `MongoConnection` in `src/sankey_studio/models/settings.py`; `check_mongo_uri` in `src/sankey_studio/mongo_safety.py`; `BootstrapConfig` in `src/sankey_studio/config.py` ([ADR-04](decisions.md#adr-04-secrets-never-leave-the-settings-store)) |
-| `dump_settings` and `load_settings` are the only code that writes the real values to `settings.json` and reads them back. Other code reads the real value only to use it: to open the Mongo client, to key the result cache and the write-back target, and to merge a settings save | `src/sankey_studio/storage/settings_store.py`; the other call sites are `mongo.py`, `pipeline.py`, `services.py`, `edits/target.py` and `web/schemas/settings.py` |
-| `settings.json` is always written atomically with mode 0600. The data directory is created with mode 0700; an existing one owned by someone else is refused, and an existing one that group or others can write to loses those write bits (its read and search bits are left as they are). A settings file that is not valid JSON or not valid settings is moved aside as `settings.json.corrupt-<n>` (still 0600; at most 20 copies, the last one is reused) instead of being overwritten; a file that cannot be opened (a symlink, not a regular file, over 1 MiB) is reported and left in place | `settings_store.py`, `src/sankey_studio/storage/atomic.py` ([ADR-18](decisions.md#adr-18-hardening-of-files-settings-and-exports)) |
+| `dump_settings` and `load_settings` are the only code that validates a settings document with its real values, and `SettingsStore` with `split_credentials` and `join_credentials` the only code that moves them between that document and the two files (the strings go to `credentials.json`, `settings.json` never holds one). Other code reads the real value only to use it: to open the Mongo client, to key the result cache and the write-back target, and to merge a settings save | `src/sankey_studio/storage/settings_store.py`, `src/sankey_studio/storage/credentials.py`, `src/sankey_studio/models/credentials.py` ([ADR-46](decisions.md#adr-46-connection-strings-live-in-credentialsjson)); the other call sites are `mongo.py`, `pipeline.py`, `services.py`, `edits/target.py` and `web/schemas/settings.py` |
+| `settings.json` and `credentials.json` are always written atomically with mode 0600, `credentials.json` first. The data directory is created with mode 0700; an existing one owned by someone else is refused, and an existing one that group or others can write to loses those write bits (its read and search bits are left as they are). A settings file that is not valid JSON or not valid settings is moved aside as `settings.json.corrupt-<n>`, together with `credentials.json` as `credentials.json.corrupt-<n>` (still 0600; at most 20 copies, the last one is reused) instead of being overwritten; a file that cannot be opened (a symlink, not a regular file, over 1 MiB) is reported and left in place. A `credentials.json` that is broken is reported and never moved; one that group or others can read is tightened to 0600 on load | `settings_store.py`, `src/sankey_studio/storage/atomic.py` ([ADR-18](decisions.md#adr-18-hardening-of-files-settings-and-exports)) |
 | `mask_uri` rebuilds the URI from an allow-list: scheme, `user:***`, hosts, database and the values of a short list of options (`SAFE_URI_OPTIONS`), and only when the value looks plain; every other option keeps its key and shows `***`, and an option whose key is unreadable is dropped. It never raises. No `mongodb` or `mongodb+srv` scheme gives `***`; any structural doubt gives `mongodb://***`. Its patterns end in `\Z`, so a newline cannot slip through | `mask_uri` and `looks_masked` in `src/sankey_studio/util.py` ([ADR-15](decisions.md#adr-15-uri-masking-fails-closed)); tests in `tests/test_util.py` |
 | The API returns `uri_masked` and `has_secret` and has no field called `uri`. A save that sends no URI, an empty one, a masked one or the masked form of the stored one keeps the stored secret (a connection with no stored secret and no real URI is refused) | `ConnectionOut`, `SettingsOut` and `merge_settings` in `src/sankey_studio/web/schemas/settings.py` |
 | While a remote server is read-only, the settings answer hides hosts and user names too (`mongodb://***`) | `connection_out` in the same file ([ADR-17](decisions.md#adr-17-remote-mode-is-read-only-by-default)) |
@@ -211,14 +219,14 @@ password. The application treats them as secrets in every layer:
 
 What this does not do:
 
-* `settings.json` holds the URIs in plain text. It is not encrypted. Its protection is the file
+* `credentials.json` holds the URIs in plain text. It is not encrypted. Its protection is the file
   mode, the directory mode and the account of the person who runs the server, so anyone who can
   read the file as that user (or as root), and any backup or copy of the data directory, has the
   passwords. Keep the data directory out of shared folders and repositories.
 * `SANKEY_MONGO_URI`, like any environment variable, is visible to other processes of the same
   user. There is no command line option for a URI, so it is never on a command line. It only seeds
   a connection named `default` while no `settings.json` exists; seeding writes nothing, and the
-  first save of the settings that keeps this connection stores it, with its URI, in `settings.json`.
+  first save of the settings that keeps this connection stores its URI in `credentials.json`.
 * The only logging setting is the log level of uvicorn (`SANKEY_LOG_LEVEL`). The application does
   not configure the logging of the MongoDB driver or of other libraries; its own log lines carry
   the connection name only.
@@ -227,7 +235,27 @@ What this does not do:
   database user, so give the application a user that can do only what you want it to do
   ([README](../README.md#security-model)).
 
-If you think a connection string of yours has leaked (a copied `settings.json`, a shared backup),
+### The credentials file
+
+`<data-dir>/credentials.json` holds the connection strings, apart from `settings.json` (which keeps the connection names and default databases and no password):
+
+```json
+{
+  "version": 1,
+  "mongo_connections": {
+    "main": {"uri": "mongodb://user:password@host:27017/?replicaSet=rs0"}
+  }
+}
+```
+
+* The keys are the connection names of the Settings page. A connection with no entry is an error (`settings_error`, HTTP 422) that names the connection and the file; an entry whose name is not a connection is ignored and dropped by the next save.
+* **Replace or rotate.** Edit the connection in Settings (a save rewrites the file), or replace the file while the server runs: write the new file next to it and `mv` it over `credentials.json`. The change applies on the next request, with no restart. Keep the mode 0600: a file that group or others can read is tightened to 0600 on load; a file owned by another user, a symlink or a file over 1 MiB is refused.
+* **Back up** both files together. Deleting `settings.json` does not delete the strings, and the next save replaces `credentials.json`; to start over delete both, and copy `credentials.json` first if you want to keep the strings.
+* **A broken file** is never moved or overwritten: the application answers 422 `credentials.json is not valid JSON` or `credentials.json is invalid` with the places that are wrong (never the values) until you fix it. If `settings.json` is the corrupt one, both files go aside together as `settings.json.corrupt-<n>` and `credentials.json.corrupt-<n>`.
+* **Upgrading.** A `settings.json` written by an earlier version keeps the strings in its connection entries; they are read as they are and the next save of the settings (any change on the Settings page) moves them to `credentials.json`. Downgrading afterwards is not supported: the older version cannot read the new `settings.json` and moves it aside.
+* The file is not encrypted (see above).
+
+If you think a connection string of yours has leaked (a copied `credentials.json`, a shared backup),
 change the password at the database first, then enter the new URI in Settings. Deleting your copy
 of the file does not undo the leak.
 
@@ -293,10 +321,11 @@ application.
 
 ## Limits
 
-* The scanners are a safety net, not a boundary. The hooks are client-side, the hosted CI runs only the unit tests,
+* The scanners are a safety net, not a boundary. The hooks are client-side, the hosted workflows are not required,
   and the gate runs Trivy's and Semgrep's secret detection only for a push of `main` or a tag (or
   when someone runs `make trivy` or `make semgrep`), over the working tree, not over the history
-  and not over `.env`.
+  and not over `.env`. The hosted `ci-security.yml` runs the same scans on every push to `main` and every
+  pull request, on a checkout of that commit, which holds no `.env` either.
 * The two Semgrep project rules match two code shapes. They do not prove that no secret reaches a
   log or an error by another route; the tests scan the routes they drive, and the maintainers' own
   changes get no second reviewer yet ([GOVERNANCE.md](../GOVERNANCE.md#changes-and-review)).
@@ -304,6 +333,6 @@ application.
   or certificate saved under another name is not ignored.
 * GitHub secret scanning and push protection find the secret types they have patterns for; its
   generic-pattern and validity checks are off.
-* `settings.json` is not encrypted ([above](#how-the-application-handles-mongodb-uris)).
+* `credentials.json` is not encrypted ([above](#how-the-application-handles-mongodb-uris)).
 * The repository and the GitHub settings hold no copy of the two project secrets, so a lost `.env`
   cannot be restored from there; new ones are issued at the issuer.

@@ -84,8 +84,8 @@ class BootstrapConfig(BaseSettings):
     #: There is no login. Bind to loopback unless you know what you are doing.
     host: str = "127.0.0.1"
     port: int = Field(default=8765, ge=1, le=65535)
-    #: Resolved to an absolute path at construction. Holds ``settings.json`` (Mongo URIs in clear
-    #: text), ``graphs/`` and the default ``sources/``.
+    #: Resolved to an absolute path at construction. Holds ``settings.json``, ``credentials.json``
+    #: (the Mongo URIs, in clear text), ``graphs/`` and the default ``sources/``.
     data_dir: Path = Field(default_factory=default_data_dir)
     #: Root for ``TextSource(origin="file")`` and the upload API. Bootstrap-only (never editable
     #: through the web: a web-writable root would be arbitrary file read/write). ``None`` ->
@@ -141,10 +141,11 @@ class BootstrapConfig(BaseSettings):
 
     def _check_sources_dir(self) -> None:
         root = self.effective_sources_dir
-        protected = (self.data_dir, self.graphs_dir, self.settings_file)
+        protected = (self.data_dir, self.graphs_dir, self.settings_file, self.credentials_file)
         if any(root == p or p.is_relative_to(root) for p in protected):
             raise ValueError(
-                "sources_dir must not equal or contain data_dir, graphs/ or settings.json"
+                "sources_dir must not equal or contain data_dir, graphs/, settings.json "
+                "or credentials.json"
             )
         if root.is_relative_to(self.graphs_dir):
             raise ValueError("sources_dir must not be inside graphs/")
@@ -152,6 +153,11 @@ class BootstrapConfig(BaseSettings):
     @property
     def settings_file(self) -> Path:
         return self.data_dir / "settings.json"
+
+    @property
+    def credentials_file(self) -> Path:
+        """The connection strings, apart from ``settings.json`` (``storage.settings_store``)."""
+        return self.data_dir / "credentials.json"
 
     @property
     def graphs_dir(self) -> Path:

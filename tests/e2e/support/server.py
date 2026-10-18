@@ -159,6 +159,10 @@ class LiveServer:
         return self.config.settings_file
 
     @property
+    def credentials_file(self) -> Path:
+        return self.config.credentials_file
+
+    @property
     def read_only(self) -> bool:
         return not self.config.privileged_writes_allowed
 

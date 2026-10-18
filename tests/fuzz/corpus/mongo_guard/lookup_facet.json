@@ -1,0 +1,1 @@
+[{"$lookup": {"from": "accounts", "localField": "a", "foreignField": "_id", "as": "acc"}}, {"$unwind": "$acc"}, {"$facet": {"x": [{"$count": "n"}]}}]

@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import pytest
 from playwright.sync_api import expect
@@ -58,8 +58,10 @@ def page_leaks(settings: SettingsPage, secret: str) -> list[str]:
     return found
 
 
-def stored_file(live_server: LiveServer) -> dict[str, Any]:
-    return dict(json.loads(live_server.settings_file.read_text(encoding="utf-8")))
+def stored_uris(live_server: LiveServer) -> dict[str, str]:
+    """``{connection name: URI}`` as kept in the credentials file."""
+    doc = json.loads(live_server.credentials_file.read_text(encoding="utf-8"))
+    return {name: item["uri"] for name, item in doc["mongo_connections"].items()}
 
 
 # ------------------------------------------------------------------------------ add and mask
@@ -89,7 +91,8 @@ def test_a_new_connection_is_typed_in_a_password_field_saved_and_never_shown_aga
             "default_database": FLOWS_DATABASE,
         }
     ]
-    assert MONGO_PASSWORD in live_server.settings_file.read_text()  # kept, but only on the server
+    assert MONGO_PASSWORD in live_server.credentials_file.read_text()  # kept, only on the server
+    assert MONGO_PASSWORD not in live_server.settings_file.read_text()  # and not in the settings
     settings.page.reload()  # and after a reload it is still nowhere in the page
     settings.expect_ready()
     expect(settings.connection_named("main")).to_contain_text(MASKED)
@@ -129,7 +132,7 @@ def test_other_changes_and_a_rename_keep_the_secret_a_pasted_string_replaces_it(
     settings.save()
     expect(settings.save_status).to_have_text("All changes saved.")
     assert settings.stored()["mongo_connections"][0]["default_database"] == "other_db"
-    assert stored_file(live_server)["mongo_connections"][0]["uri"] == MONGO_URI
+    assert stored_uris(live_server) == {"main": MONGO_URI}
     card = settings.connection(0)  # found by position: its name is about to change
     card.get_by_test_id("connection-name").fill("primary")
     expect(card).to_contain_text("Renaming keeps the stored connection string.")
@@ -137,12 +140,12 @@ def test_other_changes_and_a_rename_keep_the_secret_a_pasted_string_replaces_it(
     expect(settings.save_status).to_have_text("All changes saved.")
     renamed = settings.stored()["mongo_connections"][0]
     assert (renamed["name"], renamed["has_secret"]) == ("primary", True)
-    assert stored_file(live_server)["mongo_connections"][0]["uri"] == MONGO_URI
+    assert stored_uris(live_server) == {"primary": MONGO_URI}
     card.get_by_test_id("connection-uri").fill(NEW_URI)  # now replace it
     settings.save()
     expect(settings.save_status).to_have_text("All changes saved.")
     expect(card.get_by_test_id("connection-uri")).to_have_value("")
-    file_text = live_server.settings_file.read_text()
+    file_text = live_server.credentials_file.read_text()
     assert NEW_SECRET in file_text
     assert MONGO_PASSWORD not in file_text
     assert page_leaks(settings, NEW_SECRET) == []
@@ -201,7 +204,7 @@ def test_deleting_a_connection_removes_it_at_once_and_keeps_it_until_saved(
     settings.save()
     expect(settings.save_status).to_have_text("All changes saved.")
     assert settings.stored()["mongo_connections"] == []
-    assert MONGO_PASSWORD not in live_server.settings_file.read_text()
+    assert MONGO_PASSWORD not in live_server.credentials_file.read_text()
     settings.page.reload()
     settings.expect_ready()
     expect(settings.connections).to_have_count(0)

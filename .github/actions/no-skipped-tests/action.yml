@@ -1,0 +1,38 @@
+# The rule of the git hooks for the hosted jobs: a JUnit report that holds a skipped test, no test
+# case at all, or a cut-off run fails the job (scripts/githook_junit.py, docs/quality.md "Git hooks").
+# A skip is how a missing browser, node or MongoDB turns a red check green. It needs uv on the PATH,
+# so a job runs astral-sh/setup-uv and checks out the repository before it.
+name: No skipped test
+description: Fail on a skipped test, an empty report or an unterminated JUnit report.
+
+inputs:
+  reports:
+    description: Directory that holds the JUnit .xml reports of the job.
+    required: true
+  allow:
+    description: Space separated fragments of skip reasons that are allowed (none by default).
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Read the JUnit reports
+      shell: bash
+      env:
+        REPORTS: ${{ inputs.reports }}
+        ALLOW: ${{ inputs.allow }}
+      run: |
+        read -r -a allow <<< "${ALLOW}"
+        uv run --no-project --python 3.14 python - "${REPORTS}" "${allow[@]}" <<'PY'
+        import sys
+        from pathlib import Path
+
+        from scripts.githook_junit import check_reports
+
+        verdict = check_reports(Path(sys.argv[1]), tuple(sys.argv[2:]))
+        print(f"{verdict.tests} test cases in {sys.argv[1]}")
+        for problem in verdict.problems:
+            print(f"::error::{problem}")
+        sys.exit(0 if verdict.ok else 1)
+        PY

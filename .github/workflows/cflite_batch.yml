@@ -1,0 +1,71 @@
+# ClusterFuzzLite batch fuzzing: once a day the fuzz targets in tests/fuzz run for an hour on main,
+# and the corpus they build up is kept as a workflow artifact for the next run and for the pull
+# request runs. The second job minimises that corpus. Run it by hand (workflow_dispatch) after a
+# change to the build, with a short time. See docs/fuzzing.md.
+name: cflite-batch
+
+on:
+  schedule:
+    - cron: "37 2 * * *"
+  workflow_dispatch:
+    inputs:
+      fuzz-seconds:
+        description: "Total fuzzing time in seconds, shared by the targets"
+        type: number
+        default: 3600
+
+permissions: {}
+
+concurrency:
+  group: cflite-batch
+  cancel-in-progress: false
+
+jobs:
+  batch:
+    name: Batch fuzzing
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Build the fuzz targets
+        id: build
+        uses: google/clusterfuzzlite/actions/build_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1 # v1
+        with:
+          language: python
+          sanitizer: address
+
+      - name: Run the fuzz targets
+        id: run
+        uses: google/clusterfuzzlite/actions/run_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1 # v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          fuzz-seconds: ${{ inputs.fuzz-seconds || 3600 }}
+          mode: batch
+          sanitizer: address
+
+  prune:
+    name: Prune the corpus
+    needs: batch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Build the fuzz targets
+        id: build
+        uses: google/clusterfuzzlite/actions/build_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1 # v1
+        with:
+          language: python
+          sanitizer: address
+
+      - name: Minimise the corpus
+        id: run
+        uses: google/clusterfuzzlite/actions/run_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1 # v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          fuzz-seconds: 600
+          mode: prune
+          sanitizer: address

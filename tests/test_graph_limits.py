@@ -154,8 +154,8 @@ def test_two_hundred_thousand_links_build_in_under_three_seconds() -> None:
         (f"s{rnd.randrange(700)}", f"t{rnd.randrange(900)}", rnd.uniform(1, 50), rnd.choice(CATS))
         for _ in range(200_000)
     ]
-    started = time.perf_counter()
+    started = time.process_time()
     graph = make_graph(links)
-    assert time.perf_counter() - started < 3.0 * TIME_FACTOR
+    assert time.process_time() - started < 3.0 * TIME_FACTOR
     assert graph.n_links > 150_000
     assert len(graph.categories) == 9

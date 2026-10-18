@@ -1,0 +1,1 @@
+{"$where": "sleep(1000)", "$expr": {"$function": {"body": "x", "args": [], "lang": "js"}}}

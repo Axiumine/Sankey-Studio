@@ -1437,7 +1437,7 @@ ss -ltn | grep ":$PORT "     # empty output means the port is free again
   `localhost`, `127.0.0.1` and `[::1]` (and the bound loopback address). Use the same spelling in the
   page URL and in an `Origin` header.
 * Graphs are files in `<data-dir>/graphs/<id>.json` and the settings are `<data-dir>/settings.json`
-  (mode 0600). Files uploaded to `--sources-dir` persist between tests that share it, and an upload
+  with the connection strings in `<data-dir>/credentials.json` (both mode 0600). Files uploaded to `--sources-dir` persist between tests that share it, and an upload
   of an existing name asks "Replace the existing file?".
 * **Settings are server-wide.** The header theme switch and the settings page write
   `PUT /api/v1/settings`, so use a fresh data directory per module, or set `theme` back to `system`.

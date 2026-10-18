@@ -41,13 +41,14 @@ def put_settings(api: httpx.Client, body: dict[str, Any], status: int = 200) -> 
 
 
 def stored_settings(server: LiveServer) -> dict[str, Any]:
-    """The settings file as it is on disk (it holds the real URIs: the one place that may)."""
+    """The settings file as it is on disk (it holds no secret: they are in credentials.json)."""
     return dict(json.loads(server.settings_file.read_text(encoding="utf-8")))
 
 
 def stored_uris(server: LiveServer) -> dict[str, str]:
-    """``{connection name: URI}`` as stored on disk."""
-    return {item["name"]: item["uri"] for item in stored_settings(server)["mongo_connections"]}
+    """``{connection name: URI}`` as stored on disk, in the credentials file (the one place)."""
+    doc = json.loads(server.credentials_file.read_text(encoding="utf-8"))
+    return {name: item["uri"] for name, item in doc["mongo_connections"].items()}
 
 
 def keys_of(value: Any) -> Iterator[str]:

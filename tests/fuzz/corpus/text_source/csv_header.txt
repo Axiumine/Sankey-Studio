@@ -1,0 +1,4 @@
+source,target,value,category
+Budget,Rent,1200,Fixed
+Budget,Food,450.5,
+Food,Groceries,300,Variable

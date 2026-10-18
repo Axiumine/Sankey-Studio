@@ -131,10 +131,11 @@ class Snapshot:
     sources: list[str]
     graph_files: list[str]
     settings_file: bytes | None
+    credentials_file: bytes | None
 
 
 def snapshot(client: httpx.Client, server: LiveServer) -> Snapshot:
-    """Graph and folder lists, the settings answer and file, and the files on disk."""
+    """Graph and folder lists, the settings answer and both files, and the files on disk."""
     return Snapshot(
         graphs=json_of(client.get(f"{API}/graphs")),
         folders=json_of(client.get(f"{API}/folders")),
@@ -142,6 +143,9 @@ def snapshot(client: httpx.Client, server: LiveServer) -> Snapshot:
         sources=_names(server.sources_dir),
         graph_files=_names(server.graphs_dir),
         settings_file=server.settings_file.read_bytes() if server.settings_file.exists() else None,
+        credentials_file=(
+            server.credentials_file.read_bytes() if server.credentials_file.exists() else None
+        ),
     )
 
 

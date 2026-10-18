@@ -31,6 +31,8 @@ FILE_MODE = 0o600
 DIR_MODE = 0o700
 #: Group and other write bits: a data directory that has either can be tampered with.
 UNSAFE_DIR_BITS = 0o022
+#: Any group or other permission bit: a file with secrets must be reachable by its owner only.
+UNSAFE_FILE_BITS = 0o077
 TMP_ATTEMPTS = 5
 
 _WRITE_FLAGS = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC
@@ -140,6 +142,32 @@ def read_file_nofollow(path: Path, limit: int) -> bytes:
     try:
         if not stat.S_ISREG(os.fstat(fd).st_mode):
             raise OSError(errno.EINVAL, "not a regular file")
+        data = _read_capped(fd, limit + 1)
+    finally:
+        os.close(fd)
+    if len(data) > limit:
+        raise OSError(errno.EFBIG, "the file is too large")
+    return data
+
+
+def read_private_file(path: Path, limit: int) -> bytes:
+    """``read_file_nofollow`` for a file that holds secrets (the credentials file).
+
+    The checks run on the open descriptor, so nothing can change between check and read. A file
+    that belongs to another user is refused (they could have written it); one of this user that
+    group or others can reach loses those permission bits (``fchmod``), the way
+    ``ensure_private_dir`` repairs a directory. Both are reported as plain ``OSError``.
+    """
+    fd = os.open(path, _READ_FLAGS)
+    try:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode):
+            raise OSError(errno.EINVAL, "not a regular file")
+        if info.st_uid != current_uid():
+            raise OSError(errno.EPERM, "the file is owned by another user")
+        mode = stat.S_IMODE(info.st_mode)
+        if mode & UNSAFE_FILE_BITS:
+            os.fchmod(fd, mode & FILE_MODE)
         data = _read_capped(fd, limit + 1)
     finally:
         os.close(fd)

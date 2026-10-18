@@ -62,6 +62,10 @@ Contents
 | [ADR-42](#adr-42-uvlock-is-the-one-source-of-the-dependency-list) | uv.lock is the one source of the dependency list |
 | [ADR-43](#adr-43-codeql-a-ruleset-on-main-and-signed-release-assets) | CodeQL, a ruleset on main and signed release assets |
 | [ADR-44](#adr-44-a-hosted-ci-job-runs-the-unit-tests) | A hosted CI job runs the unit tests |
+| [ADR-45](#adr-45-mask_uri-shows-option-values-from-an-allow-list) | mask_uri shows option values from an allow-list |
+| [ADR-46](#adr-46-connection-strings-live-in-credentialsjson) | Connection strings live in credentials.json |
+| [ADR-47](#adr-47-fuzzing-runs-in-clusterfuzzlite-from-testsfuzz) | Fuzzing runs in ClusterFuzzLite from tests/fuzz |
+| [ADR-48](#adr-48-hosted-ci-runs-the-browser-memory-and-mongodb-suites-and-the-scanners) | Hosted CI runs the browser, memory and MongoDB suites and the scanners |
 
 ## ADR-01 Storage protocol and graph ids
 
@@ -121,6 +125,9 @@ created with mode 0600.
 
 **Why.** A Mongo URI carries credentials. The UI must be able to edit a connection without ever
 seeing, storing or echoing its password.
+
+**Clarified by [ADR-46](#adr-46-connection-strings-live-in-credentialsjson).** The real values are in
+`credentials.json`, and `settings.json` holds none.
 
 ## ADR-05 Build order keeps topology category-agnostic
 
@@ -228,6 +235,9 @@ send one of the headers) while keeping curl and scripts usable for JSON.
 percent-encoded form; an unparseable URI is fully masked. Every regex ends in `\Z`.
 
 **Why.** A mask that misses one shape leaks a password into logs or the UI.
+
+**Clarified by [ADR-45](#adr-45-mask_uri-shows-option-values-from-an-allow-list).** The sentence about keys that
+"look secret" is read as the allow-list described there.
 
 ## ADR-16 Mongo access is read-only and allow-listed
 
@@ -705,9 +715,11 @@ rule is now one sentence: tests run in the hooks, and a check that did not run i
 * `qodana` is required for `main` and tags and runs a fresh `make cov` first, because it imports
   `coverage.xml` and only warns when it is missing or stale. It runs before `mutation` so a missing
   token fails before the long mutation run.
-* The hooks are client-side only. The hosted CI (ADR-44) runs only lint, types, caps and the unit tests and nothing
-  requires it, and `main` requires no check or review (a ruleset blocks only deletion and force-push,
-  ADR-43); the hooks stay the one full gate and are a convenience gate that stops mistakes, not a security boundary.
+* The hooks are client-side only. The hosted workflows (ADR-44, ADR-48) run lint, types, caps, the unit,
+  browser, memory and MongoDB suites and the scanners on a clean runner, and nothing requires them;
+  `main` requires no check or review (a ruleset blocks only deletion and force-push, ADR-43). The hooks
+  stay the one full gate (Qodana, the replica-set suite and the stamps exist only there) and are a
+  convenience gate that stops mistakes, not a security boundary.
 
 **Accepted risks.** `--no-verify`, `core.hooksPath` overrides and a clone without `make hooks` skip
 every hook (the rules for agents forbid them; nothing enforces it). A push gate of 30+ minutes holds
@@ -886,6 +898,11 @@ control and that the repository cannot test.
   two rules, `deletion` and `non_fast_forward`. It does not require pull requests, reviews or status
   checks: those would stop the maintainer's direct pushes, which is how the git-hook gate works
   ([ADR-37](#adr-37-git-hooks-are-the-one-place-the-checks-run)).
+* A second ruleset, "v* tags: no deletion, no update, no force-push", protects every tag that matches `v*`.
+  An existing release tag cannot be deleted or moved without a repository administrator switching the
+  ruleset off. It does not restrict who may create a `v*` tag (a `creation` rule would also stop the
+  maintainer, who has no bypass entry); creating one starts the release workflow, whose `pypi`
+  environment waits for the reviewer.
 * After a release the GitHub release page carries the wheel and the sdist exactly as on PyPI (the
   sha256 is compared with PyPI's) and, next to each, a Sigstore bundle `<file>.sigstore.json` made from
   the PyPI provenance of that file and verified against the identity of `release.yml`. The procedure is in
@@ -899,6 +916,10 @@ code is safe.
 
 ## ADR-44 A hosted CI job runs the unit tests
 
+**Status.** Partly superseded by [ADR-48](#adr-48-hosted-ci-runs-the-browser-memory-and-mongodb-suites-and-the-scanners):
+the browser, memory and MongoDB suites and the scanners, which this record keeps local, now run hosted too.
+The decision below, job `test`, is unchanged.
+
 **Decision.** `.github/workflows/ci.yml`, job `test`, runs on every push to `main`, every pull request
 to `main` and on demand: `uv sync --all-extras --locked`, `make lint typecheck caps`, then `make cov`
 (the unit suite with the 100% line and branch gate) after installing Node 22 for the tests of the
@@ -906,14 +927,96 @@ frontend modules. It uploads a JUnit and a coverage report. It starts
 from `permissions: {}`, has `contents: read` in the job, uses pinned actions and no secret.
 
 * Why: a test run tied to each check-in on the shared repository, with a report (the silver criterion
-  `automated_integration_testing`, the passing criterion `test_continuous_integration`), and a check
-  named `test` on pull requests, which is what the OpenSSF Scorecard CI-Tests check looks for.
-* What stays local: the browser end-to-end suites, the memory budgets, mutation testing, Semgrep, Trivy,
-  Qodana and the real-MongoDB suites. The pre-push gate stays the one full gate
-  ([ADR-37](#adr-37-git-hooks-are-the-one-place-the-checks-run)).
+  `automated_integration_testing`, the passing criterion `test_continuous_integration`), and a
+  successful check run on the head commit of a pull request. The OpenSSF Scorecard CI-Tests check
+  accepts a completed check run with conclusion `success` whose app slug contains a keyword such as
+  `github-actions`; for a GitHub Actions job the slug is always `github-actions`, so any successful
+  job counts, whatever its name. A skipped or cancelled job does not count, so `ci.yml` has no
+  `paths` filter and a pull request that changes only documents still gets a run.
+* What stays local: Qodana, the replica-set suite (`e2e-mongo-rs`) and the hooks themselves. The
+  pre-push gate stays the one full gate
+  ([ADR-37](#adr-37-git-hooks-are-the-one-place-the-checks-run)). The other suites that this record
+  kept local run hosted since ADR-48; mutation testing runs there only when started by hand.
 
 **Accepted risks.** Nothing requires the job to pass: a required status check would stop the
 maintainer's direct pushes ([ADR-43](#adr-43-codeql-a-ruleset-on-main-and-signed-release-assets)), so the
 job reports and does not block. A pull request runs its own code on the runner with a read-only token
 and no secret (none exists to reach). The runner differs from the maintainer's machine (image, Chrome,
 kernel), so the job can fail for a reason the local gate never shows, and the other way round.
+
+## ADR-45 mask_uri shows option values from an allow-list
+
+**Status.** Clarifies [ADR-15](#adr-15-uri-masking-fails-closed), which stays in force.
+
+**Decision.** ADR-15 says `util.mask_uri` "masks every query value whose key looks secret". The code
+does the safer opposite and rebuilds the URI from an allow-list:
+
+* The scheme must be `mongodb` or `mongodb+srv`; a text without it becomes `***`. Any structural doubt,
+  and any exception, gives `mongodb://***`. The function never raises.
+* User info is masked: `user:pw` becomes `user:***`, and a user info without a colon (a token in the
+  user name) becomes `***`.
+* Hosts and the database name are shown when they match plain-character patterns.
+* A query option keeps its key, and its value is shown only when the key (compared in lower case) is one of
+  the twelve in `SAFE_URI_OPTIONS` (`replicaSet`, `authSource`, `authMechanism`, `tls`, `ssl`,
+  `retryWrites`, `retryReads`, `w`, `readPreference`, `appName`, `directConnection`, `loadBalanced`) and
+  the value matches a plain pattern. Every other option, `authMechanismProperties` and
+  `tlsCertificateKeyFilePassword` included, shows `key=***`. An item whose key is unreadable is
+  dropped. Items are split on `&` and on `;`.
+* The patterns that validate a host, a user, a database, an option key and an option value are
+  anchored with `\Z` (a `$` would also match before a trailing newline). The scheme pattern is the one
+  prefix match, by design.
+
+**Why.** A deny-list of secret-looking keys fails open for the next secret-bearing option. An
+allow-list fails closed: a new option stays hidden until someone adds it.
+
+**Accepted risks.** A harmless new option is shown as `key=***` until it is added to
+`SAFE_URI_OPTIONS`, so a masked URI can be less informative than the real one. The list is code, kept
+in step by the table tests in `tests/test_util.py`.
+
+## ADR-46 Connection strings live in credentials.json
+
+**Decision.** The connection strings of the MongoDB connections are kept in `<data_dir>/credentials.json`, a file of their own. `settings.json` keeps the rest of each connection (name, default database) and never a `uri`.
+
+* Format, version 1: `{"version": 1, "mongo_connections": {"<connection name>": {"uri": "<string>"}}}`. The key is the connection name (the identity a connection already has); one object per name, so a later secret (a key passphrase, a token) is a new field, not a new format. `models/credentials.py` validates it with the same function as `MongoConnection.uri` (`checked_uri`).
+* `SettingsStore.save` writes `credentials.json` first and `settings.json` second, each atomically with mode 0600 in the 0700 data directory, and always both. `dump_settings` and `load_settings` keep their shape and stay the code that validates a settings document; `storage/credentials.py` splits and joins the plain dicts between them and the two files. The API, the exports and the bundles do not change (`uri_masked`, `has_secret`; a bundle never held a string).
+* Loading reads both files and caches on both signatures, so a `credentials.json` replaced by hand applies on the next request, with no restart. A `uri` still inside `settings.json` (a file of an earlier version, or a hand edit) is used and wins; a load writes nothing; the next save moves the string out. A connection with no entry, an unreadable file, a file that is not JSON or not valid, a symlink and a file of another user are reported as `settings_error` (422) naming the file and the connection and never a value; nothing is moved or overwritten. An entry with no connection is ignored and dropped by the next save. A file that group or others can reach is tightened to its owner bits. When `settings.json` itself is corrupt it is moved aside together with `credentials.json` under one `.corrupt-<n>` number, so a repair finds both halves.
+* `SANKEY_MONGO_URI` still seeds `default` while no `settings.json` exists; the first save stores it in `credentials.json`.
+
+**Why.** The OpenSSF silver criterion `crypto_credential_agility` asks for credentials in files apart from other information and replaceable without a rebuild. A copy, a backup, a bug report or a diff of the settings no longer carries a password, and an operator can rotate one with `mv` while the server runs.
+
+**Accepted risks.** The two files are not replaced together: a crash between the writes leaves new strings with old settings, which is harmless except for a connection that the save removed or renamed; the next load names it and the file has to be fixed by hand. The file is plain text: its protection is the file mode, the directory mode and the account of the person who runs the server (as in [ADR-04](#adr-04-secrets-never-leave-the-settings-store)). A version from before this record reads the new `settings.json` as invalid and moves it aside, so the change is one-way. An existing install keeps its strings in `settings.json` until its next save. There is no operator-chosen path: a mounted secret is usually a symlink (refused by `O_NOFOLLOW`) on a read-only volume, which would also need a read-only Settings page; left for a later record.
+
+## ADR-47 Fuzzing runs in ClusterFuzzLite from tests/fuzz
+
+**Context.** The code that reads text from outside (four source formats, the rewriter behind the write-back, the MongoDB filter, pipeline and URI guards, the name validators, the number formatter) is where a malformed input does the most harm, and the unit, mutation and end-to-end tests only try the inputs someone thought of. The OpenSSF criterion `dynamic_analysis` and the Scorecard check `Fuzzing` ask for fuzzing too. The project needs CPython 3.14 (PEP 758 syntax), and the OSS-Fuzz Python image ships 3.11.
+
+**Decision.**
+
+* The targets live in `tests/fuzz` (not a top-level directory), so lint, types, caps, the licence-header test and the policy tests apply to them unchanged. Seven Atheris entry points (`<name>_fuzzer.py`) call plain functions in `text_targets.py` and `guard_targets.py`; `targets.py` is the registry. A target accepts the errors the code is documented to raise and checks an oracle on what it accepts (for example: an accepted MongoDB document holds no `$where`, and the JSON reader gives the same result for every chunk size).
+* `tests/fuzz/test_targets.py` runs every seed, 400 mutated seeds and 400 random inputs per target in the normal unit suite, so the targets cannot rot between fuzzing runs.
+* ClusterFuzzLite runs them in GitHub Actions: 7 minutes on a pull request that touches the code they read, one hour every night on `main`, then a corpus prune. The corpus is kept as a workflow artifact. Neither workflow is in the git hooks or required.
+* `.clusterfuzzlite/Dockerfile` starts from the OSS-Fuzz Python builder (by digest), installs CPython 3.14.7 and the project's runtime packages from `uv.lock` with uv, and the two fuzzing tools (`atheris` 3.1.0, the first release with a 3.14 wheel, and `pyinstaller`) by hash from `.clusterfuzzlite/requirements.txt`. `build.sh` turns each entry point into a PyInstaller one-file binary, so the runner needs no Python 3.14. The targets are pure Python, so no sanitizer runtime is preloaded and `address` is only the name of the run; `coverage` is refused.
+* Nothing is added to `pyproject.toml` or `uv.lock` except a mypy override for `atheris`; only the entry points import it, and a test checks that.
+
+**Why.** Fuzzing runs on GitHub's machines, not in the maintainer's hooks, and does not slow a commit or a push. Keeping the code in `tests/fuzz` means no new rule or exception for it.
+
+**Accepted risks.** A second dependency list (the fuzz tools and two image digests) sits next to ADR-42; it is hash-pinned and Dependabot reads it (security updates only), but a bump is by hand. `atheris` lags new CPython releases, so a Python upgrade can break the image until it catches up. The image runs as root, as the OSS-Fuzz builders do (`AVD-DS-0002` in `.trivyignore`, expiry 2027-10-18). The ClusterFuzzLite actions fix their own `:v1` images by tag, not by the action's commit. The image is not built in the git hooks: its first build was the first pull request run (2026-10-18), which built it without a change and fuzzed for 7 minutes. That run found a real defect in the JSON reader (a first chunk of only the byte order mark, [CHANGELOG](../CHANGELOG.md)), fixed in the same pull request. A fuzzer finds nothing it cannot reach: the targets prove only that these inputs are handled, not that the code has no bug.
+
+## ADR-48 Hosted CI runs the browser, memory and MongoDB suites and the scanners
+
+**Status.** Partly supersedes [ADR-44](#adr-44-a-hosted-ci-job-runs-the-unit-tests), which kept these checks local; its job `test` stays as it is.
+
+**Context.** ADR-44 put the unit suite on GitHub's runners and left everything else to the hooks on the maintainer's machine. The hook stamps do not record the environment (ADR-37), so a pass says nothing about a clean machine, and the browser, memory and MongoDB suites and the scanners had no report next to a push or a pull request. Hosted minutes are free for a public repository. Nothing in this record changes what is required: a required check would still stop the maintainer's direct pushes (ADR-43).
+
+**Decision.** Four workflows and one local composite action run the same `make` targets as the pre-push gate. Every workflow starts from `permissions: {}`, gives each job `contents: read`, uses only the four action commits already pinned (checkout, setup-uv, setup-node, upload-artifact), reads no secret and has no `pull_request_target`; `${{ }}` never appears inside a `run` script (matrix values and inputs go through `env`). There is no cache. `ci.yml`, `ci-e2e.yml` and `ci-security.yml` start on every push to `main`, every pull request to `main` and on demand, each with its own concurrency group that cancels an older run of the same pull request (never a run on `main`).
+
+* `ci.yml`: job `test` (lint, types, caps, `make cov`; unchanged but for the JUnit path `reports/junit/cov.xml`) and job `memory-test` (`make memray`, the same budgets as the gate).
+* `ci-e2e.yml`: job `e2e`, a matrix of five jobs that run `make e2e-shard-N E2E_SHARDS=5`, one shard per runner, `fail-fast` off, and job `e2e-mongo` (`make e2e-mongo`). The browser is the Google Chrome of the runner image at `/opt/google/chrome/chrome` (Playwright channel `chrome`, headless, `--no-sandbox` from the harness). There is no `playwright install`: a step prints the Chrome version and fails with a clear message when the path is gone, because a missing browser would otherwise turn every browser test into a skip. A step lifts `kernel.apparmor_restrict_unprivileged_userns` on the throw-away VM and prints `scripts/netns.sh ip -brief link`, so the log shows whether the private network namespace works or the script fell back to the host network ([e2e.md](e2e.md#how-to-run)). The MongoDB is a service container, `mongo:8` pinned by digest, on `127.0.0.1:27117` (the port of `docker-compose.yml`, which the e2e support code insists on instead of 27017-27019) with a `mongosh` health check the runner waits for; `scripts/mongo_wait.py` pings it before the tests, and `SANKEY_TEST_MONGO_URI` is set on the test step only. Only the `mongo` marker is selected.
+* `ci-security.yml`: job `semgrep` (`make semgrep-test`, `make semgrep`) and job `trivy` (`make trivy`), through the scripts of the hooks and their pinned Docker images. The SARIF files are kept as workflow artifacts and are not sent to code scanning (CodeQL feeds it, ADR-43). `trivy-weekly.yml` stays: it finds a new advisory between pushes.
+* `mutation.yml`: `workflow_dispatch` only. It runs `make mutate MUTATE_CHILDREN=4` and `make mutate-gate` with a 300 minute cap. It has no schedule and never runs on a push or a pull request.
+* `.github/actions/no-skipped-tests`: the rule of the hooks for the hosted jobs. It calls `scripts.githook_junit.check_reports` (the function of the gate) on the JUnit reports of the job, so a skipped test, a report with no test case and an unterminated report fail the job. Its `allow` input is empty everywhere except job `test`, which allows the skip reason `SANKEY_TEST_MONGO_URI` for the 8 mongo-marked unit tests that `e2e-mongo` runs.
+* Still local only: Qodana (it needs `QODANA_TOKEN` and no secret exists in the repository), `e2e-mongo-rs` (the maintainer's private replica set on the LAN) and the git-hook gate itself.
+
+**Why.** The same suites in a clean environment give a second, independent verdict on each push to `main` and each pull request, which the stamps of one machine cannot. The skipped-test rule is needed hosted because the browser fixture skips when no browser starts. A shard per runner costs seconds of setup and shows which shard failed; the `-j5` of `make e2e` would put five browsers on one runner's four vCPUs. A service container is waited for by the runner and needs no Docker Compose, and the digest keeps the image from changing under a run (the compose file still follows the tag `mongo:8`). The memory budgets are allocation peaks and do not depend on the speed of the machine. Mutation testing is long on a hosted runner, so it is on demand and not a schedule.
+
+**Accepted risks.** Nothing requires any job (ADR-43), so a red job does not stop a push. A pull request runs its own code on the runner with a read-only token and no secret; a first-time contributor needs approval before a run starts. The MongoDB has no authentication and holds only test data on a VM that is deleted afterwards. The sysctl change is made on a throw-away VM and lasts until it is deleted. The runner image's Chrome is not pinned, so an image update can change the browser version under an unchanged commit. The first hosted run of the workflows (pull request 1, 2026-10-18) passed every job apart from the fuzz job, which found a bug (ADR-47); the figures are in [quality.md](quality.md#hosted-ci). A later run, with another Chrome, runner image, rule set or advisory, can still fail with no change to the code. The UI end-to-end files that assert geometry (bounding boxes, widths at phone size) can fail on the fonts and the Chrome of the runner while they pass locally. A slower CPU than the maintainer's machine can reach the 20 second server wait or a 10 second `expect` timeout in the harness. Semgrep and Trivy depend on rules and a database that change without a commit, so a job can turn red with no code change; their images are pulled anonymously, and a rate limit of the registry is untested. The digest of `mongo:8` is refreshed by hand, and a Docker Hub, ghcr.io or semgrep.dev outage fails a job for a reason that is not the code.

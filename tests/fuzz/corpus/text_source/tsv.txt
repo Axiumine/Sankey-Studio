@@ -1,0 +1,3 @@
+source	target	value
+A	B	10
+B	C	4

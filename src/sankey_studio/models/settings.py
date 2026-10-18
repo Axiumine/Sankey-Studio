@@ -16,6 +16,22 @@ from sankey_studio.mongo_safety import check_mongo_uri, validate_db_name
 from sankey_studio.util import looks_masked
 
 
+def checked_uri(v: SecretStr) -> SecretStr:
+    """The stripped connection string; ``ValueError`` (never echoing it) when it is unusable.
+
+    The one rule for both places a URI is read: ``MongoConnection.uri`` and the secrets file
+    (``models.credentials``). A masked placeholder and an unsafe option are refused.
+    """
+    raw = v.get_secret_value().strip()
+    if looks_masked(raw):
+        raise ValueError("uri is a masked placeholder; enter the real connection string")
+    try:
+        check_mongo_uri(raw)
+    except UnsafeSourceError as exc:
+        raise ValueError(exc.message) from None
+    return SecretStr(raw)
+
+
 class MongoConnection(_Model):
     """A named MongoDB connection. The URI may hold credentials: never log or return it.
 
@@ -38,14 +54,7 @@ class MongoConnection(_Model):
     @field_validator("uri")
     @classmethod
     def _uri(cls, v: SecretStr) -> SecretStr:
-        raw = v.get_secret_value().strip()
-        if looks_masked(raw):
-            raise ValueError("uri is a masked placeholder; enter the real connection string")
-        try:
-            check_mongo_uri(raw)
-        except UnsafeSourceError as exc:
-            raise ValueError(exc.message) from None
-        return SecretStr(raw)
+        return checked_uri(v)
 
     @field_validator("default_database")
     @classmethod

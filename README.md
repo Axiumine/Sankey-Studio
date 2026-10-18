@@ -115,12 +115,12 @@ uv run sankey-studio serve [--host HOST] [--port PORT] [--data-dir DIR] [--sourc
 |---|---|---|---|
 | `--host HOST` | `SANKEY_HOST` | `127.0.0.1` | Address to bind. A non-loopback address needs `--allow-remote` |
 | `--port PORT` | `SANKEY_PORT` | `8765` | Port to listen on (1 to 65535) |
-| `--data-dir DIR` | `SANKEY_DATA_DIR` | `$XDG_DATA_HOME/sankey-studio` (`~/.local/share/sankey-studio`) | Holds `settings.json`, `graphs/` and the default sources folder |
-| `--sources-dir DIR` | `SANKEY_SOURCES_DIR` | `<data-dir>/sources` | Folder of managed source files; must not equal or contain the data directory, `graphs/` or `settings.json` |
+| `--data-dir DIR` | `SANKEY_DATA_DIR` | `$XDG_DATA_HOME/sankey-studio` (`~/.local/share/sankey-studio`) | Holds `settings.json`, `credentials.json`, `graphs/` and the default sources folder |
+| `--sources-dir DIR` | `SANKEY_SOURCES_DIR` | `<data-dir>/sources` | Folder of managed source files; must not equal or contain the data directory, `graphs/`, `settings.json` or `credentials.json` |
 | `--allow-remote` | `SANKEY_REMOTE_MODE` | off | Accept a non-loopback bind. There is NO authentication; the app is read-only |
 | `--allow-remote-writes` | `SANKEY_REMOTE_WRITES` | off | With `--allow-remote`: also allow changes to settings, files, graphs and collections, and writing edits back into managed files |
 | `--allow-source-writes` | `SANKEY_SOURCE_WRITES` | off | With `--allow-remote-writes`: also allow writing edits back to MongoDB sources (without it a remote server never does, even with `--allow-remote-writes`). On loopback this is always allowed |
-| (none) | `SANKEY_MONGO_URI` | unset | Seeds a connection named `default` when no `settings.json` exists yet |
+| (none) | `SANKEY_MONGO_URI` | unset | Seeds a connection named `default` when no `settings.json` exists yet (the first save stores it in `credentials.json`) |
 | (none) | `SANKEY_ALLOWED_HOSTS` | `["localhost", "127.0.0.1", "[::1]"]` | JSON array of accepted `Host` headers |
 | (none) | `SANKEY_LOG_LEVEL` | `info` | uvicorn log level: critical, error, warning, info, debug or trace |
 
@@ -234,8 +234,10 @@ server; otherwise the UI uses the browser's own download.
 
 ### Connections and storage
 
-The settings page manages named MongoDB connections. Passwords are stored in `settings.json` (mode
-0600) and are never shown again: the form displays "(unchanged)". Graphs are stored in one of two
+The settings page manages named MongoDB connections. Connection strings are stored in
+`credentials.json` (mode 0600, apart from `settings.json`; see
+[the credentials file](docs/secrets.md#the-credentials-file)) and are never shown again: the form
+displays "(unchanged)". Graphs are stored in one of two
 backends:
 
 * **Files** (default): one `<id>.json` per graph in `<data-dir>/graphs/`, written atomically.
@@ -389,6 +391,8 @@ for that reason.
 * **ruff** (all rules, formatter), **mypy** in strict mode, **pytest** with warnings as errors.
 * **memray** memory budgets (`make memray`) and a whole-pipeline profile (`make profile`).
 * **mutmut** mutation testing with a score gate.
+* **ClusterFuzzLite** fuzzing of the parsers, the rewriter, the MongoDB guards and the name validators
+  in GitHub Actions ([docs/fuzzing.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/fuzzing.md)).
 * **Semgrep** with custom rules for the project's invariants (MongoDB writes only in the library store
   and the source write-back, both under `storage/`,
   no unsafe HTML or JavaScript sinks, no secrets in logs, no outbound HTTP, ...), run in Docker.
@@ -471,8 +475,9 @@ its `make` target, one at a time.
   checks of a tier have a stamp, without running anything.
 * **Not a security boundary.** The hooks are local: `git commit --no-verify`, `git push --no-verify`,
   `git -c core.hooksPath=/dev/null ...` and a fresh clone without `make hooks` skip them, and the
-  project has no server-side check (a hosted job runs the unit tests but nothing requires it, and the other workflows
-  publish a tagged release, scan the dependencies weekly, run CodeQL and score the repository, see
+  project has no required server-side check (hosted workflows run the unit, browser, memory and MongoDB suites and the
+  scanners but nothing requires them, and the other workflows publish a tagged release, scan the dependencies weekly,
+  run CodeQL, score the repository and fuzz the parsers, see
   [docs/dependencies.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/dependencies.md)). They stop mistakes, not a determined person.
 * **Rollback.** `git config --unset core.hooksPath` disables every hook of the clone; `rm -rf
   .git/hook-stamps .git/hook-logs` clears the stamps and logs (use `git rev-parse --git-common-dir`
@@ -494,7 +499,7 @@ src/sankey_studio/
                         suggest, write plan) and manual data sources; rewrite/ edits text in place
   graph/                build_graph: intern, categories, pairs, cycles, layers, assemble
   render/               Sankey and donut figures, legend, colours, palette, tables, exports
-  storage/              file and MongoDB graph and collection stores, settings.json, bundles,
+  storage/              file and MongoDB graph and collection stores, settings and credentials, bundles,
                         migration, MongoDB source write-back
   services.py           Services: wires settings, clients, storage and source context
   bundle.py             RenderBundle: everything a page needs to draw one graph
@@ -503,7 +508,7 @@ src/sankey_studio/
   web/                  FastAPI app: middleware, security, routers/, schemas/, templates/, static/
 scripts/                code caps, mutation gate, memory profile, Semgrep/Trivy/Qodana runners,
                         the git-hook gate (githook_*.py) and mongo_wait.py
-tests/                  unit tests mirroring src/, contracts/, e2e/
+tests/                  unit tests mirroring src/, contracts/, e2e/, fuzz/ (fuzz targets)
 docs/                   project documentation, README screenshots and a gallery of every screen
 LICENSE                 GNU General Public License, version 3
 .semgrep/rules/         custom Semgrep rules and their tests

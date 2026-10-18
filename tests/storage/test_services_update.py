@@ -119,8 +119,10 @@ def test_a_plain_update_is_saved_and_reports_no_copy(env: Env) -> None:
 
 def test_the_secrets_reach_the_file_and_nothing_else(env: Env) -> None:
     env.services.update_settings(_settings(("a", SECRET_URI), ("b", OTHER_URI)))
-    on_disk = json.loads(env.config.settings_file.read_text())
-    assert [c["uri"] for c in on_disk["mongo_connections"]] == [SECRET_URI, OTHER_URI]
+    kept = json.loads(env.config.credentials_file.read_text())["mongo_connections"]
+    assert {name: item["uri"] for name, item in kept.items()} == {"a": SECRET_URI, "b": OTHER_URI}
+    public = json.loads(env.config.settings_file.read_text())["mongo_connections"]
+    assert all("uri" not in conn for conn in public)
 
 
 def test_an_invalid_candidate_is_refused_before_anything_changes(env: Env) -> None:
@@ -291,6 +293,7 @@ def test_an_unreachable_destination_leaves_everything_as_it_was(env: Env) -> Non
     assert isinstance(env.services.graphs(), FileGraphRepository)
     assert list(env.services.graphs().iter_definitions()) == graphs
     assert DEAD_URI not in json.dumps(json.loads(env.config.settings_file.read_text()))
+    assert DEAD_URI not in env.config.credentials_file.read_text()
 
 
 def test_a_destination_that_cannot_be_built_leaves_everything_as_it_was(env: Env) -> None:
@@ -299,6 +302,7 @@ def test_a_destination_that_cannot_be_built_leaves_everything_as_it_was(env: Env
         env.services.update_settings(_settings(("r", REFUSED_URI), backend="mongo", connection="r"))
     assert env.services.settings() == old
     assert not env.config.settings_file.exists()
+    assert not env.config.credentials_file.exists()
 
 
 def test_a_failure_midway_through_the_copy_keeps_the_old_settings(
