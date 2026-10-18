@@ -33,7 +33,7 @@ Contents
 | End-to-end | `make e2e`, `make e2e-mongo`, `make e2e-mongo-rs` | `pytest -m "e2e and not mongo and not mongo_rs"`: the real app on an ephemeral loopback port driven over HTTP and by real Chrome; `e2e-mongo` runs the same flows against a real MongoDB and then the mongo-marked unit tests; `e2e-mongo-rs` runs them against a replica set you run yourself (`SANKEY_TEST_MONGO_RS_URI`); see [e2e.md](e2e.md) | `e2e`: every pre-push. `e2e-mongo`: pre-push of `main` and tags. `e2e-mongo-rs`: pre-push of `main` and tags |
 | Coverage | `make cov` | 100% line and branch of `src/sankey_studio` from the unit suite, slow tests included, e2e excluded | `cov`: every pre-push (`qodana` runs it again) |
 | Memory | `make memray` | `limit_memory` budgets (pytest-memray) | `memray`: every pre-push |
-| Mutation | `make mutate`, `make mutate-gate` | mutmut 3.x score of at least 90 | `mutation`: pre-push of `main` and tags |
+| Mutation | `make mutate`, `make mutate-gate` | mutmut 3.x score of at least 95 | `mutation`: pre-push of `main` and tags |
 | Semgrep | `make semgrep-test`, `make semgrep` | rule tests green, no finding in `src` and `scripts` | `security`: pre-push of `main` and tags |
 | Trivy | `make trivy` | no fixed HIGH or CRITICAL vulnerability in the runtime packages of `uv.lock`, no secret, no misconfiguration | `security` |
 | Qodana | `make qodana` | Ultimate Plus inspection; needs `QODANA_TOKEN` in a local `.env` | `qodana`: pre-push of `main` and tags; fails without the token |
@@ -106,7 +106,7 @@ routes are covered by GET tests and exercised by the browser tests.
 
 `make mutate` runs mutmut 3.x over `src/sankey_studio`, excluding `cli.py` and `__main__.py` (and the
 non-Python web assets). It runs the unit tests only (not e2e, slow or memory). `make mutate-gate`
-folds the results into a score and fails below **90** (`scripts/mutation_gate.py --min-score 90`; add
+folds the results into a score and fails below **95** (`scripts/mutation_gate.py --min-score 95`; add
 `--by-module` for one line per module).
 
 Write tests that fail when a boundary moves:

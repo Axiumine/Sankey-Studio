@@ -79,7 +79,7 @@ host machine, safe from the actors of the threat model.
 
 C1 to C7 each rest on a control in the code and on tests that exercise it. Some also rest on a
 Semgrep rule or a policy test, and the threat table names them. The mutation-score gate (at least
-90) measures how many deliberate changes to the code the tests notice; it is evidence about the
+95) measures how many deliberate changes to the code the tests notice; it is evidence about the
 tests, not proof of them. C8 rests on the release workflow, the GitHub settings and a check anyone
 can run by hand (T15), not on tests. The argument is only as strong as those tests and gates, and
 they have blind spots: mutation testing skips `cli.py` and `__main__.py` and does not mutate
@@ -304,7 +304,7 @@ Other weaknesses:
 | [ADR-34](decisions.md#adr-34-edits-are-written-back-to-the-data-when-the-person-agrees), [ADR-38](decisions.md#adr-38-mongodb-runs-on-one-server-and-on-a-cluster) | Write-back and its accepted risk; MongoDB topologies |
 | [ADR-37](decisions.md#adr-37-git-hooks-are-the-one-place-the-checks-run), [ADR-39](decisions.md#adr-39-releases-are-published-to-pypi-from-a-tag) | What the hooks do and do not guarantee; the release path |
 | Human review | The maintainers state that a person reviewed the security design and the trust boundary by hand, not only with tools; the written result is the README Security model, ADR-14 to ADR-18 and ADR-38. The repository does not record who reviewed or when, and the review is not presented as an independent audit |
-| [quality.md](quality.md) | The gates the maintainer's git hooks run: 100% line and branch coverage, mutation score of at least 90, strict typing, [scanners](quality.md#scanners), [fail-closed hooks](quality.md#fail-closed-rules) |
+| [quality.md](quality.md) | The gates the maintainer's git hooks run: 100% line and branch coverage, mutation score of at least 95, strict typing, [scanners](quality.md#scanners), [fail-closed hooks](quality.md#fail-closed-rules) |
 | `tests/` | Unit tests (mongomock), `tests/e2e` (real server, real Chrome), `mongo` and `mongo_rs` suites against real MongoDB ([e2e.md](e2e.md#replica-set)); policy tests `tests/test_policy.py`, `tests/web/test_templates_policy.py`, `tests/web/test_static_policy.py` |
 | `.semgrep/rules/` | Project Semgrep rules with their own rule tests (`sankey.py`, `sankey-js.js`, `sankey-html.html`) |
 | [release.md](release.md), `.github/workflows/release.yml` | How a release is made and how to verify one |

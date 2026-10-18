@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The mutation gate (`make mutate-gate`, `scripts/mutation_gate.py`) now fails below a score of 95 instead of 90. The last full run scored 98.4% (13,027 killed, 206 survived), so the new floor leaves room for about 450 survivors; `CONTRIBUTING.md`, the README, `docs/quality.md`, `docs/assurance-case.md`, `CLAUDE.md`, `AGENTS.md` and the hosted `mutation.yml` say 95.
 - `docs/ui.md` is split: it keeps the overview (how the frontend is built, the pages, the boot data) and links to one file per page or topic under `docs/ui/` (`shell`, `library`, `editor`, `viewer`, `settings`, `testids`, `testing`, `frontend`). Anchors moved with their sections; `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`, `docs/e2e.md`, `docs/api.md` and `qodana.yaml` point at the new files (the `data-testid` contract is now `docs/ui/testids.md`). Comments in `src` and `tests` that cited `UI.md` or `API.md section N` (files and numbers that no longer exist) now name the current `docs/ui/` part or `docs/api.md` section.
 - `codeql.yml` also runs on pull requests to `main` (with its own concurrency group), so the OpenSSF Scorecard SAST check finds an analysis on each merged pull request; findings still go to code scanning and nothing requires the job ([ADR-43](docs/decisions.md#adr-43-codeql-a-ruleset-on-main-and-signed-release-assets)).
 - The graph timing tests measure CPU seconds (`time.process_time()`), so a loaded machine no longer fails them, and the worst-case bound is wider.

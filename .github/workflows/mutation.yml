@@ -1,4 +1,4 @@
-# Mutation testing on demand (mutmut 3.x over src/sankey_studio, score of at least 90), the same
+# Mutation testing on demand (mutmut 3.x over src/sankey_studio, score of at least 95), the same
 # make targets as the `mutation` check of the release gate. It takes a long time on a hosted runner,
 # so it has no schedule and never runs on a push or a pull request: start it by hand from the
 # Actions tab (workflow_dispatch). Nothing requires it. See ADR-48.
@@ -11,7 +11,7 @@ permissions: {}
 
 jobs:
   mutation-test:
-    name: mutation-test (mutmut, score of at least 90)
+    name: mutation-test (mutmut, score of at least 95)
     runs-on: ubuntu-24.04
     timeout-minutes: 300
     permissions:

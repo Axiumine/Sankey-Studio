@@ -96,7 +96,7 @@ These are enforced by tools, so a change that breaks them cannot be merged. The 
   (`make mongo-up`, then `SANKEY_TEST_MONGO_URI=mongodb://127.0.0.1:27117 make e2e-mongo`).
 * No sleeps: wait on DOM signals, events or an injectable clock. No `skip`/`xfail`; `filterwarnings =
   error`.
-* The mutation score must stay at or above 90 (`make mutate-gate`): write boundary tables that assert
+* The mutation score must stay at or above 95 (`make mutate-gate`): write boundary tables that assert
   both sides of every limit, exact messages and defaults.
 
 ## Commits and the git hooks

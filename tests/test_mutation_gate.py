@@ -146,26 +146,26 @@ def run_main(*args: str) -> int:
     return gate.main(list(args))
 
 
-def test_the_default_threshold_is_ninety_percent() -> None:
-    assert gate.DEFAULT_MIN_SCORE == 90.0
-    assert gate.build_parser().parse_args([]).min_score == 90.0
+def test_the_default_threshold_is_ninety_five_percent() -> None:
+    assert gate.DEFAULT_MIN_SCORE == 95.0
+    assert gate.build_parser().parse_args([]).min_score == 95.0
     assert gate.build_parser().parse_args([]).meta_dir == Path("mutants")
 
 
 def test_main_passes_at_exactly_the_minimum(
     workdir: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    write_meta(workdir, "src/a.py", [1] * 9 + [0])
+    write_meta(workdir, "src/a.py", [1] * 19 + [0])
     assert run_main() == gate.EXIT_PASS
     assert capsys.readouterr().out == (
-        "mutants: killed=9 survived=1 skipped=0 unchecked=0 score=90.0% (min 90.0%)\n"
+        "mutants: killed=19 survived=1 skipped=0 unchecked=0 score=95.0% (min 95.0%)\n"
     )
 
 
 def test_main_fails_below_the_minimum(workdir: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    write_meta(workdir, "src/a.py", [1] * 89 + [0] * 11)
+    write_meta(workdir, "src/a.py", [1] * 94 + [0] * 6)
     assert run_main() == gate.EXIT_LOW_SCORE
-    assert "score=89.0%" in capsys.readouterr().out
+    assert "score=94.0%" in capsys.readouterr().out
 
 
 def test_main_min_score_option(workdir: Path) -> None:

@@ -19,7 +19,7 @@ code fails a test instead of silently skewing the score):
 Score = killed / (killed + survived). Exit codes: 0 pass, 1 score below the minimum,
 2 nothing to judge (no ``mutants/`` dir, no ``.meta`` file, unreadable file), 3 unchecked mutants.
 
-    uv run python scripts/mutation_gate.py --min-score 90 [--by-module]
+    uv run python scripts/mutation_gate.py --min-score 95 [--by-module]
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ SURVIVED = frozenset({0, 5, 33, 35})
 SKIPPED = frozenset({34})
 UNCHECKED = frozenset({None, 2})
 
-DEFAULT_MIN_SCORE = 90.0
+DEFAULT_MIN_SCORE = 95.0
 
 EXIT_PASS = 0
 EXIT_LOW_SCORE = 1

@@ -347,7 +347,7 @@ make check    # lint, typecheck, caps, cov, memray
 | `make memray` | Memory-budget tests (pytest-memray) |
 | `make profile` | Whole-pipeline memory profile and flamegraph in `.memray/` |
 | `make mutate` | mutmut mutation testing of `src/sankey_studio` |
-| `make mutate-gate` | Fails when the mutation score is below 90 |
+| `make mutate-gate` | Fails when the mutation score is below 95 |
 | `make semgrep` | Semgrep with the project rules and registry packs (Docker) |
 | `make semgrep-test` | Tests of the Semgrep rules (Docker) |
 | `make trivy` | Trivy scan of `uv.lock`, secrets, misconfigurations and licences (Docker) |
@@ -372,7 +372,7 @@ make check    # lint, typecheck, caps, cov, memray
 There is also `make gitnexus-status`.
 
 **Gates.** Coverage must be 100% line and branch of `src/sankey_studio`. The mutation score must be at
-least 90. Code caps are 500 lines per file, 50 per function, 300 per class, 4 parameters and nesting 4;
+least 95. Code caps are 500 lines per file, 50 per function, 300 per class, 4 parameters and nesting 4;
 the baseline `.code-caps-baseline.json` is empty and is a ratchet that may only shrink, so fix a
 violation instead of recording it. Unit tests use mongomock. Real-MongoDB tests (`@pytest.mark.mongo`)
 and `make e2e-mongo` run only when `SANKEY_TEST_MONGO_URI` is set, for example

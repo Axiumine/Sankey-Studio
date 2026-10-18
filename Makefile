@@ -100,7 +100,7 @@ profile:
 	$(PY) memray stats .memray/bench.bin
 	$(PY) memray flamegraph --force -o .memray/bench-flamegraph.html .memray/bench.bin
 
-# mutation testing: mutmut 3.x (config in pyproject [tool.mutmut]); gate = score >= 90%
+# mutation testing: mutmut 3.x (config in pyproject [tool.mutmut]); gate = score >= 95%
 # mutmut copies non-Python files (templates, static) only once, so a stale mutants/ judges old
 # markup: always start from a clean copy.
 # workers: mutmut defaults to one per CPU, which exhausts memory on big machines
@@ -110,7 +110,7 @@ mutate:
 	$(PY) mutmut run --max-children $(MUTATE_CHILDREN)
 
 mutate-gate:
-	$(PY) python scripts/mutation_gate.py --min-score 90
+	$(PY) python scripts/mutation_gate.py --min-score 95
 
 # ---------------------------------------------------------------- security / quality scanners
 semgrep:
