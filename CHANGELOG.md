@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- `docs/release.md` says what to do when the TestPyPI install picks an unrelated package with the name of a dependency, and `docs/assurance-case.md` names both signed tags (`v0.1.0`, `v0.2.0`).
+
 ## [0.2.0] - 2026-10-18
 
 ### Added

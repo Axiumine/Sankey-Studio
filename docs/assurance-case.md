@@ -250,7 +250,7 @@ Other weaknesses:
   sdist holds `src/`, `docs/*.md`, `docs/ui/*.md`, `README.md`, `CHANGELOG.md`, `SECURITY.md`, `CONTRIBUTING.md`,
   `LICENSE` and `pyproject.toml`; tests, hooks and scanner configuration stay out. The build is not
   claimed to be byte-reproducible.
-* **Signatures.** The `v0.1.0` tag is signed, and every commit on `main` so far is SSH-signed and
+* **Signatures.** The `v0.1.0` and `v0.2.0` tags are signed, and every commit on `main` so far is SSH-signed and
   shows as Verified on GitHub. This is the maintainer's practice; no rule enforces it.
 * **Accounts.** The organisation requires two-factor authentication
   ([GOVERNANCE.md](../GOVERNANCE.md)) and has two owners ([MAINTAINERS.md](../MAINTAINERS.md)).

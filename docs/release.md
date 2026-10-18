@@ -45,6 +45,13 @@ Package name: `sankey-studio` (<https://pypi.org/project/sankey-studio/>).
      --index-strategy unsafe-best-match sankey-studio==X.Y.Z serve --port 8765
    ```
 
+   TestPyPI also hosts unrelated packages that carry the names of our dependencies (0.2.0 met a
+   `fastapi==1.0` that does not build), and `unsafe-best-match` can pick them. If the install fails
+   while building a dependency, test the wheel alone: fetch it from
+   `https://test.pypi.org/pypi/sankey-studio/X.Y.Z/json` (`urls`) into an empty directory, check its sha256
+   there, and run `uv tool run --from ./sankey_studio-X.Y.Z-py3-none-any.whl sankey-studio serve --port 8765`;
+   the dependencies then come from PyPI.
+
 6. After the approval, check <https://pypi.org/project/sankey-studio/>: the description renders, the
    links work, and `uv tool install sankey-studio` installs the new version.
 7. Create the GitHub release for the tag (notes from the CHANGELOG section) and attach the release
