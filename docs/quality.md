@@ -137,7 +137,7 @@ rendering) under `memray run`, prints `memray stats` and writes a flamegraph to
 ## Static analysis
 
 * **CodeQL** (`.github/workflows/codeql.yml`: Python, JavaScript and the workflow files) runs on pushes
-  to `main` and weekly; its findings appear in the repository's code scanning. It is not a gate
+  to `main`, on pull requests to `main` and weekly; its findings appear in the repository's code scanning. It is not a gate
   (ADR-43). Its first analysis raised eight alerts, all dismissed with a reason in code scanning.
 * **ruff** with `select = ["ALL"]` (documented exceptions in `pyproject.toml`), line length 100,
   `max-args = 4`, mccabe complexity 12. Under `web/**` only the type-checking import rules and

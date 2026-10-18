@@ -887,7 +887,8 @@ control and that the repository cannot test.
 **Decision.**
 
 * `.github/workflows/codeql.yml` runs CodeQL on Python, JavaScript and the workflow files on pushes to
-  `main` and weekly. It is an explicit workflow because the OpenSSF Scorecard SAST check detects a
+  `main`, on pull requests to `main` (added 2026-10-18: the Scorecard SAST check scores the share of
+  merged pull requests that were analysed) and weekly. It is an explicit workflow because the OpenSSF Scorecard SAST check detects a
   workflow that uses `github/codeql-action` and did not detect GitHub's default setup (tried first on
   2026-10-17). Findings appear in code scanning and are not a gate. The first analysis raised eight
   alerts, all dismissed with a reason: five test files that log fake secrets on purpose and one Semgrep

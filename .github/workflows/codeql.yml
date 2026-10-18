@@ -1,15 +1,22 @@
 # CodeQL code scanning of the Python and JavaScript code and of the workflow files. It is an explicit
 # workflow, not GitHub's default setup, so the OpenSSF Scorecard SAST check can see it. Findings go to
-# the repository's code scanning; this job is not a gate. See ADR-43.
+# the repository's code scanning; this job is not a gate. It also runs on pull requests to main, so
+# the Scorecard SAST check finds an analysis on the merged pull requests. See ADR-43.
 name: codeql
 
 on:
   push:
     branches: ["main"]
+  pull_request:
+    branches: ["main"]
   schedule:
     - cron: "17 4 * * 3"
 
 permissions: {}
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   analyze:

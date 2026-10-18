@@ -127,7 +127,7 @@ maintainer's alone for now. Contributors have no access and need none. The workf
 request (`ci.yml`, `ci-e2e.yml`, `ci-security.yml` and the fuzzing run `cflite_pr.yml`) run its code with a
 read-only token and no project secret; the MongoDB service container of the end-to-end job has no
 credentials and holds only test data. The release workflow runs when a `v*` tag is pushed; the weekly Trivy
-job, the Scorecard and CodeQL run on a schedule, on a push to `main` or when branch protection changes, and
+job, the Scorecard and CodeQL run on a schedule, on a push to `main` (CodeQL also on a pull request) or when branch protection changes, and
 the mutation job runs only when someone starts it. Write access, two-factor authentication and
 removal of access are described in [GOVERNANCE.md](../GOVERNANCE.md#access); access is removed at
 once if an account may be compromised.

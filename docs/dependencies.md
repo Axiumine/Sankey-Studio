@@ -356,7 +356,7 @@ There are ten workflows and one local composite action. `cflite_pr.yml` and `cfl
 ([ADR-39](decisions.md#adr-39-releases-are-published-to-pypi-from-a-tag)); `trivy-weekly.yml` and
 `scorecard.yml` run on a schedule, and the Scorecard also on a push to `main`
 ([ADR-40](decisions.md#adr-40-a-weekly-trivy-scan-and-the-openssf-scorecard-run-in-github-actions));
-`codeql.yml` runs on a push to `main` and weekly ([ADR-43](decisions.md#adr-43-codeql-a-ruleset-on-main-and-signed-release-assets)).
+`codeql.yml` runs on a push to `main`, on a pull request to `main` and weekly ([ADR-43](decisions.md#adr-43-codeql-a-ruleset-on-main-and-signed-release-assets)).
 Four more run the checks of the hooks hosted ([ADR-44](decisions.md#adr-44-a-hosted-ci-job-runs-the-unit-tests),
 [ADR-48](decisions.md#adr-48-hosted-ci-runs-the-browser-memory-and-mongodb-suites-and-the-scanners),
 [quality.md](quality.md#hosted-ci)): `ci.yml` (lint, types, caps, unit tests, memory budgets), `ci-e2e.yml` (browser
