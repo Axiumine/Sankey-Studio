@@ -2,8 +2,8 @@
 // Copyright (C) 2026 Giovanni Manzoni
 /**
  * Early checks of the settings draft, so the form can say what is wrong before a request is made.
- * They mirror the server rules (API.md section 2.4); the server stays the authority and its 422
- * answers are mapped onto the same field ids (errors.js).
+ * They mirror the server rules (docs/api.md, section 5.5); the server stays the authority and
+ * its 422 answers are mapped onto the same field ids (errors.js).
  *
  * Field ids: `limits.<key>`, `storage.connection`, `storage.database`, and for a connection row
  * `row.<key>.name`, `row.<key>.database`, `row.<key>.uri`.

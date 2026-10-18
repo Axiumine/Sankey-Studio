@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 Tab = Literal["text", "paste", "upload", "manual", "mongo"]
 Role = Literal["source", "target", "value", "category"]
-#: What is visible on each tab and on no other (UI.md section 4.3).
+#: What is visible on each tab and on no other (docs/ui/editor.md).
 TAB_MARKERS: Final[dict[Tab, str]] = {
     "text": "source-file-select",
     "paste": "source-content",

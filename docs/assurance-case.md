@@ -247,7 +247,7 @@ Other weaknesses:
 * **Trusted publishing and attestations.** There is no PyPI token anywhere. The upload uses OIDC and
   attaches PEP 740 (Sigstore) attestations that tie each file to this repository, `release.yml` and
   the `pypi` environment; anyone can check one ([release.md](release.md#verifying-a-release)). The
-  sdist holds `src/`, `docs/*.md`, `README.md`, `CHANGELOG.md`, `SECURITY.md`, `CONTRIBUTING.md`,
+  sdist holds `src/`, `docs/*.md`, `docs/ui/*.md`, `README.md`, `CHANGELOG.md`, `SECURITY.md`, `CONTRIBUTING.md`,
   `LICENSE` and `pyproject.toml`; tests, hooks and scanner configuration stay out. The build is not
   claimed to be byte-reproducible.
 * **Signatures.** The `v0.1.0` tag is signed, and every commit on `main` so far is SSH-signed and

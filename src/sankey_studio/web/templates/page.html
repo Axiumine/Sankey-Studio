@@ -1,7 +1,7 @@
 {# SPDX-License-Identifier: GPL-3.0-only -#}
 {# Copyright (C) 2026 Giovanni Manzoni -#}
 {% extends "base.html" %}
-{#- The one page template (API.md section 4). Context: page, heading, links, boot.
+{#- The one page template (docs/api.md, section 8.1). Context: page, heading, links, boot.
     - page "new" and "edit" share static/js/pages/editor.js; every other page loads
       static/js/pages/<page>.js and static/css/pages/<page>.css (written by the page agents).
     - boot is rendered ONLY as {{ boot|tojson }} in the application/json block.

@@ -26,7 +26,7 @@ def live_server(module_server: LiveServer) -> LiveServer:
     return module_server
 
 
-#: (field, lowest accepted, highest accepted): the documented ranges of API.md section 2.4.
+#: (field, lowest accepted, highest accepted): the documented ranges of docs/api.md section 5.5.
 RANGES = [
     ("max_links", 100, 5_000_000),
     ("max_drawn_links", 50, 20_000),

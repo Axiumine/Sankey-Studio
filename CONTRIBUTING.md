@@ -78,7 +78,7 @@ These are enforced by tools, so a change that breaks them cannot be merged. The 
 * **Frontend.** Vanilla ES modules, no build step, no CDN. No `innerHTML`, `outerHTML`,
   `insertAdjacentHTML`, `document.write`, `eval`, `new Function`, `|safe`, inline scripts or inline
   handlers (Semgrep and the policy tests fail on them). `data-testid` names are a contract listed in
-  [docs/ui.md](docs/ui.md); do not rename or remove one.
+  [docs/ui/testids.md](docs/ui/testids.md); do not rename or remove one.
 * **Security invariants.** Do not weaken the loopback default, the Host and CSRF checks, the CSP,
   the MongoDB read-only guard, path containment, secret masking or output escaping
   ([Security model](README.md#security-model)). A change near them needs a test for both sides of the

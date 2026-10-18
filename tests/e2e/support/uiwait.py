@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Giovanni Manzoni
-"""Waits on the DOM signals of the app (UI.md section 3). Never ``networkidle``, never a sleep.
+"""Waits on the DOM signals of the app (docs/ui/testing.md). Never ``networkidle``, never a sleep.
 
 All of them are Playwright ``expect`` assertions, so they retry until the (suite-wide) expect
 timeout and fail with Playwright's own message. They need no CSP-blocked ``wait_for_function``.

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Giovanni Manzoni
-"""``FolderLibrary``: the library page object with its collections ("folders" in code, UI.md 4.2).
+"""``FolderLibrary``: the library page object with its collections (docs/ui/library.md).
 
 The user-visible word is "collection"; test ids, URLs and code say ``folder``.
 

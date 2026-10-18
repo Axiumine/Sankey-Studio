@@ -17,7 +17,7 @@ budget sample. ``upload_source`` posts a file to ``POST /api/v1/sources/files`` 
 (field ``file``, optional ``overwrite``), ``post_multipart`` is the raw form for odd names/fields.
 ``json_of(response, status)`` asserts the status (the body is part of the failure message) and
 returns the parsed JSON. ``fetch_json(page, method, path, body)`` does the same from inside the
-browser, so the request carries the browser's own same-origin headers (UI.md section 2).
+browser, so the request carries the browser's own same-origin headers (docs/api.md, section 2).
 """
 
 from __future__ import annotations

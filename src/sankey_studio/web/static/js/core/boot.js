@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Giovanni Manzoni
 /**
  * Page boot data: the JSON the server embeds in `<script type="application/json" id="page-data">`
- * (API.md section 4). It is the only place page data enters the page; read it through here.
+ * (docs/api.md, section 8.2). It is the only place page data enters the page; read it through here.
  *
  * Shape: `{page, remote_mode, writes_allowed, ...}` plus per page keys (`graphs`/`total` on the
  * library, `graph` on viewer/editor, `ids`/`graphs` on compare). A missing or broken block gives

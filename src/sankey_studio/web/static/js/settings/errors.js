@@ -4,10 +4,10 @@
  * Server errors of the settings routes mapped onto form fields.
  *
  * A 422 carries `details` such as `body.max_links: Input should be greater than or equal to 100`
- * or `mongo_connections.0.uri: Value error, uri must start with mongodb://...` (API.md section
- * 2.4). `mapServerError` turns them into `{fields: {id: message}, general: [message]}` with the
- * field ids of validate.js; a detail it cannot place goes to `general`. Other failures (503
- * busy, 503 storage_error, 403 read-only, network) are general messages.
+ * or `mongo_connections.0.uri: Value error, uri must start with mongodb://...` (docs/api.md,
+ * section 3.1). `mapServerError` turns them into `{fields: {id: message}, general: [message]}`
+ * with the field ids of validate.js; a detail it cannot place goes to `general`. Other failures
+ * (503 busy, 503 storage_error, 403 read-only, network) are general messages.
  */
 
 import { fieldErrors } from "../core/api.js";

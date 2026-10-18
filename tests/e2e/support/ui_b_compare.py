@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Giovanni Manzoni
-"""``ComparePage``: the page object of ``/compare?ids=...`` (UI.md section 4.5).
+"""``ComparePage``: the page object of ``/compare?ids=...`` (docs/ui/viewer.md, Compare).
 
 Cards are found by the graph name in their heading. ``donut_colours(name)`` reads the colour of
 every category from the Plotly figure of a card's donut (the page keeps it on the chart div), so

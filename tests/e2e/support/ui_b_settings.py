@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Giovanni Manzoni
-"""``SettingsPage``: the page object of ``/settings`` (UI.md section 4.6).
+"""``SettingsPage``: the page object of ``/settings`` (docs/ui/settings.md).
 
 ``stored()`` reads the settings the SERVER holds (``GET /api/v1/settings`` from inside the page), so
 a test can tell "the screen says saved" from "the server has it". The connection cards are found by

@@ -1,10 +1,11 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Giovanni Manzoni
-"""Helpers of ``test_static_policy.py``: the API.md section 5 test ids and the file scanners.
+"""Helpers of ``test_static_policy.py``: the base test ids and the file scanners.
 
-No tests here. ``API_TESTIDS`` is a copy of the ``data-testid`` names of API.md section 5 (the
-contract of wave 3 and of the e2e wave); ``testids-extra.txt`` in ``static/`` lists the names the
-shared code adds beyond it. ``used_testids`` finds the literal names a template or script uses.
+No tests here. ``API_TESTIDS`` is the base list of ``data-testid`` names (documented in
+docs/ui/testids.md; the contract of wave 3 and of the e2e wave); ``testids-extra.txt`` in
+``static/`` lists the names the shared code adds beyond it. ``used_testids`` finds the literal
+names a template or script uses.
 """
 
 from __future__ import annotations

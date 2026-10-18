@@ -6,7 +6,7 @@
                    stats, warnings, the save bar and the Style / Transform sections.
 ``EditGraphPage``- the same page for a saved graph (``open(graph_id)``).
 
-All locators are ``data-testid`` ones (UI.md section 4.3). Waits follow the DOM signals of
+All locators are ``data-testid`` ones (docs/ui/editor.md). Waits follow the DOM signals of
 ``support.uiwait``: ``wait_preview`` after an edit, never a sleep. The entries table lives in
 ``ui_a_entries.EntriesPanel``, the source tabs in ``ui_a_sources.SourcePanel``.
 

@@ -38,7 +38,7 @@ RLO: Final = chr(0x202E)  # right-to-left override (written as a number: no bidi
 BELL: Final = "\u0007"
 NAME: Final = f'{IMG} "><b>x</b> {EMOJI * 60}'
 TAG: Final = "<script>x</script>"
-DESCRIPTION_MAX: Final = 2000  # characters (API.md: ``description`` <= 2000)
+DESCRIPTION_MAX: Final = 2000  # characters (docs/api.md section 6: ``description`` <= 2000)
 #: Markup FIRST (a card that cuts long text still shows it), then emoji up to the limit.
 DESCRIPTION: Final = IMG + EMOJI * (DESCRIPTION_MAX - len(IMG))
 TITLE: Final = "</script><svg onload=alert(3)>"

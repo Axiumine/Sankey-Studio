@@ -6,7 +6,7 @@
 Playwright downloaded, and returns ``(browser, None)``; when neither can start it returns
 ``(None, reason)`` and the ``browser`` fixture turns the reason into a skip. Chrome runs headless
 with ``--no-sandbox --disable-dev-shm-usage`` and an English locale in its environment (native
-widgets follow the OS language otherwise, UI.md quirk 12).
+widgets follow the OS language otherwise, docs/ui/testing.md, Browser launch notes).
 
 ``new_context(browser, settings)`` opens a context from a ``ContextSettings``: viewport 1280x900,
 ``en-US``, UTC, light colour scheme, reduced motion, downloads accepted, ``base_url`` set to the

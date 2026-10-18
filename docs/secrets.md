@@ -303,7 +303,7 @@ found by secret scanning. Do not wait to confirm: from that moment treat it as p
      release cannot be replaced. Yank it and publish a fixed patch version
      ([release.md](release.md#things-that-cannot-be-undone)); a yanked file can still be
      downloaded, so here too the rotation is the fix. The source distribution contains `src/`,
-     `docs/*.md`, `README.md`, `LICENSE`, `CHANGELOG.md`, `SECURITY.md` and `CONTRIBUTING.md`, so a
+     `docs/*.md`, `docs/ui/*.md`, `README.md`, `LICENSE`, `CHANGELOG.md`, `SECURITY.md` and `CONTRIBUTING.md`, so a
      secret in those ships.
 5. **Close the scanning alert** only after step 1. A real secret is closed as revoked. A fake
    fixture is closed as used in tests, as the two existing alerts were.

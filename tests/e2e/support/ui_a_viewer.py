@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Giovanni Manzoni
-"""Page object of the viewer ``/graphs/<id>`` for the UI-A suites (UI.md section 4.4).
+"""Page object of the viewer ``/graphs/<id>`` for the UI-A suites (docs/ui/viewer.md).
 
 ``ViewerPage.open(graph_id)`` goes to the viewer and waits for the Sankey to be drawn;
 ``open_donut()`` switches to the donut tab and waits for it. Export controls

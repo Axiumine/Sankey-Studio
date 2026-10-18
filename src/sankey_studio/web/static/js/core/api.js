@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Giovanni Manzoni
 /**
- * The ONE fetch wrapper of the app (API.md section 1). Nothing else calls fetch().
+ * The ONE fetch wrapper of the app (docs/api.md, sections 2 and 10). Nothing else calls fetch().
  *
  * Rules it enforces
  * - Same origin only: paths are root-relative and are prefixed with `/api/v1`; anything that

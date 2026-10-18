@@ -7,7 +7,7 @@ Covers ``templates/`` and ``static/`` (``vendor/`` skipped): extra banned constr
 literal outside ``tokens.css``, the tokens equal ``render/palette.py``, JavaScript files of at most
 300 lines that ``node --check`` accepts, every reference from a template, script or style sheet
 resolves to a file the app serves, no external URL, no inline script, and every ``data-testid`` is
-in API.md section 5 or in ``static/testids-extra.txt``.
+in ``API_TESTIDS`` or in ``static/testids-extra.txt``.
 """
 
 from __future__ import annotations

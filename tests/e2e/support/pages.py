@@ -3,7 +3,7 @@
 """``AppPage``: the base of the suites' page objects. The suites add their own subclasses.
 
 A page object wraps one ``WatchedPage`` and one ``LiveServer`` and knows the shell that every page
-of the app shares (UI.md section 4.1). A subclass sets two class attributes and adds the locators
+of the app shares (docs/ui/shell.md). A subclass sets two class attributes and adds the locators
 and actions of its page::
 
     class LibraryPage(AppPage):

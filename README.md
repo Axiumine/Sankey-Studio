@@ -520,7 +520,7 @@ LICENSE                 GNU General Public License, version 3
 * [docs/architecture.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/architecture.md): product, modules, data model, pipeline, storage,
   rendering, security design
 * [docs/api.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/api.md): the HTTP API contract, error envelope, routes, page contexts
-* [docs/ui.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/ui.md): pages, states, `data-testid` reference, DOM wait signals
+* [docs/ui.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/ui.md): the UI reference, index and overview; the parts (pages, `data-testid` reference, DOM wait signals, theming) are under `docs/ui/`
 * [docs/quality.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/quality.md): gates, caps, coverage, mutation, scanners, commit policy
 * [docs/decisions.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/decisions.md): architecture decision records
 * [docs/e2e.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/e2e.md) (end-to-end tests)

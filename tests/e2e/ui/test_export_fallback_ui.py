@@ -44,7 +44,7 @@ def saved(live_server: LiveServer) -> SavedGraph:
 
 @pytest.fixture
 def viewer(live_server: LiveServer, page: WatchedPage, saved: SavedGraph) -> ViewerPage:
-    # The 501 of every image try: the response and Chrome's console line (UI.md section 8).
+    # The 501 of every image try: the response and Chrome's console line (docs/ui/testing.md).
     # ``live_server`` comes first so that the server outlives the browser context at teardown.
     page.allow_http(501, EXPORT_PATH)
     viewer = ViewerPage(page, live_server)

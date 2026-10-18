@@ -55,7 +55,7 @@ exclude:
     paths:
       - .semgrep
   # tokens.css writes the dark token set twice on purpose: under prefers-color-scheme and under an
-  # explicit data-theme="dark" (docs/ui.md, Theming). CSS cannot share one block between the two.
+  # explicit data-theme="dark" (docs/ui/frontend.md, Theming). CSS cannot share one block between the two.
   - name: DuplicatedCode
     paths:
       - src/sankey_studio/web/static/css/tokens.css

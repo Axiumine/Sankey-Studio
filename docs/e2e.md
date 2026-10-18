@@ -4,8 +4,8 @@ The end-to-end (e2e) suite starts the real application and drives it the way a c
 with `httpx`, and through real Chrome with Playwright's synchronous API. The server is uvicorn running
 in a thread of the pytest process, on an ephemeral loopback port, with mongomock standing in for
 MongoDB. This page is for a developer who has to run the suite, add a test to it or find out why one
-fails. Related: [ui.md](ui.md) (the `data-testid` contract, the DOM wait signals and the browser
-quirks every UI test relies on), [api.md](api.md) (the routes the HTTP tests call),
+fails. Related: [ui.md](ui.md) (the UI reference: [the `data-testid` contract](ui/testids.md), [the DOM wait signals and the browser
+quirks every UI test relies on](ui/testing.md)), [api.md](api.md) (the routes the HTTP tests call),
 [quality.md](quality.md) (the gates and the suppression policy), [decisions.md](decisions.md).
 
 Contents
@@ -376,14 +376,14 @@ Playwright reports the response too, so an expected status needs both lines allo
   happened, so an allow-list entry cannot go stale unnoticed.
 
 Allow per test, never globally, and put a comment next to every entry saying why the noise is expected.
-[ui.md](ui.md#expected-console-and-network-noise) lists the legitimate ones.
+[ui/testing.md](ui/testing.md#expected-console-and-network-noise) lists the legitimate ones.
 
 ### Waits and DOM signals
 
 Never sleep, never `networkidle`, never `page.wait_for_function` (the CSP blocks its string predicate,
-[ui quirk 1](ui.md#known-quirks)). Browser state is waited for with Playwright's `expect` and the
+[ui quirk 1](ui/testing.md#known-quirks)). Browser state is waited for with Playwright's `expect` and the
 helpers of `support/uiwait.py`, which wait on the signals described in
-[ui.md](ui.md#dom-wait-signals):
+[ui/testing.md](ui/testing.md#dom-wait-signals):
 
 | Helper | Waits for |
 |---|---|
@@ -504,7 +504,7 @@ Rules:
   `?q=<name>`, so no test depends on what another left on a shared server. Settings, uploads and the
   Mongo preview cache are server-wide: take a fresh `live_server` for a test that changes them.
 * **Select by `data-testid`** (`page.get_by_test_id`), as listed in
-  [ui.md](ui.md#data-testid-reference). The exceptions are the documented structural hooks
+  [ui/testids.md](ui/testids.md#data-testid-reference). The exceptions are the documented structural hooks
   (`#page-root`, `main#main`, `html[data-theme]`), Plotly's own DOM read through `ChartDom`, and
   the few elements the app gives no test id, found by role or label. A CSS class or id of the app is a
   last resort and belongs inside a page object, so a rename is fixed in one place.

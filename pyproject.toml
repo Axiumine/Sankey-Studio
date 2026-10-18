@@ -75,6 +75,7 @@ packages = ["src/sankey_studio"]
 include = [
   "/src",
   "/docs/*.md",
+  "/docs/ui/*.md",
   "/README.md",
   "/LICENSE",
   "/CHANGELOG.md",

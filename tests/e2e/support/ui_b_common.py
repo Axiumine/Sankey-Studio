@@ -8,7 +8,7 @@
   ``wait_background(page, colour)`` waits for the body to paint a colour (a theme change needs
   a frame).
 * ``poll_js(page, expression, ...)`` - bounded polling of a JS expression (``page.evaluate`` only:
-  ``wait_for_function`` is blocked by the page's CSP, UI.md quirk 1).
+  ``wait_for_function`` is blocked by the page's CSP, docs/ui/testing.md, quirk 1).
 * ``download_text(page, click)`` - run ``click`` (a callable) and return ``(file name, text)`` of
   the download it triggers.
 * ``save_for_review(page, name)`` - a screenshot in ``.e2e-artifacts/ui-b-review/`` for humans;

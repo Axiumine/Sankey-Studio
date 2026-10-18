@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Giovanni Manzoni
 /**
- * Fixed facts of the settings page: the limits table (bounds mirror the server models, API.md
- * section 2.4) and the name rules the form checks before it asks the server.
+ * Fixed facts of the settings page: the limits table (bounds mirror the server models,
+ * docs/api.md section 5.5) and the name rules the form checks before it asks the server.
  *
  * The server is the authority: these bounds only give early, friendly feedback and the hints
  * under each field. A 422 from the server is still mapped onto the same fields (errors.js).

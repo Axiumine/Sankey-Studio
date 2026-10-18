@@ -3,7 +3,7 @@
 """E2E A.4 (exports, real Chrome): one image export at a time, the others are told to come back.
 
 Chrome is heavy, so the server runs ONE image export and answers the next ones with
-``503 export_busy`` after a short wait instead of queueing them (API.md: ``export_busy``). The test
+``503 export_busy`` after a short wait instead of queueing them (docs/api.md section 5.4). The test
 makes that visible: a slow export holds the slot, two more arrive while it runs, and only one
 browser ever exists.
 """

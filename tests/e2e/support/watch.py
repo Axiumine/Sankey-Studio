@@ -17,7 +17,7 @@ pattern matches it; the ``page`` fixture asserts that there are no problems and 
 at the end of every test that otherwise passed. CSP violations can never be allowed.
 
 The allow-list is per test and every entry must carry a comment saying why the noise is expected
-(UI.md section 8 lists the legitimate ones). Chrome prints every 4xx/5xx as a console error AND
+(docs/ui/testing.md lists the legitimate ones). Chrome prints every 4xx/5xx as a console error AND
 Playwright reports the response, so an expected status needs both lines allowed:
 
 * ``page.allow_http(409, "/api/v1/graphs/")`` - the console line and the response of status 409 on

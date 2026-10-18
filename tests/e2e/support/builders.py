@@ -8,8 +8,9 @@
 
 ``Sample`` and the ready-made samples (``csv`` plus what the app reports in ``stats``):
 
-* ``BUDGET`` - UI.md flow F1, no categories: Salary/Freelance -> Budget -> Rent/Utilities/Food/
-  Transport/Savings, Food -> Groceries/Restaurants. 10 nodes, 9 links, 4 columns, 3,800 in and out.
+* ``BUDGET`` - the UI flow F1 graph (docs/e2e.md), no categories: Salary/Freelance -> Budget ->
+  Rent/Utilities/Food/Transport/Savings, Food -> Groceries/Restaurants. 10 nodes, 9 links, 4
+  columns, 3,800 in and out.
 * ``BUDGET_CATEGORISED`` - the same links with a ``category`` column (Income, Housing, Food,
   Transport, Savings); ``categories`` holds the flow per category over ALL links (donut basis
   ``all``: 3,800 + 1,460 + 1,280 + 230 + 1,470 = 8,240).

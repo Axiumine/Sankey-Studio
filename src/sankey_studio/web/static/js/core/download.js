@@ -9,7 +9,7 @@
  *   (`filename*=UTF-8''...` first, then `filename="..."`) and wins as it is; without one the name is
  *   `fallbackName`, given the chart suffix by `chartFileName`.
  * - `isClientFallback(error)`: true when the server cannot draw the image (422 export_too_large,
- *   501/502/503/504): offer core/chart.js `downloadImage` instead (API.md section 2.3).
+ *   501/502/503/504): offer core/chart.js `downloadImage` instead (docs/api.md, section 3.2).
  * - `saveBlob(blob, filename)` and `downloadText(filename, text, mime)` save data that already
  *   exists in the browser.
  * - `exportHref(path, query)` is the URL of an export route for a plain `<a href>`.

@@ -48,7 +48,7 @@ This project is indexed by GitNexus as **Sankey-Studio** (47671 symbols, 100990 
 
 Sankey Studio: a local FastAPI + vanilla-JS web app that draws and manages Sankey graphs (plus an optional donut chart).
 Sources: text (csv/tsv/sankeymatic/json), MongoDB (read-only unless the graph owner opts into write-back), manual table. Saved graphs live on disk or in MongoDB.
-No login: loopback by default, defends itself. Python 3.14, managed by uv. Docs: `README.md` and `docs/*.md`.
+No login: loopback by default, defends itself. Python 3.14, managed by uv. Docs: `README.md`, `docs/*.md` and `docs/ui/*.md`.
 
 ## Commands
 
@@ -104,7 +104,7 @@ File 500 lines, function 50, class 300, parameters 4 (`self`/`cls` free), nestin
 * Vanilla ES modules, no build step, no CDN, no web fonts from the network. plotly.js is served locally from the installed `plotly` package at `/static/vendor/plotly.min.js`.
 * Banned in `templates/` and `static/`: `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `eval`, `new Function`, `|safe`. Build DOM with `createElement`/`textContent`. No inline scripts or inline handlers.
 * Page data reaches the browser only through the `<script type="application/json">` boot block (`|tojson`). One `fetch` wrapper sends JSON, never HTML forms.
-* `data-testid` names are a contract: they are listed in `docs/ui.md` and `src/sankey_studio/web/static/testids-extra.txt`; the policy tests fail on any other literal id. Do not rename or remove one.
+* `data-testid` names are a contract: they are listed in `docs/ui/testids.md` and `src/sankey_studio/web/static/testids-extra.txt`; the policy tests fail on any other literal id. Do not rename or remove one.
 * JS files <= 300 lines, functions <= 50 lines (convention; the caps tool measures Python only).
 
 ## Security invariants (never weaken)

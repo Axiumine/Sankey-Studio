@@ -9,7 +9,7 @@ The application has no login, no CORS and no interactive API documentation (`/do
 are 404). Everything below is enforced by the code in `src/sankey_studio/web/` and by its tests; when this text and
 the code differ, the code wins and this text is a bug.
 
-Related documents: [UI reference](ui.md) (page behaviour and the `data-testid` reference),
+Related documents: [UI reference](ui.md) (page behaviour; the [`data-testid` reference](ui/testids.md#data-testid-reference)),
 [Architecture](architecture.md) (how the layers fit together), [Quality](quality.md) (test and quality gates),
 [Decisions](decisions.md) (why the contract looks like this), [End-to-end tests](e2e.md) (browser scenarios).
 
@@ -295,7 +295,7 @@ The settings probes count as persisting because they connect to URIs a caller su
   `read_only_mode` for a file or MongoDB source it may not write.
 - `GET /settings` hides the Mongo connections: `uri_masked` is the bare placeholder `mongodb://***` instead of the
   masked host and user name.
-- UI clients should disable write controls when `writes_allowed` is false; see the [UI reference](ui.md).
+- UI clients should disable write controls when `writes_allowed` is false; see the [UI reference](ui/shell.md).
 
 ---
 
@@ -1131,7 +1131,7 @@ Plotly.newPlot(div, bundle.figure.data, bundle.figure.layout, { responsive: true
 
 The pages are plain `GET` routes in `web/routers/pages.py`. Each renders one template, `page.html`, which extends
 `base.html`. The root element is `<main data-page="..." data-testid="app-root">`. The behaviour of each page and its
-`data-testid` names are documented in the [UI reference](ui.md).
+`data-testid` names are documented in the [UI reference](ui/testids.md#data-testid-reference).
 
 ### 8.1 Template context
 

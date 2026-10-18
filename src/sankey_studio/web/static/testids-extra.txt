@@ -1,7 +1,7 @@
-# data-testid values used by the shared frontend code that are NOT listed in API.md section 5.
+# data-testid values used by the shared frontend code that are NOT in the base list API_TESTIDS.
 # One name per line. Lines starting with "#" are comments. tests/web/test_static_policy.py
-# fails when a template or script uses a test id found in neither API.md section 5 nor here.
-# Add a name here (with a comment saying where it is used) instead of renaming an API.md one.
+# fails when a template or script uses a test id found in neither API_TESTIDS nor here.
+# Add a name here (with a comment saying where it is used) instead of renaming a base one.
 
 # core/dialog.js: default test ids of confirmDialog (callers can pass their own, e.g. delete-confirm)
 confirm-dialog

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-only
 # Copyright (C) 2026 Giovanni Manzoni
-"""B3, part 1: categorise entries in the editor (UI.md flow F2 and its negatives).
+"""B3, part 1: categorise entries in the editor (the happy path and its negatives).
 
 The entries table (one row per source -> target pair), the category input with its datalist, the
 single-entry commit, "None, on purpose" for a cleared entry, the bulk rule for all entries that

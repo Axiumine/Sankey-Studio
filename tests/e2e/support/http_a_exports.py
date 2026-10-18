@@ -23,7 +23,7 @@ MEDIA_TYPES: Final = {
     "json": "application/json",
     "csv": "text/csv; charset=utf-8",
 }
-#: Headers every download carries (API.md section 2.3).
+#: Headers every download carries (docs/api.md section 5.4).
 DOWNLOAD_HEADERS: Final = {
     "x-content-type-options": "nosniff",
     "content-security-policy": "sandbox",
