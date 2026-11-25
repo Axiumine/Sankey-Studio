@@ -38,7 +38,6 @@ EXCLUDED_DIRS = frozenset(
         ".git",
         ".venv",
         "venv",
-        ".gitnexus",
         ".claude",
         ".idea",
         "mutants",

@@ -16,7 +16,6 @@ scan:
   skip-dirs:
     - .git
     - .venv
-    - .gitnexus
     - .claude
     - .idea
     - mutants

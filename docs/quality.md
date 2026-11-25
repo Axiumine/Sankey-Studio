@@ -185,8 +185,6 @@ rendering) under `memray run`, prints `memray stats` and writes a flamegraph to
   `bootstrap` of `qodana.yaml` builds a fresh venv with `uv sync` in the container, into
   `.qodana/venv`; the script mounts that over `/data/project/.venv` and names its python in
   `QODANA_PYTHON_PATH`. The host `.venv` is never touched.
-* **GitNexus** indexes the repository for code intelligence (`make gitnexus`, `make gitnexus-status`).
-  Use its impact analysis before changing an existing symbol; see the generated block in `CLAUDE.md`.
 * **Docker.** Docker is used only through `make semgrep`, `make semgrep-test`, `make trivy`,
   `make qodana`, `make mongo-up`, `make mongo-down` and `make mongo-absent` (the `e2e-mongo` check of
   the hooks runs the last three itself).

@@ -29,7 +29,6 @@ exclude:
       - .env.example
       - .venv
       - .git
-      - .gitnexus
       - .claude
       - .idea
       - mutants

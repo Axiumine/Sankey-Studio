@@ -32,7 +32,7 @@ INERT = [
     Case("docs/screenshots/a.jpeg", True, "jpeg"),
     Case("docs/screenshots/a.gif", True, "gif"),
     Case("docs/screenshots/a.webp", True, "webp"),
-    Case(".claude/skills/gitnexus-cli/SKILL.md", True, "a skill file"),
+    Case(".claude/skills/example/SKILL.md", True, "a skill file"),
     Case("src/sankey_studio/notes.md", False, "Markdown inside src ships with the package"),
     Case("src/sankey_studio/web/static/img/logo.png", False, "an image the app serves"),
     Case("tests/fixtures/shot.png", False, "an image outside docs"),

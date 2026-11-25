@@ -53,7 +53,7 @@ def accepted(tmp_path: Path, message: str) -> bool:
         "refactor(core)!: split models package",
         "feat(web,ui): add compare view",
         "docs: add CLAUDE.md",
-        "docs(hooks): note .claude/skills/gitnexus-cli/SKILL.md",
+        "docs(hooks): note .claude/skills/example/SKILL.md",
         "🤖 fix(sources): reject path traversal",
         "🤖 chore: scaffold",
     ],

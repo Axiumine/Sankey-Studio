@@ -1,5 +1,5 @@
 .PHONY: sync lint format typecheck caps test e2e e2e-serial e2e-mongo e2e-mongo-rs cov memray profile mutate mutate-gate \
-        semgrep semgrep-test trivy qodana security gitnexus gitnexus-status hooks hooks-check \
+        semgrep semgrep-test trivy qodana security hooks hooks-check \
         gate-commit gate-push gate-main gate-release check ci full serve mongo-up mongo-down mongo-absent clean \
         preflight-docker preflight-qodana preflight-rs
 
@@ -144,13 +144,7 @@ preflight-rs:
 	$(PY) pytest tests/e2e/mongo_rs/test_rs_topology.py::test_the_uri_reaches_a_replica_set_with_a_primary \
 	  -m "e2e and mongo_rs" -p no:cacheprovider $(call junit,)
 
-# ---------------------------------------------------------------- code intelligence + hooks
-gitnexus:
-	gitnexus analyze --pdg
-
-gitnexus-status:
-	gitnexus status
-
+# ---------------------------------------------------------------- hooks
 # enable the versioned hooks: pre-commit and pre-merge-commit (fast: lint typecheck caps), commit-msg
 # (message format), pre-push (new commit messages, then cov memray e2e; main and tags also security
 # and the release checks). Logic: scripts/githook_gate.py, docs/quality.md.

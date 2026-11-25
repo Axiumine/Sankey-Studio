@@ -353,7 +353,6 @@ make check    # lint, typecheck, caps, cov, memray
 | `make trivy` | Trivy scan of `uv.lock`, secrets, misconfigurations and licences (Docker) |
 | `make qodana` | Qodana Ultimate Plus inspection (needs `QODANA_TOKEN`) |
 | `make security` | `semgrep-test`, `semgrep`, `trivy` |
-| `make gitnexus` | Refresh the GitNexus code-intelligence index (`gitnexus analyze --pdg`) |
 | `make hooks` | `git config core.hooksPath .githooks` (`make sync` runs it) |
 | `make hooks-check` | Verify `core.hooksPath` and the modes of the four hook files (`git ls-files -s`) |
 | `make gate-commit` | The `commit` tier by hand: `fast` (lint, typecheck, caps) on HEAD, with a stamp |
@@ -368,8 +367,6 @@ make check    # lint, typecheck, caps, cov, memray
 | `make mongo-down` | Stop it |
 | `make mongo-absent` | Exit 0 only when Docker answers and no project MongoDB container is running (the `e2e-mongo` hook check uses it) |
 | `make clean` | Remove caches and reports |
-
-There is also `make gitnexus-status`.
 
 **Gates.** Coverage must be 100% line and branch of `src/sankey_studio`. The mutation score must be at
 least 95. Code caps are 500 lines per file, 50 per function, 300 per class, 4 parameters and nesting 4;
@@ -403,7 +400,6 @@ for that reason.
   without the token.
 * **Git hooks** that run every gate above before a commit or a push, with stamps so that a check
   never runs twice on the same tree ([Commit policy](#commit-policy)).
-* **GitNexus** code-intelligence index (`make gitnexus`) for impact analysis before edits.
 
 More in [docs/quality.md](https://github.com/Axiumine/Sankey-Studio/blob/main/docs/quality.md).
 

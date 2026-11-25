@@ -1,49 +1,3 @@
-<!-- gitnexus:start -->
-# GitNexus — Code Intelligence
-
-This project is indexed by GitNexus as **Sankey-Studio** (47671 symbols, 100990 relationships, 833 execution flows).
-
-> Index stale? Run `node .gitnexus/run.cjs analyze --index-only` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? Bootstrap with `npx`, `bunx`, or `pnpm dlx` — e.g. `bunx gitnexus@latest analyze` (npm 11 npx crash; #1939).
-
-## Always Do
-
-- **MUST run impact before editing.** Use `impact({target: "symbolName", direction: "upstream"})` or `node .gitnexus/run.cjs impact "symbolName" --direction upstream --repo .`; report callers, processes, and risk. Never substitute grep for graph analysis. For unified PDG impact, add `mode: "pdg"` with optional `line: <N>` — it returns statement-level `affectedStatements` over CDG + REACHING_DEF and inter-procedural symbols in `interproceduralByDepth`/`byDepth`; no-layer/degraded PDG results are UNKNOWN-risk notes (`--pdg` layer). CLI equivalent: `node .gitnexus/run.cjs impact "symbolName" --direction upstream --mode pdg --line <N> --repo .`.
-- **MUST analyze graph changes before committing.** Use `detect_changes({scope: "all"})` (MCP) or `node .gitnexus/run.cjs detect-changes --scope all --repo .` (CLI fallback). `partial: true` or `truncated: true` is not a clean check — a zero means unseen, not unaffected; re-run it. For regression review: `detect_changes({scope: "compare", base_ref: "main"})` or `node .gitnexus/run.cjs detect-changes --scope compare --base-ref "main" --repo .`.
-- MUST warn on HIGH/CRITICAL `risk` pre-edit; never use `riskSharedAxes` to waive a HIGH/CRITICAL `risk` warning. Compare File/symbol: MCP File omits axes; Graph-RAG expands File.
-- **MUST treat `risk: UNKNOWN` as unresolved, not as low.** An empty caller set is not evidence the symbol is unused — it can also mean the callers are not resolvable by the index (plain-object property access, dynamic dispatch, cross-language calls). `impact` pairs `UNKNOWN` with a `riskNote` saying so. Confirm with a text search before treating the symbol as safe to change or delete; do not proceed on the strength of a zero.
-- **MUST use `query({search_query: "concept"})` for concepts/flows, `context({name: "symbolName"})` for a named symbol, or `impact` for blast radius, on read-only callers, dependencies, imports, or execution flow.** Graph first; text search only for empty/`UNKNOWN`/literals.
-- For security review, `explain({target: "fileOrSymbol"})` lists taint findings (source→sink flows; needs `analyze --pdg`).
-- For control/data dependence, `pdg_query({mode: "controls", target: "fileOrSymbol"})` answers "under what condition does X run?" (CDG, incl. guard clauses) and `pdg_query({mode: "flows", target, variable})` traces "where does variable Y flow?" (REACHING_DEF). `--pdg` layer.
-
-## Never Do
-
-- NEVER edit a function, class, or method before MCP/CLI impact analysis.
-- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis, and never read `UNKNOWN` as an all-clear — it means the walk could not answer, which is the one verdict that requires confirming by other means.
-- NEVER rename symbols with find-and-replace — use `rename` which understands the call graph.
-- NEVER commit before MCP/CLI graph change analysis.
-
-## Resources
-
-| Resource | Use for |
-| --- | --- |
-| `gitnexus://repo/Sankey-Studio/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/Sankey-Studio/clusters` | All functional areas |
-| `gitnexus://repo/Sankey-Studio/processes` | All execution flows |
-| `gitnexus://repo/Sankey-Studio/process/{name}` | Step-by-step execution trace |
-
-## CLI
-
-| Task | Read this skill file |
-| --- | --- |
-| Understand architecture / "How does X work?" | `.claude/skills/gitnexus-exploring/SKILL.md` |
-| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus-impact-analysis/SKILL.md` |
-| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus-debugging/SKILL.md` |
-| Rename / extract / split / refactor | `.claude/skills/gitnexus-refactoring/SKILL.md` |
-| Tools, resources, schema reference | `.claude/skills/gitnexus-guide/SKILL.md` |
-| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus-cli/SKILL.md` |
-
-<!-- gitnexus:end -->
-
 # Sankey Studio — working agreement
 
 Sankey Studio: a local FastAPI + vanilla-JS web app that draws and manages Sankey graphs (plus an optional donut chart).
@@ -54,7 +8,7 @@ No login: loopback by default, defends itself. Python 3.14, managed by uv. Docs:
 
 * Always `uv run ...` (or `make`). Never `python3` directly (system python3 is 3.13 and cannot parse PEP 758 `except A, B:` sources).
 * `make caps` runs `uv run --no-project --python 3.14 python scripts/check_code_caps.py` for that reason.
-* `make sync | lint | format | typecheck | caps | test | e2e | e2e-mongo | e2e-mongo-rs | cov | memray | profile | mutate | mutate-gate | semgrep | semgrep-test | trivy | qodana | security | gitnexus | hooks | hooks-check | gate-commit | gate-push | gate-main | gate-release | check | ci | full | serve | mongo-up | mongo-down | mongo-absent | preflight-docker | preflight-qodana | preflight-rs`. Read the `Makefile`; aggregates: `check` = lint typecheck caps cov memray; `ci` = check + security + e2e; `full` = ci + mutate + mutate-gate + qodana. `test`, `cov`, `memray`, `e2e`, `e2e-mongo` and `e2e-mongo-rs` accept `JUNIT=<path>` (also writes a JUnit report; the hooks use it). `gate-*` and the aggregates are for the user at a terminal; agents never run them (see "Before finishing a task").
+* `make sync | lint | format | typecheck | caps | test | e2e | e2e-mongo | e2e-mongo-rs | cov | memray | profile | mutate | mutate-gate | semgrep | semgrep-test | trivy | qodana | security | hooks | hooks-check | gate-commit | gate-push | gate-main | gate-release | check | ci | full | serve | mongo-up | mongo-down | mongo-absent | preflight-docker | preflight-qodana | preflight-rs`. Read the `Makefile`; aggregates: `check` = lint typecheck caps cov memray; `ci` = check + security + e2e; `full` = ci + mutate + mutate-gate + qodana. `test`, `cov`, `memray`, `e2e`, `e2e-mongo` and `e2e-mongo-rs` accept `JUNIT=<path>` (also writes a JUnit report; the hooks use it). `gate-*` and the aggregates are for the user at a terminal; agents never run them (see "Before finishing a task").
 * Run the server: `uv run sankey-studio serve [--host] [--port] [--data-dir] [--sources-dir] [--allow-remote] [--allow-remote-writes] [--allow-source-writes]`. Env: `SANKEY_HOST`, `SANKEY_PORT`, `SANKEY_DATA_DIR`, `SANKEY_SOURCES_DIR`, `SANKEY_MONGO_URI`, `SANKEY_ALLOWED_HOSTS` (JSON array), `SANKEY_LOG_LEVEL`, `SANKEY_REMOTE_MODE`, `SANKEY_REMOTE_WRITES`, `SANKEY_SOURCE_WRITES`.
 * One uvicorn worker only (file locks and the export slot are per process).
 
@@ -167,7 +121,6 @@ Before finishing, run `make lint typecheck caps` (fast; all must be clean) and y
 
 ## Tooling and environment rules
 
-* GitNexus: follow the generated block above (impact before editing, `detect_changes` before committing).
 * Never read, print or copy `.env` (it holds the Qodana token); `.env.example` is fine. The replica-set tests read their one key, `SANKEY_TEST_MONGO_RS_URI`, from it themselves (`tests/e2e/support/rs_env.py`); you still never open it, not even to check that the key exists (no `grep`, `cat` or key listing). To learn whether it is set, run a targeted `mongo_rs` test and read its skip reason. Never print or log the URI: pipe the output of such a run through a filter that masks `mongodb://...` (a failure can echo it).
 * Never touch ports 8000 or 27017-27019, or any other project's MongoDB. Use the project-local compose Mongo (`127.0.0.1:27117`) via `make mongo-up`/`make mongo-down`. The one exception is the user's LAN replica set in `SANKEY_TEST_MONGO_RS_URI`: reach it only through `tests/e2e/mongo_rs` (`make e2e-mongo-rs` belongs to the user and the hooks; you run only the files or test ids that cover your change, with `-m "e2e and mongo_rs"`), only in the empty database its URI names, and never step a member down, change the set or run admin commands on it.
 * Never run `docker compose` or `docker` directly; Docker is used only through make targets (`semgrep`, `semgrep-test`, `trivy`, `qodana`, `mongo-up`, `mongo-down`, `mongo-absent`).

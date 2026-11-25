@@ -207,7 +207,7 @@ markers = [
   "slow: slow test (real Chrome export, large inputs)",
   "e2e: end-to-end test against a live server / real browser; run with `make e2e`",
 ]
-norecursedirs = ["mutants", ".venv", "reports", ".git", ".gitnexus", "node_modules"]
+norecursedirs = ["mutants", ".venv", "reports", ".git", "node_modules"]
 
 [tool.coverage.run]
 source = ["sankey_studio"]

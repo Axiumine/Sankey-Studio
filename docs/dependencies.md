@@ -60,8 +60,7 @@ The published wheel declares exactly these ten, as lower bounds. The rest:
   test the frontend; there is no `package.json`, no npm package and no JavaScript build step. The hosted
   browser jobs use the Google Chrome that GitHub's runner image carries; it is neither installed nor
   pinned by the repository.
-  `make gitnexus` calls an external `gitnexus` command that the repository neither installs nor
-  pins. The scanners and the project MongoDB run as Docker images (the hosted jobs use them too, and a
+  The scanners and the project MongoDB run as Docker images (the hosted jobs use them too, and a
   MongoDB service container), and the workflows use GitHub Actions; both are covered below.
 
 ## How dependencies are selected

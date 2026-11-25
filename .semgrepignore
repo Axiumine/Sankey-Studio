@@ -1,6 +1,5 @@
 .git/
 .venv/
-.gitnexus/
 .claude/
 .idea/
 mutants/
