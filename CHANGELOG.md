@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `docs/release.md` says what to do when the TestPyPI install picks an unrelated package with the name of a dependency, and `docs/assurance-case.md` names both signed tags (`v0.1.0`, `v0.2.0`).
 
+### Security
+
+- Dependency updates for the open Dependabot alerts: `dnspython` 2.9.0 to 2.9.2 (GHSA-vvf4-9x63-8xvv, high; a runtime dependency through `pymongo`), `opentelemetry-api` 1.45.1 to 1.45.2 (GHSA-mf5v-w3w3-f6cg, medium; a runtime dependency through `fastapi`), `certifi` 2026.7.22 to 2026.10.18 (GHSA-6q48-6c7w-9gw2, critical; development only, through `httpx`) and, in the fuzz image only, `setuptools` 84.0.0 to 84.1.0 (GHSA-xmj3-9gf7-h52w, low). The lower bounds in `pyproject.toml` are unchanged.
+
 ## [0.2.0] - 2026-10-18
 
 ### Added
